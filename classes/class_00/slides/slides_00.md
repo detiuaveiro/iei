@@ -1,16 +1,54 @@
-# Introdução Engenharia Informática
+---
+title: Introdução Engenharia Informática
+author: Mário Antunes
+institute: Universidade de Aveiro
+date: September 15, 2025
+mainfont: NotoSans
+mainfontfallback:
+  - "NotoColorEmoji:mode=harf"
+header-includes:
+ - \usetheme[sectionpage=none,numbering=fraction,progressbar=frametitle]{metropolis}
+ - \usepackage{longtable,booktabs}
+ - \usepackage{etoolbox}
+ - \AtBeginEnvironment{longtable}{\scriptsize}
+ - \AtBeginEnvironment{cslreferences}{\scriptsize}
+---
 
-Upon completing this course, each student should be able to: 
+# Professors
 
-- O1. Administer Linux and Windows operating systems via command line.
-- O2. Differentiate the use of virtual machines and containers to execute software in isolated and organized environments. 
-- O3. Understand the need for code versioning and collaborative work tools.
-- O4. Grasp the fundamental concepts of networking and configure a local network. 
-- O5. Develop basic web pages and utilize web technologies to create simple web applications. 
-- O6. Manipulate data in common formats and employ data analysis tools. 
-- O7. Comprehend the principles of GDPR, intellectual property, and software licensing from an ethical and professional standpoint. 
+::: columns
 
-The previous objectives will be achieved by working in these topics
+:::: column
+- **Name:** Mário Antunes
+- **E-Mail:** [mario.antunes@ua.pt](mailto:mario.antunes@ua.pt)
+- **Office:** 19.2.15 (IT1)
+::::
+
+:::: column
+![](figures/mantunes.jpg)
+::::
+
+:::
+
+# Professors
+
+::: columns
+
+:::: column
+- **Name:** Joaquim Sousa Pinto
+- **E-Mail:** [jsp@ua.pt](mailto:jsp@ua.pt)
+- **Office:** 24.0.05 (IEETA)
+::::
+
+:::: column
+![](figures/jsp.jpg)
+::::
+
+:::
+
+# Class Introduction
+
+Covering the following topics:
 
 * C1. Introduction to Command Line
 * C2. Virtualization and Containers 
@@ -19,9 +57,15 @@ The previous objectives will be achieved by working in these topics
 * C5. Web Servers and Technology 
 * C6. Semistructured Data Manipulation 
 * C7. Document Compilation (Latex and Markdown) 
-* C8. GDPR, Intellectual Property, Ethics, and Professionalism in IT 
+* C8. GDPR, Intellectual Property, Ethics, and Professionalism in IT
 
-## Schedule
+# Grading
+
+- 50% Theory + 50% Practice
+- Discrete: 25% Project 1 + 25% Project 2 + 50% Exam
+- Final: 50% Final Exame + 50% Project 
+
+# Class Schedule
 
 | Date TP1/2 | Date TP3   | Date TP4   | Topic | Description                        |
 |-----------:|-----------:|-----------:|:-----:|:-----------------------------------|
@@ -40,30 +84,10 @@ The previous objectives will be achieved by working in these topics
 | 22-12-2025 | 10-12-2025 | 11-12-2025 |    C7 | Latex & Markdown                   |
 | ---------- | 17-12-2025 | 18-12-2025 |    C8 | GDPR, AI Act, Intelectual property |
 
-## Grading
-
-- 50% Theory + 50% Practice
-- Discrete: 25% Project 1 + 25% Project 2 + 50% Exam
-- Final: 50% Final Exame + 50% Project 
-
-## Classes
-
-### Class 0 - Setup
-
-The material can be found [here](classes/class_00/).
-
-## Bibliography
+# Bibliography
 
 - James F. Kurose and Keith W. Ross. 2021. Computer Networking: A Top-Down Approach (8th edition). Pearson.  
 - Python Networking 101: Navigating essentials of networking, socket programming, AsyncIO, network testing, simulations and Ansible, Odette Windows, GiftforGits, 2023 
 - Mailund, Thomas 2019 Introducing Markdown and Pandoc: Using Markup Language and Document Converter  
 - William Shotts 2019 The Linux Command Line, 2nd Edition - A Complete Introduction 
-- Paul McFedries 2023 HTML, CSS, & JavaScript All-in-One For Dummies 
-
-## Authors
-
-* **Mário Antunes** - [mariolpantunes](https://github.com/mariolpantunes)
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
+- Paul McFedries 2023 HTML, CSS, & JavaScript All-in-One For Dummies
