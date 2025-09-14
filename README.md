@@ -23,6 +23,8 @@ The previous objectives will be achieved by working in these topics
 
 ## Schedule
 
+Can find the spreadsheet [here](iei_plan.ods).
+
 | Date TP1/2 | Date TP3   | Date TP4   | Topic | Description                        |
 |-----------:|-----------:|-----------:|:-----:|:-----------------------------------|
 | 15-09-2025 | 17-09-2025 | 18-09-2025 |    C0 | Setup                              |
