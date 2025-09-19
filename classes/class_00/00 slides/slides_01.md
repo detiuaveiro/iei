@@ -1,5 +1,6 @@
 ---
-title: Introdução Engenharia Informática
+title: Setup
+Subtitle: Introdução Engenharia Informática
 author: Mário Antunes
 institute: Universidade de Aveiro
 date: September 15, 2025

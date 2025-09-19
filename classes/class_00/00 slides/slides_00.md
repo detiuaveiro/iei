@@ -10,8 +10,8 @@ header-includes:
  - \usetheme[sectionpage=none,numbering=fraction,progressbar=frametitle]{metropolis}
  - \usepackage{longtable,booktabs}
  - \usepackage{etoolbox}
- - \AtBeginEnvironment{longtable}{\scriptsize}
- - \AtBeginEnvironment{cslreferences}{\scriptsize}
+ - \AtBeginEnvironment{longtable}{\tiny}
+ - \AtBeginEnvironment{cslreferences}{\tiny}
 ---
 
 # Professors
