@@ -218,6 +218,161 @@ Use the `chmod` (**ch**ange **mod**e) command to change permissions.
 # Give the user (u) the execute (x) permission
 $ chmod u+x my_script.sh
 ```
+-----
+
+Of course. Here are the additional slides covering package management with `apt` and task scheduling with `crontab`, designed to integrate seamlessly into the existing presentation.
+
+These slides would fit best after **"Managing Permissions with `chmod`"** and before **"Redirection: Saving Output with `>`"** for the package manager, and at the very end, after the scripting examples, for `cron`.
+
+-----
+
+## What is a Package Manager? 📦
+
+A package manager is a tool that automates the process of installing, updating, and removing software.
+
+  * It handles **dependencies** automatically, so you don't have to install required libraries manually.
+  * It keeps a database of installed software, making it easy to manage.
+  * For Debian and Ubuntu-based systems, the primary package manager is **APT** (Advanced Package Tool).
+
+**Analogy:** Think of `apt` as an App Store for your terminal.
+
+-----
+
+## Updating Package Lists (`apt update`)
+
+Before you install or search for anything, you should synchronize your local package list with the central software repositories.
+
+  * This command **does not** upgrade your software. It just downloads the latest list of what's available.
+  * This is a privileged operation, so it requires `sudo`.
+
+<!-- end list -->
+
+```bash
+# Downloads the latest package information
+$ sudo apt update
+```
+
+-----
+
+## Searching for Packages (`apt search`)
+
+If you're not sure of the exact name of a program, you can search for it.
+
+  * This command searches the names and descriptions of all available packages.
+  * You don't need `sudo` to search.
+
+**Example:** Search for a program that shows system processes, like `htop`.
+
+```bash
+$ apt search htop
+```
+
+-----
+
+## Installing Packages (`apt install`)
+
+Once you know the package name, you can install it.
+
+  * `apt` will automatically download and install the program and any dependencies it needs to run.
+  * This requires `sudo`.
+
+**Example:** Install the `htop` utility, an interactive process viewer.
+
+```bash
+$ sudo apt install htop
+```
+
+After installation, you can run the program by simply typing `htop`.
+
+-----
+
+## Removing Packages (`apt remove` / `apt purge`)
+
+Removing software is just as easy as installing it. You have two main options:
+
+1.  **`apt remove`**: Uninstalls the program but leaves its configuration files behind (useful if you plan to reinstall it later).
+2.  **`apt purge`**: Uninstalls the program **and** deletes all of its configuration files.
+
+**Examples:**
+
+```bash
+# Remove htop but keep its config files
+$ sudo apt remove htop
+
+# Remove htop and all of its config files
+$ sudo apt purge htop
+```
+-----
+
+## Introduction to `cron` & `crontab` 🕒
+
+**`cron`** is a system daemon (a background process) that runs scheduled tasks. These scheduled tasks are known as **"cron jobs."**
+
+  * It's the standard tool for automating repetitive tasks on a schedule.
+  * You manage your personal list of cron jobs using the **`crontab`** command.
+
+**Common Uses:**
+
+  * Running a backup script every night.
+  * Performing system maintenance, like a weekly **ZFS scrub** or a daily **SSD trim**.
+  * Cleaning up temporary files.
+
+-----
+
+## Understanding `crontab` Syntax
+
+A cron job consists of two parts: the **schedule** and the **command**. The schedule is defined by five fields, often represented by asterisks (`*`).
+
+```
+┌───────────── minute (0 - 59)
+│ ┌───────────── hour (0 - 23)
+│ │ ┌───────────── day of month (1 - 31)
+│ │ │ ┌───────────── month (1 - 12)
+│ │ │ │ ┌───────────── day of week (0 - 6) (Sunday to Saturday)
+│ │ │ │ │
+* * * * * /path/to/command
+```
+
+An asterisk `*` means "every." For example, an asterisk in the "hour" field means "every hour."
+
+-----
+
+## Managing Your `crontab`
+
+You can edit, view, and remove your cron jobs with the `crontab` command and a flag.
+
+  * `crontab -e`: **Edit** your crontab file. The first time you run this, it will ask you to choose a text editor (like `nano`).
+  * `crontab -l`: **List** your currently scheduled cron jobs.
+  * `crontab -r`: **Remove** your entire crontab file (use with caution\!).
+
+-----
+
+## `crontab` Examples
+
+Here are some practical examples you might add using `crontab -e`.
+
+**Example 1: Run a backup script every day at 3:30 AM.**
+
+```cron
+# Minute Hour Day(M) Month Day(W) Command
+  30    3     * * * /home/student/scripts/backup.sh
+```
+
+**Example 2: Run a system maintenance command every Sunday at 4:00 AM.**
+This example is for a system command like a ZFS storage pool scrub.
+
+```cron
+# Minute Hour Day(M) Month Day(W) Command
+   0    4     * * 0     /usr/sbin/zpool scrub my-storage-pool
+```
+
+**Example 3: Check disk space every 15 minutes and log the output.**
+The `>>` appends the output to a log file, and `2>&1` ensures that errors are also logged.
+
+```cron
+# Minute Hour Day(M) Month Day(W) Command
+  */15   * * * * /usr/bin/df -h >> /home/student/logs/disk_space.log 2>&1
+```
 
 -----
 
