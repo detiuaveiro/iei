@@ -218,11 +218,6 @@ Use the `chmod` (**ch**ange **mod**e) command to change permissions.
 # Give the user (u) the execute (x) permission
 $ chmod u+x my_script.sh
 ```
------
-
-Of course. Here are the additional slides covering package management with `apt` and task scheduling with `crontab`, designed to integrate seamlessly into the existing presentation.
-
-These slides would fit best after **"Managing Permissions with `chmod`"** and before **"Redirection: Saving Output with `>`"** for the package manager, and at the very end, after the scripting examples, for `cron`.
 
 -----
 
