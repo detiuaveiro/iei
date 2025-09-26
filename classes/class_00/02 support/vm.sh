@@ -6,5 +6,6 @@ qemu-system-x86_64 \
 -smp 4 \
 -m 4G \
 -display gtk \
+-vga virtio \
 -drive file=vm.qcow2 \
--boot d
+-boot c

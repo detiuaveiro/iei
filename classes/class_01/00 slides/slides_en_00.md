@@ -144,17 +144,36 @@ How do we see those hidden configuration files?
 
 -----
 
-## Executing Programs and Editing Files
+## Creating Directories: `mkdir`
 
-  * **Running a program:** Simply type its name.
+Use the `mkdir` command to **m**a**k**e a new **dir**ectory.
+
+  * **Create a single directory:**
     ```bash
-    $ firefox
+    $ mkdir my_project
     ```
-  * **Editing a text file:** `nano` is a simple, beginner-friendly terminal editor.
+  * **Create a nested structure:** The `-p` (**p**arents) flag creates the entire directory path, even if the parent directories don't exist yet.
     ```bash
-    $ nano my_shopping_list.txt
+    $ mkdir -p Documents/Work/2025/Reports
     ```
-    (Use `Ctrl+X` to exit, then `Y` to save).
+
+-----
+
+## Creating & Editing Files: `touch` & `nano`
+
+Once you have directories, you need files to put in them.
+
+  * **`touch`:** The fastest way to create a new, empty file.
+    ```bash
+    $ touch my_notes.txt
+    ```
+  * **`nano`:** A simple, friendly terminal-based text editor.
+    ```bash
+    $ nano my_notes.txt
+    ```
+      * Type your text directly into the window.
+      * Press `Ctrl+X` to exit.
+      * Press `Y` to confirm you want to save, then `Enter`.
 
 -----
 
@@ -297,6 +316,7 @@ $ sudo apt remove htop
 # Remove htop and all of its config files
 $ sudo apt purge htop
 ```
+
 -----
 
 ## Introduction to `cron` & `crontab` 🕒
@@ -329,6 +349,8 @@ A cron job consists of two parts: the **schedule** and the **command**. The sche
 ```
 
 An asterisk `*` means "every." For example, an asterisk in the "hour" field means "every hour."
+
+For an easy way to generate the correct time string, check out: [crontab.guru](https://crontab.guru/)
 
 -----
 
@@ -485,7 +507,8 @@ echo "Hello, $NAME!"
 **To run it:**
 
 ```bash
-$chmod +x hello.sh$ ./hello.sh
+$ chmod +x hello.sh
+$ ./hello.sh
 ```
 
 -----
@@ -578,3 +601,21 @@ You've now seen the core concepts of the Linux command line:
   * **Automating** tasks with shell scripts.
 
 Now, let's apply this knowledge in the practical part of the class.
+
+-----
+
+## Support & Further Resources 📚
+
+Bookmark these pages. They are incredibly useful references.
+
+  * **Linux Terminal Cheat Sheet:**
+
+      * [https://www.geeksforgeeks.org/linux-unix/linux-commands-cheat-sheet/](https://www.geeksforgeeks.org/linux-unix/linux-commands-cheat-sheet/)
+
+  * **Bash Cheat Sheet:**
+
+      * [https://github.com/RehanSaeed/Bash-Cheat-Sheet](https://github.com/RehanSaeed/Bash-Cheat-Sheet)
+
+  * **Bash Scripting Cheat Sheet:**
+
+      * [https://developers.redhat.com/cheat-sheets/bash-shell-cheat-sheet](https://developers.redhat.com/cheat-sheets/bash-shell-cheat-sheet)

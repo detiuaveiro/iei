@@ -4,6 +4,7 @@ subtitle: Introdução Engenharia Informática
 author: Mário Antunes
 institute: Universidade de Aveiro
 date: September 22, 2025
+geometry: a4paper,margin=2cm
 mainfont: NotoSans
 mainfontfallback:
   - "NotoColorEmoji:mode=harf"
@@ -16,7 +17,9 @@ header-includes:
  - \AtBeginEnvironment{verbatim}{\normalsize}
 ---
 
-### Exercise 1: Finding Your Way Around 🧭
+# Exercises
+
+## Exercise 1: Finding Your Way Around 🧭
 
 This exercise covers **`pwd`**, **`ls`**, **`cd`**, and basic information commands.
 
@@ -46,12 +49,37 @@ This exercise covers **`pwd`**, **`ls`**, **`cd`**, and basic information comman
 
 -----
 
-### Exercise 2: Creating and Managing Files 📂
+## Exercise 2: Exploring Key System Directories 🗺️
+
+Reinforce your knowledge of the filesystem layout by visiting important system directories.
+
+1.  Navigate to the `/etc` directory, which holds system-wide configuration files.
+    ```bash
+    $ cd /etc
+    ```
+2.  List its contents. You'll see many configuration files.
+    ```bash
+    $ ls
+    ```
+3.  View the contents of the `os-release` file to see information about your Linux distribution.
+    ```bash
+    $ cat os-release
+    ```
+4.  Now, navigate to the `/bin` directory to see where many essential command programs are stored. List its contents and see if you recognize any.
+    ```bash
+    $ cd /bin
+    $ ls
+    ```
+
+-----
+
+## Exercise 3: Creating and Managing Files 📂
 
 In this exercise, you'll create, copy, move, and delete files and directories.
 
 1.  From your home directory, create a new directory called `IEI`.
     ```bash
+    $ cd ~
     $ mkdir IEI
     ```
 2.  Navigate inside your new `IEI` directory.
@@ -82,7 +110,7 @@ In this exercise, you'll create, copy, move, and delete files and directories.
 
 -----
 
-### Exercise 3: Understanding Permissions 🔐
+## Exercise 4: Understanding Permissions 🔐
 
 This exercise focuses on reading and changing file permissions with **`chmod`**.
 
@@ -115,7 +143,50 @@ This exercise focuses on reading and changing file permissions with **`chmod`**.
 
 -----
 
-### Exercise 4: Managing Software with APT 📦
+## Exercise 5: Finding Files and Content with `find` and `grep` 🔎
+
+Learn to locate files by name and search for text within them.
+
+1.  Inside `~/IEI`, create a subdirectory and a new file within it.
+    ```bash
+    $ mkdir -p ~/IEI/reports
+    $ echo "This is a confidential report." > ~/IEI/reports/report-2025.txt
+    ```
+2.  Use the `find` command to search for any file ending with `.txt` inside your `IEI` directory.
+    ```bash
+    $ find ~/IEI -name "*.txt"
+    ```
+3.  Use `grep` to search for the word "confidential" in your new report file. The `-i` flag makes the search case-insensitive.
+    ```bash
+    $ grep -i "confidential" ~/IEI/reports/report-2025.txt
+    ```
+
+-----
+
+## Exercise 6: Managing Processes ⚙️
+
+Learn how to view and stop running programs from the command line.
+
+1.  Start a process that will run in the background. The `sleep` command waits for a specified number of seconds, and the `&` sends it to the background.
+    ```bash
+    $ sleep 120 &
+    ```
+2.  Find the Process ID (PID) of the `sleep` command. You can use `pgrep` for this.
+    ```bash
+    $ pgrep sleep
+    ```
+3.  Now, terminate the process using the `kill` command and the PID you just found. Replace `PID` with the actual number from the previous step.
+    ```bash
+    $ kill PID
+    ```
+4.  Verify that the process is no longer running. The `pgrep sleep` command should now return nothing.
+    ```bash
+    $ pgrep sleep
+    ```
+
+-----
+
+## Exercise 7: Managing Software with APT 📦
 
 Let's install and remove a program using the **APT** package manager.
 
@@ -142,7 +213,7 @@ Let's install and remove a program using the **APT** package manager.
 
 -----
 
-### Exercise 5: Combining Commands 🔗
+## Exercise 8: Combining Commands 🔗
 
 Let's explore the power of the **pipe (`|`)** and **redirection (`>>`)**.
 
@@ -156,7 +227,7 @@ Let's explore the power of the **pipe (`|`)** and **redirection (`>>`)**.
     ```
 3.  Use the append operator (`>>`) to add a second line to the file without deleting the first one.
     ```bash
-    $ echo "$(date): Finished exercise 5." >> ~/IEI/activity.log
+    $ echo "$(date): Finished exercise 8." >> ~/IEI/activity.log
     ```
 4.  Verify that your log file contains both lines.
     ```bash
@@ -165,7 +236,7 @@ Let's explore the power of the **pipe (`|`)** and **redirection (`>>`)**.
 
 -----
 
-### Exercise 6: Customizing Your Environment ✨
+## Exercise 9: Customizing Your Environment ✨
 
 Time to edit your **`.bashrc`** file to create a handy shortcut (an alias).
 
@@ -189,7 +260,38 @@ Time to edit your **`.bashrc`** file to create a handy shortcut (an alias).
 
 -----
 
-### Exercise 7: Scripting Challenge 🚀
+## Exercise 10: Understanding the `$PATH` Variable 🛣️
+
+Discover how the shell finds the commands you run.
+
+1.  View the current `$PATH` variable. It's a colon-separated list of directories.
+    ```bash
+    $ echo $PATH
+    ```
+2.  Create a simple one-line script in your `~/IEI` directory and make it executable.
+    ```bash
+    $ echo '#!/bin/bash' > ~/IEI/hello
+    $ echo 'echo "Hello from my custom script!"' >> ~/IEI/hello
+    $ chmod +x ~/IEI/hello
+    ```
+3.  Try to run the script by name. It will fail because it's not in a directory listed in `$PATH`.
+    ```bash
+    $ hello
+    ```
+4.  Now run it using its relative path. This works.
+    ```bash
+    $ ./hello
+    ```
+5.  Temporarily add your `~/IEI` directory to the `$PATH`. Now try running the script by name again.
+    ```bash
+    $ export PATH="$HOME/IEI:$PATH"
+    $ hello
+    ```
+    This change only lasts for your current terminal session.
+
+-----
+
+## Exercise 11: Scripting Challenge 🚀
 
 Let's create a script that automates creating a project structure.
 
@@ -226,7 +328,7 @@ Let's create a script that automates creating a project structure.
 
 -----
 
-### Exercise 8: Scheduling a Task with `cron` 🕒
+## Exercise 12: Scheduling a Task with `cron` 🕒
 
 Let's create a simple script and schedule it to run automatically every minute.
 
