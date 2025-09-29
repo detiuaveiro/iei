@@ -51,7 +51,7 @@ Visite diretórios importantes do sistema para compreender a estrutura do Window
       * **PowerShell:** `$ ls`
 3.  Obtenha informação sobre a sua versão do Windows.
       * **CMD:** `$ systeminfo | findstr /B /C:"OS Name" /C:"OS Version"`
-      * **PowerShell:** `$ Get-ComputerInfo | Select-Object WindowsProductName, WindowsVersion`
+      * **PowerShell:** `$ Get-ComputerInfo | Select-Object OSName, OSVersion`
 
 -----
 
@@ -150,9 +150,9 @@ Instale e remova um programa usando o **Windows Package Manager**. Estes comando
 
 Explore o poder do *pipe* (`|`) e do redirecionamento (`>>`).
 
-1.  Use o *pipe* para encontrar o seu próprio processo de terminal ("cmd.exe" ou "pwsh.exe").
+1.  Use o *pipe* para encontrar o seu próprio processo de terminal ("cmd.exe" ou "powershell.exe").
       * **CMD:** `$ tasklist | findstr "cmd.exe"`
-      * **PowerShell:** `$ Get-Process | Where-Object { $_.Name -eq "pwsh" }`
+      * **PowerShell:** `$ Get-Process | Where-Object { $_.Name -eq "powershell" }`
 2.  Crie um ficheiro de *log* com uma entrada usando `>`.
       * **CMD:** `$ echo %date% %time%: A iniciar trabalho. > activity.log`
       * **PowerShell:** `$ Set-Content activity.log "$(Get-Date): A iniciar trabalho."`
@@ -171,9 +171,9 @@ Crie um atalho útil (um *alias*).
 
   * **CMD (Alias Temporário):**
 
-    1.  Crie um *alias* `l` para o comando `dir /a` usando o `doskey`.
-        `$ doskey l=dir /a`
-    2.  Teste o seu *alias*: `$ l`
+    1.  Crie um *alias* `ll` para o comando `dir /a` usando o `doskey`.
+        `$ doskey ll=dir /a`
+    2.  Teste o seu *alias*: `$ ll`
         *(Nota: Este alias desaparece quando fecha a janela do CMD.)*
 
   * **PowerShell (Alias Permanente):**
@@ -181,8 +181,8 @@ Crie um atalho útil (um *alias*).
     1.  Abra o seu *script* de perfil do PowerShell no Notepad.
         `$ notepad $PROFILE`
     2.  Adicione a seguinte linha ao ficheiro, depois guarde e feche-o.
-        `Set-Alias -Name l -Value Get-ChildItem -Force`
-    3.  Feche e reabra o PowerShell, e depois teste o seu novo *alias*: `$ l`
+        `Set-Alias -Name ll -Value Get-ChildItem -Force`
+    3.  Feche e reabra o PowerShell, e depois teste o seu novo *alias*: `$ ll`
 
 -----
 
@@ -252,11 +252,27 @@ Crie um *script* que automatiza a criação de uma estrutura de projeto.
 Crie um *script* simples e agende a sua execução automática.
 
 1.  **Crie o Script:** Em `~/IEI`, crie o ficheiro `log_time.bat` com o seguinte conteúdo:
-    `@echo %date% %time% >> %USERPROFILE%\IEI\cron_log.txt`
+    ```cmd    
+    @echo off
+    @echo %date% %time:~0,5% >> %USERPROFILE%\IEI\cron_log.txt
+    ```
 2.  **Agende a Tarefa (CMD):**
-      * Este comando agenda a execução do *script* para daqui a um minuto.
-        `$ schtasks /create /sc once /tn "My Logger" /tr "%USERPROFILE%\IEI\log_time.bat" /st (Get-Date).AddMinutes(1).ToString("HH:mm")`
+      * Este comando agenda a execução do *script* para daqui a um minuto (periodico a um minuto):
+      ```cmd
+      $ schtasks /create /sc minute /tn "My Logger"^ 
+       /tr "%USERPROFILE%\IEI\log_time.bat" /st %time:~0,5%
+      ```
+3.  **Agende a Tarefa (PowerShell):**
+      * Este comando agenda a execução do *script* para daqui a um minuto (periodico a um minuto):
+      ```powershell
+      $action = New-ScheduledTaskAction -Execute "$env:USERPROFILE\IEI\log_time.bat"
+      $trigger = New-ScheduledTaskTrigger -At $(Get-Date -Format HH:mm) -Once `
+      -RepetitionInterval (New-TimeSpan -Minutes 1)
+      Register-ScheduledTask -Action $action -Trigger $trigger -TaskName "My Logger"
+      ```
 3.  **Verifique:** Após um minuto, verifique o ficheiro de *output*.
-      * **CMD:** `$ type %USERPROFILE%\IEI\cron_log.txt`
+      * **CMD:** `$ type %USERPROFILE%\IEI\cron_log.txt`{.cmd}
+      * **PowerShell:** `$ Get-Content $env:USERPROFILE\IEI\cron_log.txt`{.powershell}
 4.  **Limpeza:** É importante remover a tarefa para que não permaneça no sistema.
-      * **CMD:** `$ schtasks /delete /tn "My Logger" /f`
+      * **CMD:** `$ schtasks /delete /tn "My Logger" /f`{.cmd}
+      * **PowerShell:** `$ Unregister-ScheduledTask "My Logger"`{.powershell}

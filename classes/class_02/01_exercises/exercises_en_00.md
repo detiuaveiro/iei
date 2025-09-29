@@ -51,7 +51,7 @@ Visit important system directories to understand the Windows layout.
       * **PowerShell:** `$ ls`
 3.  Get information about your Windows version.
       * **CMD:** `$ systeminfo | findstr /B /C:"OS Name" /C:"OS Version"`
-      * **PowerShell:** `$ Get-ComputerInfo | Select-Object WindowsProductName, WindowsVersion`
+      * **PowerShell:** `$ Get-ComputerInfo | Select-Object OSName, OSVersion`
 
 -----
 
@@ -150,9 +150,9 @@ Install and remove a program using the **Windows Package Manager**. These comman
 
 Explore the power of the pipe (`|`) and redirection (`>>`).
 
-1.  Use the pipe to find your own terminal process ("cmd.exe" or "pwsh.exe").
+1.  Use the pipe to find your own terminal process ("cmd.exe" or "powershell.exe").
       * **CMD:** `$ tasklist | findstr "cmd.exe"`
-      * **PowerShell:** `$ Get-Process | Where-Object { $_.Name -eq "pwsh" }`
+      * **PowerShell:** `$ Get-Process | Where-Object { $_.Name -eq "powershell" }`
 2.  Create a log file with one entry using `>`.
       * **CMD:** `$ echo %date% %time%: Starting work. > activity.log`
       * **PowerShell:** `$ Set-Content activity.log "$(Get-Date): Starting work."`
@@ -171,18 +171,21 @@ Create a handy shortcut (an alias).
 
   * **CMD (Temporary Alias):**
 
-    1.  Create an alias `l` for the `dir /a` command using `doskey`.
-        `$ doskey l=dir /a`
-    2.  Test your alias: `$ l`
+    1.  Create an alias `ll` for the `dir /a` command using `doskey`.
+        `$ doskey ll=dir /a`
+    2.  Test your alias: `$ ll`
         *(Note: This alias disappears when you close the CMD window.)*
 
   * **PowerShell (Permanent Alias):**
 
     1.  Open your PowerShell profile script in Notepad.
-        `$ notepad $PROFILE`
+        ```
+        if (!(Test-Path -Path $PROFILE)) { New-Item -ItemType File -Path $PROFILE -Force }
+        $ notepad $PROFILE
+        ```
     2.  Add the following line to the file, then save and close it.
-        `Set-Alias -Name l -Value Get-ChildItem -Force`
-    3.  Close and reopen PowerShell, then test your new alias: `$ l`
+        `Set-Alias -Name ll -Value Get-ChildItem -Force`
+    3.  Close and reopen PowerShell, then test your new alias: `$ ll`
 
 -----
 
@@ -252,11 +255,27 @@ Create a script that automates setting up a project structure.
 Create a simple script and schedule it to run automatically.
 
 1.  **Create the Script:** In `~/IEI`, create `log_time.bat` with the content:
-    `@echo %date% %time% >> %USERPROFILE%\IEI\cron_log.txt`
+    ```cmd    
+    @echo off
+    @echo %date% %time:~0,5% >> %USERPROFILE%\IEI\cron_log.txt
+    ```
 2.  **Schedule the Task (CMD):**
-      * This command schedules the script to run in one minute from now.
-        `$ schtasks /create /sc once /tn "My Logger" /tr "%USERPROFILE%\IEI\log_time.bat" /st (Get-Date).AddMinutes(1).ToString("HH:mm")`
-3.  **Verify:** After a minute, check for the output file.
-      * **CMD:** `$ type %USERPROFILE%\IEI\cron_log.txt`
-4.  **Clean Up:** It's important to remove the task so it doesn't remain in the system.
-      * **CMD:** `$ schtasks /delete /tn "My Logger" /f`
+      * This command schedules the script to run in one minute from now (and pediorically at one minute):
+      ```cmd
+      $ schtasks /create /sc minute /tn "My Logger"^ 
+       /tr "%USERPROFILE%\IEI\log_time.bat" /st %time:~0,5%
+      ```
+3.  **Schedule the Task (PowerShell):**
+      * This command schedules the script to run in one minute from now (and pediorically at one minute):
+      ```powershell
+      $action = New-ScheduledTaskAction -Execute "$env:USERPROFILE\IEI\log_time.bat"
+      $trigger = New-ScheduledTaskTrigger -At $(Get-Date -Format HH:mm) -Once `
+      -RepetitionInterval (New-TimeSpan -Minutes 1)
+      Register-ScheduledTask -Action $action -Trigger $trigger -TaskName "My Logger"
+      ```
+4.  **Verify:** After a minute, check for the output file (should have repeated lines).
+      * **CMD:** `$ type %USERPROFILE%\IEI\cron_log.txt`{.cmd}
+      * **PowerShell:** `$ Get-Content $env:USERPROFILE\IEI\cron_log.txt`{.powershell}
+5.  **Clean Up:** It's important to remove the task so it doesn't remain in the system.
+      * **CMD:** `$ schtasks /delete /tn "My Logger" /f`{.cmd}
+      * **PowerShell:** `$ Unregister-ScheduledTask "My Logger"`{.powershell}

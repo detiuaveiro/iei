@@ -7,7 +7,6 @@ qemu-system-aarch64 \
 -m 4G \
 -machine type=virt \
 -cpu max \
--m 4g \
 -smp 4 \
 -initrd "./initrd.gz" \
 -kernel "./vmlinuz" \
