@@ -179,7 +179,10 @@ Crie um atalho útil (um *alias*).
   * **PowerShell (Alias Permanente):**
 
     1.  Abra o seu *script* de perfil do PowerShell no Notepad.
-        `$ notepad $PROFILE`
+        ```cmd
+        if (!(Test-Path -Path $PROFILE)) { New-Item -ItemType File -Path $PROFILE -Force }
+        $ notepad $PROFILE
+        ```
     2.  Adicione a seguinte linha ao ficheiro, depois guarde e feche-o.
         `Set-Alias -Name ll -Value Get-ChildItem -Force`
     3.  Feche e reabra o PowerShell, e depois teste o seu novo *alias*: `$ ll`

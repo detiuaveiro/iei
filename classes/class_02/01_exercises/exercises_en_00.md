@@ -179,7 +179,7 @@ Create a handy shortcut (an alias).
   * **PowerShell (Permanent Alias):**
 
     1.  Open your PowerShell profile script in Notepad.
-        ```
+        ```cmd
         if (!(Test-Path -Path $PROFILE)) { New-Item -ItemType File -Path $PROFILE -Force }
         $ notepad $PROFILE
         ```
