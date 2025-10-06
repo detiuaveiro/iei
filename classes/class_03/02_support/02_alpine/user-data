@@ -1,0 +1,24 @@
+#cloud-config
+hostname: alpine-vm
+fqdn: alpine.local
+manage_etc_hosts: true
+ssh_pwauth: true
+users:
+  - name: student
+    lock_passwd: false
+    passwd: '$6$rounds=4096$ISdq8eCvf7lgfO77$xPljnDfzHcScYANH3.mt0wr/d488Ltneq67AOp.bMHI5pnswdGnSLgVrBQe5/6uydY5URQhBu9Irpfbxn/YTQ/'
+    ssh-authorized-keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHavbo5+klkY+VzKSBEjVbpTuuIBGwWTBuqLIpv7t5HA mantunes@rincewind.home
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+package_update: true
+packages:
+  - qemu-guest-agent
+  - nano
+  - openssh-server
+  - git
+  - curl
+runcmd:
+  - touch /run/cloud.init.done
+  - rc-update add sshd default
+  - rc-service sshd start
+
