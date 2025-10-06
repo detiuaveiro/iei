@@ -51,7 +51,7 @@ First, install the correct tool for your operating system.
         ```
       * Add your user to the `kvm` group to run VMs without `sudo`. You must log out and back in for this to take effect.
         ```bash
-        $ sudo adduser $USER kvm
+        $ sudo usermod -a -G kvm $USER
         ```
 2.  **How to Use QEMU:**
       * QEMU is command-line driven. You'll create disks with `qemu-img` and launch VMs with `qemu-system-x86_64`.
@@ -68,9 +68,9 @@ Here, we'll explore a simple, non-multitasking OS to understand basic machine em
 
 1.  **Download Resources:**
 
-      * Download the **FreeDOS 1.3 Live CD** from the [official site](https://www.freedos.org/download/). You'll need the `FD14-LiveCD.zip` [file](https://www.ibiblio.org/pub/micro/pc-stuff/freedos/files/distributions/1.4/FD14-LiveCD.zip).
+      * Download the **FreeDOS 1.4 Live CD** from the [official site](https://www.freedos.org/download/). You'll need the `FD14-LiveCD.zip` [file](https://www.ibiblio.org/pub/micro/pc-stuff/freedos/files/distributions/1.4/FD14-LiveCD.zip).
       Unzip it to get the `.iso` file.
-      * Download a classic shareware DOS game, like the first episode of **DOOM** (`doom19s.zip`), from a trusted [archive](DOOM_URL="https://github.com/detiuaveiro/iei/blob/master/classes/class_03/02_support/01_freedos/games/doom19s.zip?raw=true").
+      * Download a classic shareware DOS game, like the first episode of **DOOM** (`doom19s.zip`), from a trusted [archive](https://github.com/detiuaveiro/iei/blob/master/classes/class_03/02_support/01_freedos/games/doom19s.zip?raw=true).
       Unzip it into a folder named `doom`.
 
 2.  **Create the FreeDOS VM:**

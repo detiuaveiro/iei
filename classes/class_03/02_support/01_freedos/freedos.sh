@@ -29,7 +29,7 @@ Setup()
     echo -e "Create a qemu disk as storage for FreeDos"
     qemu-img create -f qcow2 $DISK $DISK_SIZE > /dev/null 2>&1
 
-    if [! -f FreeDos.zip ]; then
+    if [ ! -f FreeDos.zip ]; then
         echo -e "Download FreeDos..."
         curl -L $IMAGE_URL --output FreeDos.zip --progress-bar
     fi
