@@ -136,17 +136,6 @@ O SO convidado sabe que não pode aceder diretamente ao hardware, por isso o seu
 
 -----
 
-### Como o Passthrough de PCI é Alcançado
-
-Esta funcionalidade avançada requer suporte de hardware da CPU e do chipset da motherboard, especificamente da **IOMMU (Input-Output Memory Management Unit)**.
-
-  * **IOMMU da Intel:** VT-d
-  * **IOMMU da AMD:** AMD-Vi
-
-A IOMMU atua como um controlador de tráfego a nível de hardware. Cria um "sandbox" de memória seguro para o dispositivo, garantindo que, quando este é passado para uma VM, apenas pode aceder à memória dessa VM específica. Isto impede que o dispositivo interfira com o SO anfitrião ou outras VMs, proporcionando tanto alto desempenho como forte segurança.
-
------
-
 ## Caso de Uso 1: Data Centers e Servidores
 
 A virtualização é a espinha dorsal da nuvem moderna.

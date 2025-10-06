@@ -136,17 +136,6 @@ The guest OS knows it can't directly access hardware, so its aware driver makes 
 
 -----
 
-### How PCI Passthrough is Achieved
-
-This advanced feature requires hardware support from the CPU and motherboard chipset, specifically the **IOMMU (Input-Output Memory Management Unit)**.
-
-  * **Intel's IOMMU:** VT-d
-  * **AMD's IOMMU:** AMD-Vi
-
-The IOMMU acts as a hardware-level traffic controller. It creates a secure memory sandbox for the device, ensuring that when it's passed through to a VM, it can only access the memory of that specific VM. This prevents the device from interfering with the host OS or other VMs, providing both high performance and strong security.
-
------
-
 ## Use Case 1: Data Centers and Servers
 
 Virtualization is the backbone of the modern cloud.

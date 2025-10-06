@@ -29,8 +29,10 @@ Setup()
     echo -e "Create a qemu disk as storage for FreeDos"
     qemu-img create -f qcow2 $DISK $DISK_SIZE > /dev/null 2>&1
 
-    echo -e "Download FreeDos..."
-    curl -L $IMAGE_URL --output FreeDos.zip --progress-bar
+    if [! -f FreeDos.zip ]; then
+        echo -e "Download FreeDos..."
+        curl -L $IMAGE_URL --output FreeDos.zip --progress-bar
+    fi
     mkdir -p /tmp/freedos/
     unzip -o FreeDos.zip -d /tmp/freedos/
     
@@ -40,7 +42,7 @@ Setup()
     -cdrom /tmp/freedos/FD14LIVE.iso -boot d
 
     rm -rf /tmp/freedos/
-    rm -rf FreeDos.zip
+    #rm -rf FreeDos.zip
 }
 
 

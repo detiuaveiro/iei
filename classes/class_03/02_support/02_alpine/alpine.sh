@@ -30,15 +30,17 @@ Setup()
     echo -e "Create a qemu disk as storage for FreeDos"
     qemu-img create -f qcow2 $DISK $DISK_SIZE > /dev/null 2>&1
 
-    echo -e "Download Alpine Standard Image..."
-    curl -L $IMAGE_URL --output alpine.iso --progress-bar
+    if [ ! -f alpine.iso ]; then
+        echo -e "Download Alpine Standard Image..."
+        curl -L $IMAGE_URL --output alpine.iso --progress-bar
+    fi
 
     echo -e "Start VM for linux setup"
     qemu-system-x86_64 -machine accel=kvm:tcg -m 4G -smp 4 -cpu host \
     -k pt-pt -rtc base=localtime -display gtk -hda $DISK -cdrom alpine.iso \
     -net nic -net user,hostfwd=tcp::5555-:22 -boot d
 
-    rm -rf alpine.iso
+    #rm -rf alpine.iso
 }
 
 ############################################################
