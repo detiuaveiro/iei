@@ -15,9 +15,12 @@ Help()
    # Display Help
    echo "Helper script to emulate freedos using qemu"
    echo
-   echo "Syntax: freedos [-h]"
+   echo "Syntax: freedos [-h] [-r] [-d <disk_name>] [-s <disk_size>]"
    echo "options:"
-   echo "h     Print this Help."
+   echo "d <disk_name> Define the (D)isk Name (default: freedos_disk.qcow)."
+   echo "h             Print this (H)elp."
+   echo "r             (R)estart the setup."
+   echo "s <disk_size> Define the Disk (S)ize (default: 128M)."
    echo
 }
 
@@ -45,7 +48,6 @@ Setup()
     #rm -rf FreeDos.zip
 }
 
-
 ############################################################
 ############################################################
 # Main program                                             #
@@ -61,7 +63,6 @@ while getopts ":d:s:rh" option; do
             Help
             exit;;
         d) # define disk name
-            echo -e "d) ${OPTARG}"
             DISK="${OPTARG}"
             ;;
         s) # define disk size

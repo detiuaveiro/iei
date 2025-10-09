@@ -4,6 +4,7 @@ subtitle: Introdução Engenharia Informática
 author: Mário Antunes
 institute: Universidade de Aveiro
 date: October 06, 2025
+colorlinks: true
 geometry: a4paper,margin=2cm
 mainfont: NotoSans
 mainfontfallback:

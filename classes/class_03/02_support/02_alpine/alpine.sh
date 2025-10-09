@@ -7,6 +7,19 @@ IMAGE_URL="https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/x86_64/alpine-st
 INTERFACE=$(sudo /sbin/ip route get 8.8.8.8 | awk '{print $5}')
 NETWORK="nat"
 RESTART=false
+WIRED=true
+
+# Check for the existence of the 'wireless' directory
+if [ -d "/sys/class/net/$INTERFACE/wireless" ]; then
+    WIRED=false
+else
+    # A more robust check for wired can be to see if a carrier file exists
+    if [ -f "/sys/class/net/$INTERFACE/carrier" ]; then
+        WIRED=true
+    else
+        WIRED=false
+    fi
+fi
 
 ############################################################
 # Help                                                     #
@@ -14,11 +27,15 @@ RESTART=false
 Help()
 {
    # Display Help
-   echo "Helper script to emulate freedos using qemu"
+   echo "Helper script to emulate alpine using qemu"
    echo
-   echo "Syntax: freedos [-h]"
+   echo "Syntax: alpine [-h] [-r] [-d <disk_name>] [-n {nat|bridge}] [-s <disk_size>]"
    echo "options:"
-   echo "h     Print this Help."
+   echo "d <disk_name>  Define the (D)isk Name (default: freedos_disk.qcow)."
+   echo "h              Print this (H)elp."
+   echo "n {nat|bridge} Define the network type (default: nat)"
+   echo "r              (R)estart the setup."
+   echo "s <disk_size>  Define the Disk (S)ize (default: 128M)."
    echo
 }
 
@@ -63,6 +80,7 @@ VM_NAT()
 VM_BRIDGE()
 {
     echo -e "Setup Bridge Interface"
+    #sudo /usr/sbin/iw dev $INTERFACE set 4addr on
     sudo /sbin/ip link add virtbr0 type bridge
     sudo /sbin/ip link set dev $INTERFACE master virtbr0
     sudo /sbin/ip addr flush dev $INTERFACE
@@ -114,6 +132,8 @@ while getopts ":d:s:n:rh" option; do
    esac
 done
 
+echo -e "Interface: $INTERFACE (Wired: $WIRED)"
+
 if [ $RESTART = true ]; then
     echo -e "Restart, by deleting $DISK"
     rm -rf $DISK
@@ -131,7 +151,12 @@ case $NETWORK in
     ;;
 
   bridge)
-    VM_BRIDGE
+    if [ $WIRED = false ]; then
+        echo -e "Wireless connection does not support bridge..."
+        VM_NAT
+    else
+        VM_BRIDGE
+    fi
     ;;
 esac
 
