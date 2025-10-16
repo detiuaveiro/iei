@@ -1,0 +1,14 @@
+services:
+  cache:
+    image: varnish:stable
+    volumes:
+      - ./varnish:/etc/varnish
+    ports:
+      - "8080:80"
+    depends_on:
+      - nginx
+
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - ./my-dynamic-website:/usr/share/nginx/html
