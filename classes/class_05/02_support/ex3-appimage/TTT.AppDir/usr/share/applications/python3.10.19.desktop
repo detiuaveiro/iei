@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=python3.10.19
+Exec=python3.10
+Comment=A Python 3.10 runtime
+Icon=python
+Categories=Development;
+Terminal=true

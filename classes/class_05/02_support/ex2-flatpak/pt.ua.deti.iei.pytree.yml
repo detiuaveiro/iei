@@ -1,0 +1,14 @@
+app-id: pt.ua.deti.iei.pytree
+runtime: org.gnome.Platform
+runtime-version: '48'
+sdk: org.gnome.Sdk
+command: pytree.py
+
+modules:
+  - name: pytree
+    buildsystem: simple
+    build-commands:
+      - install -Dm755 pytree.py /app/bin/pytree.py
+    sources:
+      - type: file
+        path: pytree.py

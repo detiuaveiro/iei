@@ -1,0 +1,4 @@
+[Application]
+name=pt.ua.deti.iei.pytree
+runtime=org.gnome.Platform/x86_64/48
+sdk=org.gnome.Sdk/x86_64/48

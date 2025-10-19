@@ -1,0 +1,16 @@
+app-id: pt.ua.deti.iei.HelloWorld
+runtime: org.freedesktop.Platform
+runtime-version: '24.08'
+sdk: org.freedesktop.Sdk
+command: hello.sh
+
+modules:
+  - name: hello-module
+    buildsystem: simple
+    build-commands:
+      # Installs the script into the sandbox's /app/bin/ folder
+      - install -Dm755 hello.sh /app/bin/hello.sh
+    sources:
+      # Tells the builder to find 'hello.sh' in our project dir
+      - type: file
+        path: hello.sh
