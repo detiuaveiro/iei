@@ -1,6 +1,8 @@
 config
 movies
 tvshows
+.flatpak*
+*.AppDir
 *.iso
 *.qcow*
 *.vdi
