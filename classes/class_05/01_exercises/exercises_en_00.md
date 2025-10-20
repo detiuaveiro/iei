@@ -123,14 +123,14 @@ sdk: org.freedesktop.Sdk
 command: hello.sh
 
 modules:
-    - name: hello-module
+  - name: hello-module
     buildsystem: simple
     build-commands:
-        # Installs the script into the sandbox's /app/bin/ folder
-        - install -Dm755 hello.sh /app/bin/hello.sh
+      # Installs the script into the sandbox's /app/bin/ folder
+      - install -Dm755 hello.sh /app/bin/hello.sh
     sources:
-        # Tells the builder to find 'hello.sh' in our project dir
-        - type: file
+      # Tells the builder to find 'hello.sh' in our project dir
+      - type: file
         path: hello.sh
 ```
 
@@ -147,14 +147,12 @@ $ flatpak-builder --user --install --install-deps-from=flathub \
 --force-clean build-dir pt.ua.deti.iei.HelloWorld.yml
 ```
 
-5.  **Run and Cleanup:** `flatpak run` executes your application inside its sandbox.
+5.  **Run and Cleanup:** `flatpak run` executes your application inside its sandbox. After use `cd ..` to exit the directory.
 
 ```bash
 $ flatpak run pt.ua.deti.iei.HelloWorld
 $ flatpak uninstall --user pt.ua.deti.iei.HelloWorld
 ```
-
-    *`cd ..` to exit the directory.*
 
 -----
 
@@ -164,9 +162,9 @@ AppImage works by bundling an entire directory (named `AppDir`).
 
 1.  Create a directory for this exercise:
 
-    ```bash
-    $ mkdir ex1-appimage && cd ex1-appimage
-    ```
+```bash
+$ mkdir ex1-appimage && cd ex1-appimage
+```
 
 2.  Create the `AppDir` and the main `AppRun` script. The **`AppRun`** file is a special script that acts as the entrypoint. It is the *first* thing that runs when you execute the AppImage. We also create a dummy `icon.png` file.
 
@@ -195,16 +193,15 @@ Categories=Utility;
 $ ARCH=x86_64 appimagetool HelloWorld.AppDir
 ```
 
-5.  **Run and Cleanup:**
+5.  **Run and Cleanup:** After use `cd ..` to exit the directory.
 
-    ```bash
-    $ chmod +x Hello-x86_64.AppImage
-    $ ./Hello-x86_64.AppImage
+```bash
+$ chmod +x Hello-x86_64.AppImage
+$ ./Hello-x86_64.AppImage
 
-    # Cleanup
-    $ rm -rf Hello-x86_64.AppImage
-    ```
-    *`cd ..` to exit the directory.*
+# Cleanup
+$ rm -rf Hello-x86_64.AppImage
+```
 
 -----
 

@@ -25,7 +25,7 @@ header-includes:
 
 **Objetivo:** Esta aula irá guiá-lo através dos fundamentos do empacotamento de aplicações. Começará com um simples "Hello World" e progredirá até ao empacotamento de uma aplicação gráfica (GUI) completa em Python, com as suas dependências.
 
-## 0\. Setup: Configurar o Ambiente de Trabalho
+## 0. Setup: Configurar o Ambiente de Trabalho
 
 Primeiro, temos de instalar todas as ferramentas necessárias para construir e testar os nossos pacotes de aplicação.
 
@@ -98,7 +98,7 @@ $ appimagetool --version
 
 -----
 
-## 1\. "Hello World" 🌍
+## 1. "Hello World" 🌍
 
 Vamos empacotar um `script` de `shell` simples.
 
@@ -126,10 +126,10 @@ echo "Hello from a Flatpak Sandbox!"
 
 3.  Crie o ficheiro `manifest`, `pt.ua.deti.iei.HelloWorld.yml`. Este ficheiro define:
 
-      * `app-id`: Um nome único, no formato DNS-reverso, para a sua aplicação.
-      * `runtime` / `sdk`: O sistema base onde a sua aplicação irá correr e ser construída.
-      * `command`: O programa a executar quando a aplicação arranca.
-      * `modules`: A lista de passos de compilação. Aqui, definimos um módulo que instala o nosso `script` `hello.sh` no caminho executável da `sandbox` (`/app/bin/`).
+    * `app-id`: Um nome único, no formato DNS-reverso, para a sua aplicação.
+    * `runtime` / `sdk`: O sistema base onde a sua aplicação irá correr e ser construída.
+    * `command`: O programa a executar quando a aplicação arranca.
+    * `modules`: A lista de passos de compilação. Aqui, definimos um módulo que instala o nosso `script` `hello.sh` no caminho executável da `sandbox` (`/app/bin/`).
 
 <!-- end list -->
 
@@ -141,14 +141,14 @@ sdk: org.freedesktop.Sdk
 command: hello.sh
 
 modules:
-    - name: hello-module
+  - name: hello-module
     buildsystem: simple
     build-commands:
-        # Installs the script into the sandbox's /app/bin/ folder
-        - install -Dm755 hello.sh /app/bin/hello.sh
+      # Installs the script into the sandbox's /app/bin/ folder
+      - install -Dm755 hello.sh /app/bin/hello.sh
     sources:
-        # Tells the builder to find 'hello.sh' in our project dir
-        - type: file
+      # Tells the builder to find 'hello.sh' in our project dir
+      - type: file
         path: hello.sh
 ```
 
@@ -167,17 +167,13 @@ $ flatpak-builder --user --install --install-deps-from=flathub \
 --force-clean build-dir pt.ua.deti.iei.HelloWorld.yml
 ```
 
-5.  **Executar e Limpar:** `flatpak run` executa a sua aplicação dentro da sua `sandbox`.
+5.  **Executar e Limpar:** `flatpak run` executa a sua aplicação dentro da sua `sandbox`. Após usar, `cd ..` para sair do diretório.
 
 <!-- end list -->
 
 ```bash
 $ flatpak run pt.ua.deti.iei.HelloWorld
 $ flatpak uninstall --user pt.ua.deti.iei.HelloWorld
-```
-
-```
-*`cd ..` para sair do diretório.*
 ```
 
 -----
@@ -188,9 +184,9 @@ O AppImage funciona ao empacotar um diretório inteiro (chamado `AppDir`).
 
 1.  Crie um diretório para este exercício:
 
-    ```bash
-    $ mkdir ex1-appimage && cd ex1-appimage
-    ```
+```bash
+$ mkdir ex1-appimage && cd ex1-appimage
+```
 
 2.  Crie o `AppDir` e o `script` `AppRun` principal. O ficheiro **`AppRun`** é um `script` especial que atua como ponto de entrada (entrypoint). É a *primeira* coisa que é executada quando abre o AppImage. Também criamos um ficheiro `icon.png` vazio (dummy).
 
@@ -225,21 +221,19 @@ Categories=Utility;
 $ ARCH=x86_64 appimagetool HelloWorld.AppDir
 ```
 
-5.  **Executar e Limpar:**
+5.  **Executar e Limpar:** Após usar, `cd ..` para sair do diretório.
 
-    ```bash
-    $ chmod +x Hello-x86_64.AppImage
-    $ ./Hello-x86_64.AppImage
+```bash
+$ chmod +x Hello-x86_64.AppImage
+$ ./Hello-x86_64.AppImage
 
-    # Cleanup
-    $ rm -rf Hello-x86_64.AppImage
-    ```
-
-    *`cd ..` para sair do diretório.*
+# Cleanup
+$ rm -rf Hello-x86_64.AppImage
+```
 
 -----
 
-## 2\. Aplicação CLI Python: Árvore ASCII 🌳
+## 2. Aplicação CLI Python: Árvore ASCII 🌳
 
 Vamos empacotar uma aplicação CLI (Command-Line Interface) simples em Python.
 Criaremos um `script` `pytree.py` que lista recursivamente diretórios num formato de árvore.

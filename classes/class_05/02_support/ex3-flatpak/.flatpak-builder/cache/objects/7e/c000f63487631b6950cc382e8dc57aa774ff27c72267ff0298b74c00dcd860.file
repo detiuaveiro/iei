@@ -1,5 +1,0 @@
-[Runtime]
-name=pt.ua.deti.iei.tictactoe.Debug
-
-[ExtensionOf]
-ref=app/pt.ua.deti.iei.tictactoe/x86_64/master
