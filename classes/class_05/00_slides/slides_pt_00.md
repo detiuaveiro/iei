@@ -1,9 +1,11 @@
 ---
-title: Application Containers
+title: Containers para Aplicações
 subtitle: Introdução Engenharia Informática
 author: Mário Antunes
 institute: Universidade de Aveiro
 date: October 20, 2025
+colorlinks: true
+highlight-style: tango
 mainfont: NotoSans
 mainfontfallback:
   - "NotoColorEmoji:mode=harf"
@@ -17,446 +19,342 @@ header-includes:
  - \AtBeginEnvironment{verbatim}{\tiny}
 ---
 
-## Introdução aos Contentores
+## Contentores de Aplicações & Sandboxing em Linux
 
-### Uma Forma Moderna de Empacotar e Executar Aplicações
-
------
-
-## Terminologia 📖
-
-Antes de começarmos, vamos definir alguns termos-chave.
-
-  * **Imagem (Image):** Um modelo inerte, apenas de leitura, que contém uma aplicação e as suas dependências. Pense nisto como uma **planta** ou uma classe em programação orientada a objetos.
-  * **Contentor / Instância (Container / Instance):** Uma **instância** executável de uma imagem. Esta é a aplicação real, a correr (como um objeto criado a partir de uma classe). Os termos são frequentemente usados de forma intercambiável.
-  * **Registo (Registry):** Um sistema de armazenamento para imagens de contentores. O **Docker Hub** é um registo público popular.
-  * **Motor Docker (Docker Engine):** A aplicação cliente-servidor subjacente que constrói e executa os contentores.
-  * **Volume:** Um mecanismo para persistir dados fora do sistema de ficheiros efémero de um contentor.
+### Um Olhar Aprofundado sobre AppImage, Snap, e Flatpak
 
 -----
 
-## O Problema: "Na Minha Máquina Funciona\!" 🤔
+## O Problema Principal: "O Inferno das Dependências Linux" 👹
 
-Todos os programadores já enfrentaram este problema clássico:
+Aplicações Linux tradicionais dependem de **bibliotecas de sistema partilhadas** (ficheiros `.so`).
 
-  * A sua aplicação funciona perfeitamente no seu portátil (que tem Python 3.9, uma versão específica de uma biblioteca, e corre Debian).
-  * Quando a entrega a um colega (que tem Python 3.8 e corre macOS) ou a implementa num servidor (a correr um SO mais antigo), ela falha.
-
-Estas diferenças nos ambientes criam um enorme desafio para a portabilidade do software.
-
------
-
-## A Solução: Contentores 📦
-
-Um **contentor** é uma unidade de software padrão e executável que empacota o código de uma aplicação juntamente com todas as suas dependências de tempo de execução.
-Este pacote é **isolado**, garantindo que a aplicação corre de forma uniforme e consistente em qualquer lugar.
-
-**Analogia:** Um contentor é como um contentor de transporte padronizado.
-Não importa o que está lá dentro; pode ser manuseado por qualquer navio compatível (máquina anfitriã).
+  * **O Conflito:**
+      * A Aplicação A precisa da `libXYZ v1.0`
+      * A Aplicação B precisa da `libXYZ v2.0`
+  * **O Resultado:**
+      * O seu gestor de pacotes (`apt`, `dnf`) muitas vezes só consegue instalar uma versão.
+      * Instalar a Aplicação B quebra a Aplicação A (ou vice-versa).
 
 -----
 
-## Como o Isolamento é Alcançado: Namespaces
+## A Necessidade de Isolamento & Portabilidade
 
-Os contentores correm à velocidade **máxima do hardware** porque são apenas processos isolados no kernel do anfitrião.
-O isolamento é fornecido pelos **Namespaces do Linux**.
-
-Os Namespaces virtualizam os recursos do sistema para um processo, fazendo parecer que este tem a sua própria cópia privada.
-Os namespaces-chave incluem:
-
-  * **PID:** Isola os IDs dos processos. Dentro do contentor, a sua aplicação é o PID 1.
-  * **NET:** Fornece uma pilha de rede isolada (endereços IP, tabelas de encaminhamento).
-  * **MNT:** Isola os pontos de montagem do sistema de ficheiros.
-
-**Analogia:** Os Namespaces são como as paredes, caixas de correio privadas e chaves de porta únicas para cada apartamento num prédio.
+  * **Portabilidade:** Uma aplicação empacotada com as suas dependências irá "correr em qualquer lado" (`run anywhere`) em qualquer distribuição Linux, independentemente das suas bibliotecas de sistema.
+  * **Estabilidade:** Aplicações não podem conflituar com as dependências umas das outras.
+  * **Segurança:** Se uma aplicação está isolada (`sandboxed`), ela não consegue ler as suas chaves SSH, histórico do navegador, ou outros dados sensíveis.
 
 -----
 
-## Como os Recursos são Geridos: Cgroups
+## Como Outros SOs Gerem Isto
 
-Para evitar que um contentor consuma todos os recursos do sistema, o kernel do Linux usa **Control Groups (cgroups)**.
+Isto não é apenas um problema do Linux.
 
-Os Cgroups permitem que o anfitrião limite e monitorize os recursos que um contentor pode usar, tais como:
+  * **Windows:** Aplicações empacotam quase *todos* os seus ficheiros `.dll` na sua pasta de instalação (ex: `C:\Program Files\App`).
 
-  * Uso de CPU (p. ex., limitar a 1 núcleo de CPU).
-  * Memória (p. ex., limitar a 512 MB de RAM).
-  * Largura de banda de I/O de disco.
+      * **Pró:** Previne conflitos.
+      * **Contra:** Muita duplicação; ineficiente.
 
-**Analogia:** Os Cgroups são como os contadores de serviços públicos e os disjuntores de cada apartamento, garantindo que nenhum inquilino pode usar toda a água ou eletricidade do prédio.
+  * **macOS:** "Bundles" `.app` são apenas pastas que contêm o binário da aplicação e todas as suas bibliotecas.
 
------
-
-## VMs vs. Contentores \#1
-
-  * **Máquinas Virtuais (VMs)** virtualizam o **hardware**. Cada VM inclui uma cópia completa de um SO convidado e do seu kernel. São pesadas e demoram minutos a arrancar.
-  * **Contentores** virtualizam o **sistema operativo**. Partilham o kernel do sistema anfitrião e são leves, arrancando em segundos.
+      * **Pró:** Auto-contido e portátil.
+      * **Contra:** Também duplica bibliotecas.
 
 -----
 
-## VMs vs. Contentores \#2
+## Isolamento "Natural": VMs & Runtimes
 
-| Característica         | Máquinas Virtuais (VMs)                       | Contentores                                  |
-| :--------------------- | :-------------------------------------------- | :------------------------------------------- |
-| **Analogia** | 🏡 **Casas:** Totalmente autónomas.             | 🏢 **Apartamentos:** Partilham a infraestrutura do prédio. |
-| **Nível de Abstração** | **Virtualização de Hardware** | **Virtualização de SO** |
-| **Tamanho** | **Gigabytes (GB)** | **Megabytes (MB)** |
-| **Tempo de Arranque** | **Minutos** | **Segundos ou menos** |
-| **Sobrecarga** | Baixa a Média                                 | Muito Baixa (Quase nativa)                   |
-| **Uso de Recursos** | Mais elevado (SO completo por VM)             | Mais baixo (Kernel do SO partilhado)         |
-| **Isolamento** | **Forte** (Nível de hardware)                 | **Bom** (Nível de processo)                  |
-| **Portabilidade** | Portátil (mas grande)                         | **Extremamente Portátil** |
+Algumas tecnologias fornecem isolamento pela sua própria natureza.
+
+  * **Java Virtual Machine (JVM):**
+
+      * O SO corre o processo `java`, não a sua aplicação diretamente.
+      * A JVM corre o `bytecode` Java num ambiente gerido e em `sandbox`.
+      * Um "Security Manager" controla todo o acesso ao sistema de ficheiros e rede do anfitrião (`host`).
 
 -----
 
-## A Imagem do Contentor e as Suas Camadas 📜
+  * **Python Virtual Environments (`venv`):**
 
-Uma **imagem** é um modelo apenas de leitura construído a partir de uma série de **camadas** empilhadas.
-Cada instrução num `Dockerfile` cria uma nova camada.
-
-Isto torna as construções (builds) rápidas e o uso de disco eficiente, já que múltiplas imagens podem partilhar camadas base comuns.
-
------
-
-## Dados Persistentes: Volumes 💾
-
-Por defeito, o sistema de ficheiros de um contentor é **efémero** (apagado quando o contentor para).
-
-Para guardar dados permanentemente, usam-se **volumes**, que mapeiam um *diretório* dentro do contentor para um *diretório* na máquina anfitriã.
+      * Isto é **isolamento de dependências**, não `sandboxing` de segurança.
+      * Cria uma pasta local (`.venv`) com o seu próprio interpretador Python e pacotes (`pygame`, `numpy`).
+      * Um ficheiro `requirements.txt` lista todas as dependências, permitindo que `pip install -r requirements.txt` crie um ambiente reprodutível, tal como fizemos no nosso exercício.
+      * Isto resolve o problema "Aplicação A vs. Aplicação B" na nossa máquina local, mas não impede a aplicação de ler os nossos ficheiros.
 
 -----
 
-## Rede de Contentores e DNS
+## As Soluções Linux Modernas
 
-O motor de contentores cria uma **rede virtual em modo ponte (bridge)**. Os contentores na mesma rede recebem um IP privado e podem comunicar entre si.
+Três grandes tecnologias emergiram para resolver isto para *qualquer* aplicação, com o objetivo de empacotar a aplicação *e* as suas dependências.
 
-  * **Mapeamento de Portas:** Para expor o serviço de um contentor ao mundo exterior, mapeia-se uma porta do anfitrião para uma porta do contentor (p. ex., `-p 8080:80`).
-  * **DNS Interno:** Ao usar o Docker Compose, cada serviço pode alcançar outro usando o nome do serviço como hostname. O código da sua `webapp` pode simplesmente conectar-se a `http://database` para chegar ao contentor da base de dados.
+1.  **AppImage 📦**
 
------
+      * **Filosofia:** "Uma aplicação = um ficheiro." Não é necessária instalação.
 
-## Apresentando o Docker
+2.  **Snap 🧩**
 
-O Docker é a plataforma que popularizou os contentores. Fornece um conjunto simples de ferramentas para construir, distribuir e executar qualquer aplicação, em qualquer lugar.
+      * **Filosofia:** "Um pacote seguro e universal." Apoiado pela Canonical (Ubuntu).
 
-  * **Docker Engine:** O serviço de fundo (daemon) que gere os contentores.
-  * **Docker CLI:** A ferramenta de linha de comandos que usa para interagir com o Docker Engine.
-  * **Docker Hub:** Um registo público de imagens de contentores pré-construídas.
+3.  **Flatpak 🎁**
 
------
-
-## Comandos Docker Comuns
-
-| Comando                     | Descrição                                                                      |
-| :-------------------------- | :----------------------------------------------------------------------------- |
-| `docker run [imagem]`       | Cria e inicia um novo contentor a partir de uma imagem.                        |
-| `docker ps`                 | Lista todos os contentores em execução. `ps -a` lista todos (em execução ou parados). |
-| `docker stop [id/nome]`     | Para um contentor em execução de forma controlada.                             |
-| `docker rm [id/nome]`       | Remove um contentor parado.                                                    |
-| `docker logs [id/nome]`     | Obtém os logs (saída padrão) de um contentor.                                    |
-| `docker pull [imagem]`      | Descarrega uma imagem de um registo (como o Docker Hub).                         |
-| `docker images`             | Lista todas as imagens armazenadas localmente.                                 |
-| `docker build -t [nome] .`  | Constrói uma nova imagem a partir de um `Dockerfile` no diretório atual.         |
+      * **Filosofia:** "O futuro das aplicações `desktop`." Apoiado pela Red Hat & comunidade GNOME.
 
 -----
 
-## O `Dockerfile`: Uma Análise Detalhada
+## Análise Aprofundada: AppImage 📦
 
-Um `Dockerfile` é uma receita para construir uma imagem de contentor.
-Aqui estão as instruções mais comuns:
+  * **Isolamento:** **Nenhum por defeito.** Foca-se na portabilidade, não na segurança. A aplicação corre como um processo de utilizador normal.
 
-  * `FROM`: Especifica a imagem base sobre a qual construir (p. ex., `ubuntu:22.04`).
-  * `WORKDIR`: Define o diretório de trabalho para os comandos seguintes.
-  * `COPY`: Copia ficheiros ou diretórios do anfitrião para a imagem.
+      * *(Pode ser colocada em `sandbox` por ferramentas externas opcionais, como o `firejail`)*.
 
------
+  * **Dependências:** **"Empacotar Tudo."** A aplicação empacota todas as bibliotecas de que precisa, assumindo apenas um sistema base mínimo.
 
-  * `RUN`: Executa um comando durante o processo de construção da imagem (p. ex., `RUN apt-get install -y nginx`).
-  * `CMD`: Fornece o comando padrão a ser executado quando um contentor é iniciado a partir da imagem.
-  * `ENTRYPOINT`: Configura o contentor para ser executado como um executável.
-  * `EXPOSE`: Informa o Docker que o contentor escuta nas portas de rede especificadas em tempo de execução.
-  * `ENV`: Define variáveis de ambiente persistentes.
+  * **Acesso ao Anfitrião:** **Acesso Total de Utilizador.** A aplicação pode ver e modificar qualquer coisa que o utilizador que a executou pode.
 
 -----
 
-## Exemplo de `Dockerfile`: Um Serviço de Logs
+## Análise Aprofundada: Snap 🧩
 
-Este `Dockerfile` simples cria um serviço cujo único trabalho é imprimir um carimbo de data/hora a cada 5 segundos.
-Isto é perfeito para testar o comando `docker logs`.
+  * **Isolamento:** **`Sandbox` Forte.** Usa funcionalidades do `kernel` Linux como `cgroups`, `namespaces`, e **AppArmor** para confinar estritamente a aplicação.
 
-```dockerfile
-# Usar uma imagem base mínima
-FROM alpine:latest
+  * **Dependências:** **Empacotadas + `Core Snaps`.** As aplicações empacotam as suas bibliotecas específicas, mas também dependem de um `core snap` partilhado (ex: `core22`) que fornece um `runtime` base do Ubuntu.
 
-# O comando a executar quando o contentor arranca.
-# É um ciclo infinito que imprime a data atual
-# e espera 5 segundos.
-CMD ["sh", "-c", "while true; do echo \"[LOG] Servidor a correr em $(date)\"; sleep 5; done"]
-```
+  * **Acesso ao Anfitrião:** **"Interfaces."** Negado por defeito. A aplicação tem de declarar o que precisa (ex: `network`, `home`, `camera`).
 
 -----
 
-Para construir e executar:
+## Análise Aprofundada: Flatpak 🎁
+
+  * **Isolamento:** **`Sandbox` Forte.** Usa `namespaces` do `kernel` e uma ferramenta chamada **Bubblewrap (`bwrap`)** para criar um ambiente privado para a aplicação.
+
+  * **Dependências:** **`Runtimes` Partilhados.** Uma aplicação requisita um "Runtime" (ex: `org.gnome.Platform`). Este é descarregado *uma vez* e partilhado por todas as aplicações que precisam dele. Muito eficiente.
+
+  * **Acesso ao Anfitrião:** **"Portals."** Negado por defeito. Quando uma aplicação precisa de um ficheiro, ela pede a um "Portal", que abre um seletor de ficheiros *fora* da `sandbox`. O utilizador escolhe um ficheiro, e *apenas* esse ficheiro é dado à aplicação.
+
+-----
+
+## Comparação: Sandboxing & Dependências
+
+| Funcionalidade | AppImage | Snap | Flatpak |
+| :--- | :--- | :--- | :--- |
+| **Sandboxing** | ❌ Nenhum (por defeito) | ✅ Forte (AppArmor) | ✅ Forte (Bubblewrap) |
+| **Permissões** | Acesso total de utilizador | Interfaces (Declarativas) | Portals (Interativos) |
+| **Modelo de Dependências**| Tudo empacotado no ficheiro | Empacotadas + `Core snaps` | `Runtimes` Partilhados |
+
+-----
+
+## Comparação: Distribuição & Apoio
+
+| Funcionalidade | AppImage | Snap | Flatpak |
+| :--- | :--- | :--- | :--- |
+| **Distribuição** | Descentralizada (qualquer URL) | Centralizada (Snap Store) | Descentralizada (Repositórios) |
+| **Apoio Central** | Comunidade | Canonical (Ubuntu) | Red Hat / GNOME |
+| **Precisa de um `Daemon`?**| ❌ Não | ✅ Sim (`snapd`) | ✅ Sim (`flatpak-daemon`) |
+| **Integração com o `Desktop`**| Opcional (`appimaged`) | Automática | Automática |
+
+-----
+
+## Limitações: Os Compromissos
+
+  * **Espaço em Disco:**
+
+      * **AppImage/Snap:** Empacotar pode ser ineficiente. Uma aplicação de 10MB pode tornar-se num pacote de 150MB.
+      * **Flatpak:** `Runtimes` são grandes (muitas vezes 500MB+), mas isto é um `download` **único**.
+
+  * **Tempo de Arranque:**
+
+      * **AppImage:** Tem de "montar" o sistema de ficheiros comprimido em cada arranque (pode ser lento).
+      * **Snap:** Notoriamente lento no *primeiro arranque* enquanto configura a `sandbox`.
+
+-----
+
+## Limitações: O Problema da "Prisão"
+
+  * **Segurança vs. Usabilidade:**
+
+      * A `sandbox` é uma "prisão". Isto é ótimo para a segurança, mas pode ser frustrante.
+      * "Porque é que a minha aplicação não vê o meu tema do `desktop`?" (Maioria resolvido agora).
+      * "Porque é que a minha aplicação não vê a minha pasta pessoal?" Isto é uma **funcionalidade**, não um `bug`, mas requer que as aplicações sejam reescritas para usar `Portals` corretamente.
+
+  * **Não serve para Tudo:**
+
+      * Pouco adequado para ferramentas de linha de comandos (`command-line tools`) que precisam de integração profunda com o sistema (ex: `docker`, `htop`, `drivers` de sistema).
+
+-----
+
+## Prática: A Estrutura `AppDir` do AppImage
+
+Um AppImage é apenas um diretório comprimido. Este diretório é chamado de **`AppDir`**.
+
+**`MyGame.AppDir/`** (A pasta raiz)
+
+  * **`AppRun` (Obrigatório):** O `script` de `entrypoint`. É isto que corre quando dá um duplo clique no AppImage. É nosso trabalho escrever este `script` para configurar o ambiente (como o `PYTHONPATH` para o Pygame) e lançar o binário principal.
+  
+  -----
+
+  * **`my-game.desktop` (Obrigatório):** O ficheiro de integração com o `desktop`. Diz ao menu de aplicações do sistema:
+      * `Name=My Game`
+      * `Exec=AppRun` (Sempre `AppRun`)
+      * `Icon=my-game` (O nome do ícone, sem extensão)
+  * **`my-game.png` (Obrigatório):** O ficheiro de ícone nomeado no ficheiro `.desktop`.
+  * **`usr/`...:** Uma estrutura Linux padrão contendo os seus binários, bibliotecas, e o interpretador Python portátil.
+
+-----
+
+## Prática: AppImage "Hello World"
+
+Aqui, criamos a estrutura `AppDir` *mínima*.
+
+1.  **Criar o diretório, `script`, e metadados:**
+
+    ```bash
+    mkdir -p HelloWorld.AppDir
+    cd HelloWorld.AppDir
+
+    # Criar o entrypoint AppRun
+    echo '#!/bin/bash' > AppRun
+    echo 'echo "Hello from an AppImage!"' >> AppRun
+    chmod +x AppRun
+
+    # Criar o ficheiro .desktop
+    echo '[Desktop Entry]' > hello.desktop
+    echo 'Name=Hello' >> hello.desktop
+    echo 'Exec=AppRun' >> hello.desktop
+    echo 'Icon=hello' >> hello.desktop
+    echo 'Type=Application' >> hello.desktop
+
+    # Adicionar um ícone vazio (dummy)
+    touch hello.png
+    ```
+
+-----
+
+## Prática: Empacotar o AppImage
+
+1.  **Empacotar\!**
+
+    ```bash
+    # Voltar ao diretório pai
+    cd ..
+
+    # Descarregar o appimagetool (só precisa de o fazer uma vez)
+    wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+    chmod +x appimagetool-x86_64.AppImage
+
+    # Executar a ferramenta no seu diretório
+    # Temos de definir ARCH para aplicações baseadas em scripts
+    ARCH=x86_64 ./appimagetool-x86_64.AppImage HelloWorld.AppDir
+    ```
+
+    **Resultado:** Agora tem o `Hello-x86_64.AppImage`. Execute-o:
+    `./Hello-x86_64.AppImage`
+
+-----
+
+## Prática: O `Manifest` do Flatpak (`.yml`)
+
+Um Flatpak é construído a partir de um ficheiro "manifest" que atua como uma "receita".
+
+  * `app-id`: O nome único (ex: `com.example.HelloWorld`).
+  * `runtime` / `sdk`: O sistema base sobre o qual construir (ex: `org.gnome.Platform`). Não empacotamos o Python; usamos o que vem no `runtime`.
+  * `command`: O executável a correr.
+  * `modules`: A lista de "partes" a construir. É aqui que listamos o código da nossa aplicação e as suas dependências (como o `pygame` do PyPI ou o nosso jogo de um URL `git`).
+
+-----
+
+## Prática: Flatpak "Hello World"
+
+1.  **Criar o `script`:**
+
+    ```bash
+    # Criar um ficheiro chamado hello.sh
+    echo '#!/bin/sh' > hello.sh
+    echo 'echo "Hello from a Flatpak Sandbox!"' >> hello.sh
+    ```
+
+-----
+
+2.  **Criar o `manifest` (`com.example.HelloWorld.yml`):**
+
+    ```yaml
+    app-id: com.example.HelloWorld
+    runtime: org.freedesktop.Platform
+    runtime-version: '23.08'
+    sdk: org.freedesktop.Sdk
+    command: hello.sh
+    modules:
+      - name: hello-module
+        buildsystem: simple
+        build-commands:
+          # Instalar o script na sandbox
+          - install -Dm755 hello.sh /app/bin/hello.sh
+        sources:
+          # Dizer ao builder para encontrar o hello.sh no dir do projeto
+          - type: file
+            path: hello.sh
+    ```
+
+-----
+
+## Prática: A Ferramenta `flatpak-builder`
+
+O comando `flatpak-builder` lê o seu `manifest` `.yml` e realiza a compilação dentro de um ambiente limpo e em `sandbox`.
 
 ```bash
-$ docker build -t logging-service .
-$ docker run -d --name logger logging-service
-$ docker logs -f logger
+# 1. Construir e instalar a aplicação
+flatpak-builder --user --install --force-clean \
+  build-dir com.example.HelloWorld.yml
+```
+
+  * **`--user`**: Instala para o utilizador atual (sem `sudo`).
+  * **`--install`**: Instala a aplicação assim que é construída.
+  * **`--force-clean`**: Apaga o diretório de compilação antigo para um começo limpo.
+  * **`build-dir`**: Uma pasta temporária para o processo de compilação.
+
+<!-- end list -->
+
+```bash
+# 2. Execute a sua nova aplicação!
+flatpak run com.example.HelloWorld
 ```
 
 -----
 
-## Docker Compose: Uma Análise Detalhada
+## Prática: Repositórios Flatpak
 
-Um ficheiro `compose.yml` define uma aplicação multi-serviço.
-Aqui estão as chaves mais comuns:
+O Flatpak é descentralizado, como o `git`. Não existe uma "loja" (`store`) única.
 
-  * `services`: A chave raiz onde todos os serviços da sua aplicação são definidos.
-  * `image`: Especifica uma imagem pré-construída de um registo (como o Docker Hub).
-  * `build`: Especifica o caminho para um `Dockerfile` para construir a imagem do serviço.
+  * **O que é um Repositório?**
 
------
+      * Um servidor (ou pasta local) que aloja aplicações, gerido pelo `ostree`.
+      * Pode ter múltiplos "remotes" (repositórios) configurados.
 
-  * `ports`: Mapeia portas do anfitrião para o contentor (p. ex., `"8080:80"`).
-  * `volumes`: Monta caminhos do anfitrião ou volumes nomeados no contentor.
-  * `environment`: Define variáveis de ambiente para o serviço.
-  * `depends_on`: Define dependências entre serviços, controlando a ordem de arranque.
+  * **Flathub: O Repositório "Principal"**
+
+      * `flathub.org` é o repositório central *de facto* para a maioria das aplicações `desktop` (Spotify, VS Code, GIMP, Steam).
+      * `flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo`
 
 -----
 
-## Exemplo Compose 1: Construir uma Imagem NGINX Personalizada
+  * **Como Publicar:**
 
-Este exemplo mostra como empacotar os ficheiros do seu site diretamente numa imagem personalizada.
-
-**Estrutura de Ficheiros Necessária:**
-
-```
-.
-├── docker-compose.yml
-├── Dockerfile
-└── my-website/
-    └── index.html
-```
+      * Para colocar a sua aplicação no Flathub, submete o seu ficheiro `manifest` `.yml` ao repositório GitHub deles como um `pull request`.
+      * O sistema de compilação deles constrói, assina e publica automaticamente a sua aplicação por si.
 
 -----
 
-**`Dockerfile`**
+## Conclusão
 
-```dockerfile
-# Usar a imagem oficial do NGINX como base
-FROM nginx:alpine
+  * O **Isolamento** resolve o "Inferno das Dependências" e adiciona **segurança**.
 
-# Copiar a nossa página web personalizada para o diretório raiz da web da imagem
-COPY ./my-website /usr/share/nginx/html
-```
+  * **AppImage:** Melhor para **portabilidade** simples. "Correr a partir de uma `pen` USB."
 
-**`docker-compose.yml`**
+      * *Foco:* Estrutura de ficheiros (`AppDir`) e `script` `AppRun`.
 
-```yaml
-services:
-  webserver:
-    build: .
-    ports:
-      - "8080:80"
-```
+  * **Snap:** Forte em **IoT/Servidores** e no Ubuntu. Apoiado por uma corporação.
 
------
+      * *Foco:* Loja central, segurança forte.
 
-## Exemplo 1: Explicação
+  * **Flatpak:** O líder no espaço **`desktop`**. Apoiado pela comunidade (GNOME/KDE) e Red Hat.
 
-Neste método, criamos uma **imagem autónoma e portátil** que inclui o código da nossa aplicação.
-
-1.  Quando executa `docker-compose up`, a diretiva `build: .` diz ao Compose para procurar um `Dockerfile` no diretório atual.
-2.  O `Dockerfile` começa a partir de uma imagem base padrão do `nginx`.
-3.  A instrução `COPY` pega na sua pasta local `./my-website` e copia o seu conteúdo diretamente para o sistema de ficheiros da imagem em `/usr/share/nginx/html`.
-4.  É criada uma nova imagem personalizada contendo tanto o NGINX como a sua página web.
-5.  Um contentor é iniciado a partir desta nova imagem.
-
------
-
-**Conceito-Chave:** A aplicação e o seu código são empacotados juntos. Isto é ideal para **implementações de produção**, já que a imagem resultante é um artefacto consistente e imutável que pode ser executado em qualquer lugar.
-
------
-
-## Exemplo Compose 2: Usar um Volume para Servir Conteúdo
-
-Este exemplo usa uma imagem NGINX padrão e injeta o conteúdo do site usando um volume.
-
-**Estrutura de Ficheiros Necessária:**
-
-```
-.
-├── docker-compose.yml
-└── my-website/
-    └── index.html
-```
-
------
-
-**`docker-compose.yml`**
-
-```yaml
-services:
-  webserver:
-    image: nginx:alpine
-    ports:
-      - "8080:80"
-    volumes:
-      - ./my-website:/usr/share/nginx/html
-```
-
-*(Não é necessário Dockerfile para este método)*
-
------
-
-## Exemplo 2: Explicação
-
-Este método mantém o seu código na máquina anfitriã e liga-o dinamicamente ao contentor.
-
-1.  Quando executa `docker-compose up`, a diretiva `image: nginx:alpine` diz ao Compose para ir buscar a imagem padrão do NGINX ao Docker Hub. Nenhuma imagem personalizada é construída.
-2.  Um contentor é iniciado a partir desta imagem padrão.
-3.  A diretiva `volumes` cria uma ligação em tempo real entre a pasta `./my-website` no seu anfitrião e a pasta `/usr/share/nginx/html` dentro do contentor.
-4.  Quando o NGINX dentro do contentor procura ficheiros para servir, está na verdade a lê-los diretamente do disco da sua máquina anfitriã.
-
------
-
-**Conceito-Chave:** O contentor não tem estado (stateless), e o código vive no anfitrião. Se alterar o seu ficheiro `index.html` no anfitrião, a alteração é refletida **instantaneamente** sem reconstruir ou reiniciar o contentor. Isto é ideal para **desenvolvimento local**.
-
------
-
-### Exemplo Compose 3: NGINX com uma Cache Varnish
-
-Este exemplo avançado orquestra dois serviços: um servidor web NGINX e uma cache Varnish que se posiciona à sua frente para acelerar a entrega de conteúdo.
-
-**Estrutura de Ficheiros Necessária:**
-
-```
-.
-├── docker-compose.yml
-└── varnish/
-    └── default.vcl
-```
-
------
-
-**`varnish/default.vcl` (Configuração do Varnish)**
-
-```vcl
-vcl 4.1;
-
-// Definir o servidor de backend de onde o Varnish irá obter o conteúdo.
-// 'nginx' é o nome do nosso outro serviço no docker-compose.yml.
-backend default {
-    .host = "nginx";
-    .port = "80";
-}
-```
-
-**`docker-compose.yml`**
-
-```yaml
-services:
-  # A cache Varnish que é exposta ao mundo exterior
-  cache:
-    image: varnish:stable
-    volumes:
-      # Montar a nossa configuração personalizada do Varnish
-      - ./varnish:/etc/varnish
-    ports:
-      # Mapear a porta 8080 do anfitrião para a porta 80 da cache
-      - "8080:80"
-    depends_on:
-      - nginx
-
-  # O servidor web NGINX, que NÃO é exposto ao anfitrião
-  nginx:
-    image: nginx:alpine
-    # Nenhuma secção de portas significa que só é acessível a partir da rede Docker
-```
-
------
-
-### Exemplo 3: Explicação
-
-Esta configuração demonstra uma arquitetura multi-camada realista e de alto desempenho, onde os serviços comunicam internamente.
-
-1.  O `docker-compose.yml` define dois serviços: `cache` (Varnish) e `nginx`.
-2.  Apenas o serviço `cache` expõe uma porta (`8080`) à máquina anfitriã. O serviço `nginx` está completamente isolado do mundo exterior.
-3.  O ficheiro de configuração personalizado do Varnish (`default.vcl`) é montado no contentor `cache`. Este ficheiro diz ao Varnish que o seu "backend" (o servidor web real) está localizado no hostname `nginx`.
-4.  Graças ao **DNS interno** do Docker, o nome do serviço `nginx` resolve automaticamente para o endereço IP privado do contentor `nginx`, permitindo que o Varnish se conecte a ele.
-
------
-
-**O Fluxo do Pedido:**
-`Browser do Utilizador` → `Máquina Anfitriã (Porta 8080)` → `Contentor Varnish (Cache)` → `Contentor NGINX (Servidor de Origem)`
-
-**A Magia do Caching:**
-No primeiro pedido de uma página web, o Varnish vai buscá-la ao contentor `nginx` e armazena uma cópia na sua memória. Para todos os pedidos subsequentes da mesma página, o Varnish serve a cópia diretamente da sua cache, o que é incrivelmente rápido e evita que o servidor NGINX tenha de fazer qualquer trabalho.
-
-**Conceito-Chave:** Isto demonstra uma poderosa **descoberta de serviços (service discovery)** e a criação de um **proxy reverso**, um padrão fundamental na arquitetura web.
-
------
-
-## A Origem: Linux Containers (LXC)
-
-Antes do Docker, havia o **LXC**.
-
-  * O LXC é uma interface de espaço de utilizador para as funcionalidades de contenção do kernel Linux (namespaces e cgroups).
-  * Fornece um conjunto de ferramentas de mais baixo nível para criar e gerir contentores.
-  * Os contentores LXC são frequentemente descritos como sendo mais parecidos com máquinas virtuais muito leves e de arranque rápido do que com contentores de aplicação. Eles tipicamente executam um sistema `init` completo e são usados para isolar sistemas operativos inteiros.
-
------
-
-## O Padrão: Docker
-
-O Docker pegou na tecnologia subjacente do LXC e construiu um ecossistema de alto nível e amigável ao utilizador à sua volta.
-
-  * Introduziu o conceito de imagens portáteis através do `Dockerfile`.
-  * Criou um registo centralizado (Docker Hub) para partilhar imagens.
-  * O seu foco são os contentores **centrados na aplicação**, empacotando uma única aplicação ou processo por contentor. Esta filosofia é uma pedra angular da arquitetura de microsserviços.
-
------
-
-## A Alternativa Moderna: Podman
-
-O Podman é uma alternativa popular e moderna ao Docker, desenvolvida pela Red Hat.
-
-  * **Sem Daemon:** Ao contrário do Docker, o Podman não requer um daemon central sempre em execução, o que é frequentemente citado como um benefício de segurança.
-  * **Sem Root (Rootless):** O Podman foi projetado para executar contentores como um utilizador regular, sem necessitar de privilégios de root.
-  * **Compatível com CLI:** A interface de linha de comandos do Podman é intencionalmente idêntica à do Docker. Em muitos sistemas, pode simplesmente executar `alias docker=podman` e usar os mesmos comandos que já conhece.
-
------
-
-## Conclusão e Pontos-Chave
-
-  * Os contentores resolvem o problema do "na minha máquina funciona", empacotando uma aplicação com as suas dependências numa unidade **portátil**.
-  * Eles alcançam isolamento e gestão de recursos através de funcionalidades do kernel Linux como **namespaces** e **cgroups**.
-  * O **`Dockerfile`** fornece uma receita para construir imagens, e o **Docker Compose** ajuda a gerir aplicações multi-serviço.
-  * Os contentores revolucionaram o desenvolvimento de software, formando a base das práticas modernas de **DevOps e cloud-native**.
-
------
-
-## Recursos Adicionais e Links Úteis 📚
-
-Para continuar a sua jornada de aprendizagem com contentores, aqui estão alguns excelentes recursos:
-
-  * **Folha de Consulta Oficial do Docker:** Uma referência oficial e concisa para os comandos mais comuns.
-
-      * [https://docs.docker.com/get-started/docker\_cheatsheet.pdf](https://docs.docker.com/get-started/docker_cheatsheet.pdf)
-
-  * **Folha de Consulta Definitiva do Docker (Collabnix):** Uma folha de consulta mais abrangente com exemplos detalhados e explicações.
-
-      * [https://dockerlabs.collabnix.com/docker/cheatsheet/](https://dockerlabs.collabnix.com/docker/cheatsheet/)
-
------
-
-  * **Como Otimizar Imagens Docker (GeeksforGeeks):** Aprenda técnicas como builds multi-estágio para tornar as suas imagens mais pequenas, rápidas e seguras.
-
-      * [https://www.geeksforgeeks.org/devops/how-to-optimize-docker-image/](https://www.geeksforgeeks.org/devops/how-to-optimize-docker-image/)
-
-  * **Otimizar Dockerfiles para Builds Rápidas (WarpBuild):** Entenda como estruturar o seu `Dockerfile` para tirar o máximo partido do cache de camadas e acelerar significativamente o seu processo de construção.
-
-      * [https://www.warpbuild.com/blog/optimizing-docker-builds](https://www.warpbuild.com/blog/optimizing-docker-builds)
-
-  * **LinuxServer.io:** Um projeto comunitário que fornece e mantém imagens de contentores de alta qualidade e fáceis de usar para muitas aplicações auto-hospedadas populares (como servidores de multimédia, clientes de download e mais).
-
-      * [https://www.linuxserver.io/](https://www.linuxserver.io/)
+      * *Foco:* Escrever "receitas" declarativas (`manifests` `.yml`) e deixar o `flatpak-builder` e os `runtimes` partilhados fazer o trabalho pesado.

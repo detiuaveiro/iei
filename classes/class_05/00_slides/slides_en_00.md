@@ -70,13 +70,15 @@ Some technologies provide isolation by their very nature.
 
       * The OS runs the `java` process, not your app directly.
       * The JVM runs the Java bytecode in a managed, sandboxed environment.
-      * A "Security Manager" controls all access to the host's file system and network.
+
+-----
 
   * **Python Virtual Environments (`venv`):**
 
       * This is **dependency isolation**, not security sandboxing.
-      * Creates a local folder (`.venv`) with its own packages (`pygame`, `numpy`).
-      * This solves the "App A vs. App B" problem but doesn't stop the app from reading your files.
+      * Creates a local folder (`.venv`) with its own Python interpreter and packages (like `pygame`).
+      * A `requirements.txt` file lists all dependencies, allowing `pip install -r requirements.txt` to create a reproducible environment, just as we did in our exercise.
+      * This solves the "App A vs. App B" problem on our local machine but doesn't stop the app from reading our files.
 
 -----
 
@@ -116,7 +118,7 @@ Three major technologies emerged to solve this for *any* application, aiming to 
 
   * **Dependencies:** **Bundled + Core Snaps.** Apps bundle their specific libraries but also depend on a shared `core` snap (e.g., `core22`) that provides a base Ubuntu runtime.
 
-  * **Host Access:** **"Interfaces."** Denied by default. The app must declare what it needs (e.g., `network`, `home`, `camera`). The user (or Snap Store) must grant these permissions.
+  * **Host Access:** **"Interfaces."** Denied by default. The app must declare what it needs (e.g., `network`, `home`, `camera`).
 
 -----
 
@@ -170,7 +172,6 @@ Three major technologies emerged to solve this for *any* application, aiming to 
   * **Security vs. Usability:**
 
       * The sandbox is a "jail." This is great for security but can be frustrating.
-      * "Why can't my app see my desktop theme?" (Mostly solved now).
       * "Why can't my app see my home folder?" This is a **feature**, not a bug, but it requires apps to be written to use Portals correctly.
 
   * **Not for Everything:**
@@ -179,11 +180,30 @@ Three major technologies emerged to solve this for *any* application, aiming to 
 
 -----
 
+## Practical: The AppImage `AppDir` Structure
+
+An AppImage is just a compressed directory. This directory is called the **`AppDir`**.
+
+**`MyGame.AppDir/`** (The root folder)
+
+  * **`AppRun` (Required):** The entrypoint script. This is what runs when you double-click the AppImage. It's our job to write this script to set up the environment (like `PYTHONPATH` for Pygame) and launch the main binary.
+
+  -----
+
+  * **`my-game.desktop` (Required):** The desktop integration file. It tells the system's app menu:
+      * `Name=My Game`
+      * `Exec=AppRun` (Always `AppRun`)
+      * `Icon=my-game` (The name of the icon, without extension)
+  * **`my-game.png` (Required):** The icon file named in the `.desktop` file.
+  * **`usr/`...:** A standard Linux structure containing your binaries, libraries, and the portable Python interpreter.
+
+-----
+
 ## Practical: AppImage "Hello World"
 
-An AppImage is just a directory (`AppDir`) compressed into a file. The only *required* file is `AppRun`.
+Here, we create the *minimal* `AppDir` structure.
 
-1.  **Create the directory and the script:**
+1.  **Create the directory, script, and metadata:**
 
     ```bash
     mkdir -p HelloWorld.AppDir
@@ -193,44 +213,54 @@ An AppImage is just a directory (`AppDir`) compressed into a file. The only *req
     echo '#!/bin/bash' > AppRun
     echo 'echo "Hello from an AppImage!"' >> AppRun
     chmod +x AppRun
-    ```
 
------
-
-2.  **Add metadata (Optional, but good practice):**
-
-    ```bash
+    # Create the desktop file
     echo '[Desktop Entry]' > hello.desktop
     echo 'Name=Hello' >> hello.desktop
     echo 'Exec=AppRun' >> hello.desktop
     echo 'Icon=hello' >> hello.desktop
     echo 'Type=Application' >> hello.desktop
+
     # Add a dummy icon
     touch hello.png
     ```
 
 -----
 
-3.  **Bundle it\!**
+## Practical: Bundling the AppImage
+
+1.  **Bundle it\!**
 
     ```bash
     # Go back to parent dir
     cd ..
-    # Download appimagetool
+
+    # Download appimagetool (only need to do this once)
     wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
     chmod +x appimagetool-x86_64.AppImage
 
     # Run the tool on your directory
-    ./appimagetool-x86_64.AppImage HelloWorld.AppDir
+    # We must set ARCH for script-based apps
+    ARCH=x86_64 ./appimagetool-x86_64.AppImage HelloWorld.AppDir
     ```
 
-    **Result:** You now have `Hello-x86_64.AppImage`. Run it: `./Hello-x86_64.AppImage`
+    **Result:** You now have `Hello-x86_64.AppImage`. Run it:
+    `./Hello-x86_64.AppImage`
+
+-----
+
+## Practical: The Flatpak Manifest (`.yml`)
+
+A Flatpak is built from a "manifest" file that acts as a "recipe."
+
+  * `app-id`: The unique name (e.g., `com.example.HelloWorld`).
+  * `runtime` / `sdk`: The base system to build upon (e.g., `org.gnome.Platform`). We don't bundle Python; we use the one from the runtime.
+  * `command`: The executable to run.
+  * `modules`: The list of "parts" to build. This is where we list our app's code and its dependencies (like `pygame` from PyPI or our game from a `git` URL).
 
 -----
 
 ## Practical: Flatpak "Hello World"
-
-A Flatpak is built from a "manifest" file (`.yml`) that describes all its parts.
 
 1.  **Create the script:**
 
@@ -240,40 +270,48 @@ A Flatpak is built from a "manifest" file (`.yml`) that describes all its parts.
     echo 'echo "Hello from a Flatpak Sandbox!"' >> hello.sh
     ```
 
------
-
 2.  **Create the manifest (`com.example.HelloWorld.yml`):**
 
     ```yaml
     app-id: com.example.HelloWorld
     runtime: org.freedesktop.Platform
-    runtime-version: '23.08'
+    runtime-version: '25.08'
     sdk: org.freedesktop.Sdk
     command: hello.sh
-
     modules:
       - name: hello-module
         buildsystem: simple
         build-commands:
-          # Install the script into the sandbox's /app/bin/ folder
+          # Install the script into the sandbox
           - install -Dm755 hello.sh /app/bin/hello.sh
         sources:
-          # Tell the builder to find 'hello.sh' in our project dir
           - type: file
             path: hello.sh
     ```
 
 -----
 
-3.  **Build and Run:**
+## Practical: The `flatpak-builder` Tool
 
-    ```bash
-    # 1. Build and install the app
-    flatpak-builder build-dir com.example.HelloWorld.yml --user --install --force-clean
+The `flatpak-builder` command reads your `.yml` manifest and performs the build inside a clean, sandboxed environment.
 
-    # 2. Run your new app!
-    flatpak run com.example.HelloWorld
-    ```
+```bash
+# 1. Build and install the app
+flatpak-builder --user --install --force-clean \
+  build-dir com.example.HelloWorld.yml
+```
+
+  * **`--user`**: Installs for the current user (no `sudo`).
+  * **`--install`**: Installs the app as soon as it's built.
+  * **`--force-clean`**: Deletes the old build directory for a fresh start.
+  * **`build-dir`**: A temporary folder for the build process.
+
+<!-- end list -->
+
+```bash
+# 2. Run your new app!
+flatpak run com.example.HelloWorld
+```
 
 -----
 
@@ -283,15 +321,15 @@ Flatpak is decentralized, like `git`. There is no single "store."
 
   * **What is a Repository?**
 
-      * A server (or local folder) that hosts apps, managed by `ostree` (a system like "git for OS binaries").
+      * A server (or local folder) that hosts apps, managed by `ostree`.
       * You can have multiple "remotes" (repositories) configured.
-
-----
 
   * **Flathub: The "Main" Repo**
 
       * `flathub.org` is the *de facto* central repository for most desktop apps (Spotify, VS Code, GIMP, Steam).
       * `flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo`
+
+  -----
 
   * **How to Publish:**
 
@@ -304,14 +342,14 @@ Flatpak is decentralized, like `git`. There is no single "store."
 
   * **Isolation** solves "Dependency Hell" and adds **security**.
 
-  * **AppImage:** Best for simple **portability**. "Run from a USB stick."
+  * **AppImage:** Best for simple **portability**.
 
-      * *Focus:* File structure (`AppDir`).
+      * *Focus:* Manually creating a file structure (`AppDir`) and an `AppRun` script.
 
-  * **Snap:** Strong in **IoT/Server** and on Ubuntu. Backed by a corporation.
+  * **Snap:** Strong in **IoT/Server** and on Ubuntu.
 
       * *Focus:* Central store, strong security.
 
-  * **Flatpak:** The leader in the **desktop** space. Backed by the community (GNOME/KDE) and Red Hat.
+  * **Flatpak:** The leader in the **desktop** space.
 
-      * *Focus:* Build manifests (`.yml`) and shared runtimes.
+      * *Focus:* Writing a declarative "recipe" (`.yml` manifest) and letting `flatpak-builder` and shared runtimes do the heavy lifting.
