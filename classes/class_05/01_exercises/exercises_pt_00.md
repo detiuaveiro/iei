@@ -17,6 +17,7 @@ header-includes:
  - \AtBeginEnvironment{cslreferences}{\tiny}
  - \AtBeginEnvironment{Shaded}{\normalsize}
  - \AtBeginEnvironment{verbatim}{\normalsize}
+ - \setmonofont[Contextuals={Alternate}]{FiraCodeNerdFontMono-Retina}
 ---
 
 # Exercícios
@@ -264,7 +265,7 @@ import sys
 def tree(startpath):
     """Prints a directory tree."""
     for root, dirs, files in os.walk(startpath):
-        # Não visitar .venv ou __pycache__
+        # Don't visit .venv or __pycache__
         if '.venv' in dirs:
             dirs.remove('.venv')
         if '__pycache__' in dirs:
@@ -273,14 +274,14 @@ def tree(startpath):
         level = root.replace(startpath, '').count(os.sep)
         indent = '│   ' * (level - 1) + '├── ' if level > 0 else ''
         
-        print(f'{indent}📂 {os.path.basename(root)}/')
+        print(f'{indent} {os.path.basename(root)}/')
         
         subindent = '│   ' * level + '├── '
         for f in files:
-            print(f'{subindent}📄 {f}')
+            print(f'{subindent} {f}')
 
 if __name__ == "__main__":
-    # Usar o diretório atual ou um caminho especificado
+    # Use current directory or a specified path
     path = sys.argv[1] if len(sys.argv) > 1 else '.'
     tree(os.path.abspath(path))
 ```
@@ -654,8 +655,8 @@ $ tar --strip-components=1 -zxvf ../tictactoe-1.0.tar.gz
 <!-- end list -->
 
 ```bash
-$ ./usr/bin/python3.10 -m pip install -r \
-$ ./requirements.txt --target ./usr/lib/python3.10/site-packages/
+$ ./usr/bin/python3.10 -m pip install -r ./requirements.txt \
+--target ./usr/lib/python3.10/site-packages/
 ```
 
 7.  **Copiar os ficheiros do seu jogo:** Movemos os `scripts` e `assets` do jogo para dentro do `AppDir`.

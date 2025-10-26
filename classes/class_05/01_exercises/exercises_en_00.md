@@ -17,6 +17,7 @@ header-includes:
  - \AtBeginEnvironment{cslreferences}{\tiny}
  - \AtBeginEnvironment{Shaded}{\normalsize}
  - \AtBeginEnvironment{verbatim}{\normalsize}
+ - \setmonofont[Contextuals={Alternate}]{FiraCodeNerdFontMono-Retina}
 ---
 
 # Exercises
@@ -241,11 +242,11 @@ def tree(startpath):
         level = root.replace(startpath, '').count(os.sep)
         indent = '│   ' * (level - 1) + '├── ' if level > 0 else ''
         
-        print(f'{indent}📂 {os.path.basename(root)}/')
+        print(f'{indent} {os.path.basename(root)}/')
         
         subindent = '│   ' * level + '├── '
         for f in files:
-            print(f'{subindent}📄 {f}')
+            print(f'{subindent} {f}')
 
 if __name__ == "__main__":
     # Use current directory or a specified path
@@ -570,8 +571,8 @@ $ tar --strip-components=1 -zxvf ../tictactoe-1.0.tar.gz
 6.  **Install dependencies from `requirements.txt`:** We use the *bundled* Python's `pip` to install packages. The `--target` flag tells `pip` to install `pygame` *inside* our `AppDir`'s `site-packages` folder, not on the host system.
 
 ```bash
-$ ./usr/bin/python3.10 -m pip install -r \
-$ ./requirements.txt --target ./usr/lib/python3.10/site-packages/
+$ ./usr/bin/python3.10 -m pip install -r ./requirements.txt \
+--target ./usr/lib/python3.10/site-packages/
 ```
 
 7.  **Copy your game files:** We move the game's scripts and assets into the `AppDir`.

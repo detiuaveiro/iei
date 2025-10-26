@@ -16,8 +16,7 @@ modules:
       env:
         MAKEFLAGS: -j$(nproc)
     build-commands:
-      - pip3 install --isolated --no-index --find-links="file://${PWD}"
-        --prefix=/app pygame
+      - pip3 install --isolated --no-index --find-links="file://${PWD}" --prefix=/app pygame
     sources:
       - type: file
         url: https://pypi.io/packages/source/p/pygame/pygame-2.6.1.tar.gz

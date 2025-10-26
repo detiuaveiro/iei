@@ -11,6 +11,6 @@ pdf: $(ALL_PDF)
 	pandoc -s --pdf-engine=lualatex -o $@ $<
 
 clean:
-	rm -rf *.pdf
+	rm -rf *.pdf luatex.*
 
 .PHONY: all clean pdf
