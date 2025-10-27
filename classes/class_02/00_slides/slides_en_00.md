@@ -4,6 +4,8 @@ subtitle: Introdução Engenharia Informática
 author: Mário Antunes
 institute: Universidade de Aveiro
 date: September 29, 2025
+colorlinks: true
+highlight-style: tango
 mainfont: NotoSans
 mainfontfallback:
   - "NotoColorEmoji:mode=harf"
@@ -15,6 +17,7 @@ header-includes:
  - \AtBeginEnvironment{cslreferences}{\tiny}
  - \AtBeginEnvironment{Shaded}{\tiny}
  - \AtBeginEnvironment{verbatim}{\tiny}
+ - \setmonofont[Contextuals={Alternate}]{FiraCodeNerdFontMono-Retina}
 ---
 
 ## Welcome to the Windows Command Line\! 💻

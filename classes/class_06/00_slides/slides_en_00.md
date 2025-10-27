@@ -7,8 +7,7 @@ date: October 27, 2025
 colorlinks: true
 highlight-style: tango
 mainfont: NotoSans
-mainfontfallback:
-  - "NotoColorEmoji:mode=harf"
+mainfontfallback: "NotoColorEmoji:mode=harf"
 header-includes:
  - \usetheme[sectionpage=none,numbering=fraction,progressbar=frametitle]{metropolis}
  - \usepackage{longtable,booktabs}
@@ -202,6 +201,19 @@ A **branch** is simply a lightweight, movable pointer to one of your commits. Th
 * `git branch <name>`: Creates a new branch.
 * `git checkout <name>`: Switches your Working Directory to that branch.
 * `git checkout -b <name>`: A shortcut that creates and switches in one step.
+
+---
+
+## Visualizing Branches & Merging
+
+This diagram shows the relationship between different branches.
+
+  * Work starts on the **Main branch** (blue rectangles).
+  * A new `branch` is created to work on a feature (green circles).
+  * When the feature is complete, it is `merged` back into the main branch.
+  * This process can be nested, with branches created from other feature branches (red circles).
+
+  ![image](figures/git_branch_00.png)
 
 ---
 

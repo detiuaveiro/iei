@@ -8,7 +8,7 @@ all: $(ALL_PDF)
 pdf: $(ALL_PDF)
 
 %.pdf: %.md 
-	pandoc -s --highlight-style=../../support/solarizeddark.theme --pdf-engine=lualatex -o $@ $<
+	pandoc -s --pdf-engine=lualatex -o $@ $<
 
 clean:
 	rm -rf *.pdf

@@ -3,6 +3,8 @@ title: Introdução Engenharia Informática
 author: Mário Antunes
 institute: Universidade de Aveiro
 date: September 15, 2025
+colorlinks: true
+highlight-style: tango
 mainfont: NotoSans
 mainfontfallback:
   - "NotoColorEmoji:mode=harf"
@@ -12,6 +14,9 @@ header-includes:
  - \usepackage{etoolbox}
  - \AtBeginEnvironment{longtable}{\tiny}
  - \AtBeginEnvironment{cslreferences}{\tiny}
+ - \AtBeginEnvironment{Shaded}{\tiny}
+ - \AtBeginEnvironment{verbatim}{\tiny}
+ - \setmonofont[Contextuals={Alternate}]{FiraCodeNerdFontMono-Retina}
 ---
 
 # Professors

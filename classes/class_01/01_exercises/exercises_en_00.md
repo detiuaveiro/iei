@@ -4,6 +4,8 @@ subtitle: Introdução Engenharia Informática
 author: Mário Antunes
 institute: Universidade de Aveiro
 date: September 22, 2025
+colorlinks: true
+highlight-style: tango
 geometry: a4paper,margin=2cm
 mainfont: NotoSans
 mainfontfallback:
@@ -15,6 +17,7 @@ header-includes:
  - \AtBeginEnvironment{cslreferences}{\tiny}
  - \AtBeginEnvironment{Shaded}{\normalsize}
  - \AtBeginEnvironment{verbatim}{\normalsize}
+ - \setmonofont[Contextuals={Alternate}]{FiraCodeNerdFontMono-Retina}
 ---
 
 # Exercises
