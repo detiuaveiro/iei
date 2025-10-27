@@ -1,14 +1,13 @@
 ---
-title: Containers para Aplicações
+title: Git & Github
 subtitle: Introdução Engenharia Informática
 author: Mário Antunes
 institute: Universidade de Aveiro
-date: October 20, 2025
+date: 27 de Outubro de 2025
 colorlinks: true
 highlight-style: tango
 mainfont: NotoSans
-mainfontfallback:
-  - "NotoColorEmoji:mode=harf"
+mainfontfallback: "NotoColorEmoji:mode=harf"
 header-includes:
  - \usetheme[sectionpage=none,numbering=fraction,progressbar=frametitle]{metropolis}
  - \usepackage{longtable,booktabs}
@@ -17,344 +16,363 @@ header-includes:
  - \AtBeginEnvironment{cslreferences}{\tiny}
  - \AtBeginEnvironment{Shaded}{\tiny}
  - \AtBeginEnvironment{verbatim}{\tiny}
+ - \setmonofont[Contextuals={Alternate}]{FiraCodeNerdFontMono-Retina}
 ---
 
-## Contentores de Aplicações & Sandboxing em Linux
+## Git & GitHub
+### Um Guia Prático de Controlo de Versões e Colaboração
 
-### Um Olhar Aprofundado sobre AppImage, Snap, e Flatpak
+## O Caos Antes do Controlo de Versões
 
------
+Imagine que está a escrever um grande ensaio ou projeto de programação. A sua pasta provavelmente ficaria assim:
 
-## O Problema Principal: "O Inferno das Dependências Linux" 👹
+* `Projecto_v1.c`
+* `Projecto_v2_corrigido.c`
+* `Projecto_final.c`
+* `Projecto_final_AGORA_VAI.c`
+* `Projecto_final_APROVADO_v3.c`
 
-Aplicações Linux tradicionais dependem de **bibliotecas de sistema partilhadas** (ficheiros `.so`).
+Isto é confuso, propenso a erros e impossível de escalar. Não tem um registo claro de *o que* mudou, *porquê* mudou, ou *quando* mudou.
 
-  * **O Conflito:**
-      * A Aplicação A precisa da `libXYZ v1.0`
-      * A Aplicação B precisa da `libXYZ v2.0`
-  * **O Resultado:**
-      * O seu gestor de pacotes (`apt`, `dnf`) muitas vezes só consegue instalar uma versão.
-      * Instalar a Aplicação B quebra a Aplicação A (ou vice-versa).
+---
 
------
+## O Problema da Colaboração
 
-## A Necessidade de Isolamento & Portabilidade
+1. **Método 1: Pastas Partilhadas (ex: Dropbox, Google Drive)**
+* Estas são ferramentas de **sincronização de ficheiros**, não ferramentas de controlo de versões.
+* **Problema:** *Bloqueio de ficheiros (File locking).* Se duas pessoas editarem o mesmo ficheiro, obtém `O_Meu_Ficheiro (Cópia Conflituosa).doc`. A última pessoa a guardar "ganha", e o trabalho é perdido. Apenas sincroniza a *última* versão.
 
-  * **Portabilidade:** Uma aplicação empacotada com as suas dependências irá "correr em qualquer lado" (`run anywhere`) em qualquer distribuição Linux, independentemente das suas bibliotecas de sistema.
-  * **Estabilidade:** Aplicações não podem conflituar com as dependências umas das outras.
-  * **Segurança:** Se uma aplicação está isolada (`sandboxed`), ela não consegue ler as suas chaves SSH, histórico do navegador, ou outros dados sensíveis.
+---
 
------
+2. **Método 2: Enviar Ficheiros por Email**
+* `Projecto_v5_alteracoes_Mario.zip`
+* `Projecto_v5_feedback_Ana.zip`
+* **Problema:** Como é que junta (merge) estas alterações? Este é um processo manual e caótico que garante o fracasso.
 
-## Como Outros SOs Gerem Isto
+---
 
-Isto não é apenas um problema do Linux.
+## A Solução: Um Sistema de Controlo de Versões (VCS)
 
-  * **Windows:** Aplicações empacotam quase *todos* os seus ficheiros `.dll` na sua pasta de instalação (ex: `C:\Program Files\App`).
+Um VCS é um sistema que regista alterações a um ficheiro ou conjunto de ficheiros ao longo do tempo. É uma **máquina do tempo** para o seu projeto.
 
-      * **Pró:** Previne conflitos.
-      * **Contra:** Muita duplicação; ineficiente.
+Permite-lhe:
 
-  * **macOS:** "Bundles" `.app` são apenas pastas que contêm o binário da aplicação e todas as suas bibliotecas.
+* Ver quem alterou o quê, e quando.
+* Reverter para qualquer versão anterior.
+* Comparar alterações ao longo do tempo.
+* Trabalhar em equipa de forma segura sem sobrepor o trabalho dos outros.
 
-      * **Pró:** Auto-contido e portátil.
-      * **Contra:** Também duplica bibliotecas.
+---
 
------
+## Tipos de VCS: Centralizado vs. Distribuído
 
-## Isolamento "Natural": VMs & Runtimes
+1. **Centralizado (CVCS) - ex: Subversion (SVN)**
+* Existe **um único servidor central** que contém todo o histórico do projeto.
+* Os programadores fazem "check-out" da versão mais recente, trabalham, e fazem "check-in" das suas alterações.
+* **Ponto fraco:** É um ponto único de falha. Se o servidor falhar, ninguém pode colaborar ou guardar o seu histórico.
 
-Algumas tecnologias fornecem isolamento pela sua própria natureza.
+---
 
-  * **Java Virtual Machine (JVM):**
+2. **Distribuído (DVCS) - ex: Git, Mercurial**
+* **Cada programador** tem uma cópia local completa (um "clone") de **todo o repositório**, incluindo o seu histórico completo.
+* O "servidor" é apenas um outro repositório com o qual todos concordam em sincronizar.
+* **Ponto forte:** Pode trabalhar offline, e o histórico está seguro em dezenas de máquinas.
 
-      * O SO corre o processo `java`, não a sua aplicação diretamente.
-      * A JVM corre o `bytecode` Java num ambiente gerido e em `sandbox`.
-      * Um "Security Manager" controla todo o acesso ao sistema de ficheiros e rede do anfitrião (`host`).
+---
 
------
+## A Origem do Git
 
-  * **Python Virtual Environments (`venv`):**
+* **Quem:** Linus Torvalds (o criador do Kernel do Linux).
+* **Quando:** 2005.
+* **Porquê:** A equipa do Kernel do Linux usava um DVCS proprietário chamado BitKeeper. Uma alteração no licenciamento forçou-os a parar de o usar.
+* **O Problema:** Nenhum outro VCS na altura conseguia lidar com a escala (velocidade, tamanho e número de contribuidores) do projeto do Kernel do Linux.
+* **A Solução:** Linus criou o **Git** em cerca de uma semana. Foi desenhado desde o início para ser distribuído, rápido e para garantir a integridade dos dados.
 
-      * Isto é **isolamento de dependências**, não `sandboxing` de segurança.
-      * Cria uma pasta local (`.venv`) com o seu próprio interpretador Python e pacotes (`pygame`, `numpy`).
-      * Um ficheiro `requirements.txt` lista todas as dependências, permitindo que `pip install -r requirements.txt` crie um ambiente reprodutível, tal como fizemos no nosso exercício.
-      * Isto resolve o problema "Aplicação A vs. Aplicação B" na nossa máquina local, mas não impede a aplicação de ler os nossos ficheiros.
+---
 
------
+## Como o Git "Pensa": Snapshots, Não Diffs
 
-## As Soluções Linux Modernas
+Muitas ferramentas VCS mais antigas (como o SVN) armazenam as alterações como *deltas* ou *diffs* (uma lista do que mudou, linha por linha).
 
-Três grandes tecnologias emergiram para resolver isto para *qualquer* aplicação, com o objetivo de empacotar a aplicação *e* as suas dependências.
+O Git não faz isso. O Git "pensa" no seu histórico como um **fluxo de snapshots (instantâneos)**.
 
-1.  **AppImage 📦**
+Quando faz **commit** (guarda uma versão), o Git tira uma "fotografia" de como todos os seus ficheiros estão nesse momento e armazena uma referência a esse snapshot. Se um ficheiro não mudou, o Git apenas aponta para a versão anterior desse ficheiro.
 
-      * **Filosofia:** "Uma aplicação = um ficheiro." Não é necessária instalação.
+---
 
-2.  **Snap 🧩**
+## O Conceito Central: Os 3 Estados
 
-      * **Filosofia:** "Um pacote seguro e universal." Apoiado pela Canonical (Ubuntu).
+Esta é a parte mais crucial, e por vezes confusa, do Git. Os seus ficheiros existem num de três estados:
 
-3.  **Flatpak 🎁**
+1.  **Working Directory (Diretório de Trabalho):** Todos os seus ficheiros e pastas no sistema de ficheiros do seu computador. Esta é a sua "secretária desarrumada".
+2.  **Staging Area (Index) (Área de Preparação):** Uma área de "rascunho". É aqui que monta o seu snapshot. Usa `git add` para mover ficheiros *do* Working Directory *para* aqui.
+3.  **Repository (.git) (Repositório):** A base de dados permanente e imutável de todos os snapshots (commits) do seu projeto. Este é o "armário de arquivo".
 
-      * **Filosofia:** "O futuro das aplicações `desktop`." Apoiado pela Red Hat & comunidade GNOME.
+---
 
------
+## Criar um Repositório: `git init`
 
-## Análise Aprofundada: AppImage 📦
+Existem duas formas de iniciar um projeto com Git:
 
-  * **Isolamento:** **Nenhum por defeito.** Foca-se na portabilidade, não na segurança. A aplicação corre como um processo de utilizador normal.
+1.  `git clone`: (Veremos isto mais tarde) Copiar um repositório *existente* de um servidor.
+2.  `git init`: Criar um *novo* repositório de raiz.
 
-      * *(Pode ser colocada em `sandbox` por ferramentas externas opcionais, como o `firejail`)*.
-
-  * **Dependências:** **"Empacotar Tudo."** A aplicação empacota todas as bibliotecas de que precisa, assumindo apenas um sistema base mínimo.
-
-  * **Acesso ao Anfitrião:** **Acesso Total de Utilizador.** A aplicação pode ver e modificar qualquer coisa que o utilizador que a executou pode.
-
------
-
-## Análise Aprofundada: Snap 🧩
-
-  * **Isolamento:** **`Sandbox` Forte.** Usa funcionalidades do `kernel` Linux como `cgroups`, `namespaces`, e **AppArmor** para confinar estritamente a aplicação.
-
-  * **Dependências:** **Empacotadas + `Core Snaps`.** As aplicações empacotam as suas bibliotecas específicas, mas também dependem de um `core snap` partilhado (ex: `core22`) que fornece um `runtime` base do Ubuntu.
-
-  * **Acesso ao Anfitrião:** **"Interfaces."** Negado por defeito. A aplicação tem de declarar o que precisa (ex: `network`, `home`, `camera`).
-
------
-
-## Análise Aprofundada: Flatpak 🎁
-
-  * **Isolamento:** **`Sandbox` Forte.** Usa `namespaces` do `kernel` e uma ferramenta chamada **Bubblewrap (`bwrap`)** para criar um ambiente privado para a aplicação.
-
-  * **Dependências:** **`Runtimes` Partilhados.** Uma aplicação requisita um "Runtime" (ex: `org.gnome.Platform`). Este é descarregado *uma vez* e partilhado por todas as aplicações que precisam dele. Muito eficiente.
-
-  * **Acesso ao Anfitrião:** **"Portals."** Negado por defeito. Quando uma aplicação precisa de um ficheiro, ela pede a um "Portal", que abre um seletor de ficheiros *fora* da `sandbox`. O utilizador escolhe um ficheiro, e *apenas* esse ficheiro é dado à aplicação.
-
------
-
-## Comparação: Sandboxing & Dependências
-
-| Funcionalidade | AppImage | Snap | Flatpak |
-| :--- | :--- | :--- | :--- |
-| **Sandboxing** | ❌ Nenhum (por defeito) | ✅ Forte (AppArmor) | ✅ Forte (Bubblewrap) |
-| **Permissões** | Acesso total de utilizador | Interfaces (Declarativas) | Portals (Interativos) |
-| **Modelo de Dependências**| Tudo empacotado no ficheiro | Empacotadas + `Core snaps` | `Runtimes` Partilhados |
-
------
-
-## Comparação: Distribuição & Apoio
-
-| Funcionalidade | AppImage | Snap | Flatpak |
-| :--- | :--- | :--- | :--- |
-| **Distribuição** | Descentralizada (qualquer URL) | Centralizada (Snap Store) | Descentralizada (Repositórios) |
-| **Apoio Central** | Comunidade | Canonical (Ubuntu) | Red Hat / GNOME |
-| **Precisa de um `Daemon`?**| ❌ Não | ✅ Sim (`snapd`) | ✅ Sim (`flatpak-daemon`) |
-| **Integração com o `Desktop`**| Opcional (`appimaged`) | Automática | Automática |
-
------
-
-## Limitações: Os Compromissos
-
-  * **Espaço em Disco:**
-
-      * **AppImage/Snap:** Empacotar pode ser ineficiente. Uma aplicação de 10MB pode tornar-se num pacote de 150MB.
-      * **Flatpak:** `Runtimes` são grandes (muitas vezes 500MB+), mas isto é um `download` **único**.
-
-  * **Tempo de Arranque:**
-
-      * **AppImage:** Tem de "montar" o sistema de ficheiros comprimido em cada arranque (pode ser lento).
-      * **Snap:** Notoriamente lento no *primeiro arranque* enquanto configura a `sandbox`.
-
------
-
-## Limitações: O Problema da "Prisão"
-
-  * **Segurança vs. Usabilidade:**
-
-      * A `sandbox` é uma "prisão". Isto é ótimo para a segurança, mas pode ser frustrante.
-      * "Porque é que a minha aplicação não vê o meu tema do `desktop`?" (Maioria resolvido agora).
-      * "Porque é que a minha aplicação não vê a minha pasta pessoal?" Isto é uma **funcionalidade**, não um `bug`, mas requer que as aplicações sejam reescritas para usar `Portals` corretamente.
-
-  * **Não serve para Tudo:**
-
-      * Pouco adequado para ferramentas de linha de comandos (`command-line tools`) que precisam de integração profunda com o sistema (ex: `docker`, `htop`, `drivers` de sistema).
-
------
-
-## Prática: A Estrutura `AppDir` do AppImage
-
-Um AppImage é apenas um diretório comprimido. Este diretório é chamado de **`AppDir`**.
-
-**`MyGame.AppDir/`** (A pasta raiz)
-
-  * **`AppRun` (Obrigatório):** O `script` de `entrypoint`. É isto que corre quando dá um duplo clique no AppImage. É nosso trabalho escrever este `script` para configurar o ambiente (como o `PYTHONPATH` para o Pygame) e lançar o binário principal.
-  
-  -----
-
-  * **`my-game.desktop` (Obrigatório):** O ficheiro de integração com o `desktop`. Diz ao menu de aplicações do sistema:
-      * `Name=My Game`
-      * `Exec=AppRun` (Sempre `AppRun`)
-      * `Icon=my-game` (O nome do ícone, sem extensão)
-  * **`my-game.png` (Obrigatório):** O ficheiro de ícone nomeado no ficheiro `.desktop`.
-  * **`usr/`...:** Uma estrutura Linux padrão contendo os seus binários, bibliotecas, e o interpretador Python portátil.
-
------
-
-## Prática: AppImage "Hello World"
-
-Aqui, criamos a estrutura `AppDir` *mínima*.
-
-1.  **Criar o diretório, `script`, e metadados:**
-
-    ```bash
-    mkdir -p HelloWorld.AppDir
-    cd HelloWorld.AppDir
-
-    # Criar o entrypoint AppRun
-    echo '#!/bin/bash' > AppRun
-    echo 'echo "Hello from an AppImage!"' >> AppRun
-    chmod +x AppRun
-
-    # Criar o ficheiro .desktop
-    echo '[Desktop Entry]' > hello.desktop
-    echo 'Name=Hello' >> hello.desktop
-    echo 'Exec=AppRun' >> hello.desktop
-    echo 'Icon=hello' >> hello.desktop
-    echo 'Type=Application' >> hello.desktop
-
-    # Adicionar um ícone vazio (dummy)
-    touch hello.png
-    ```
-
------
-
-## Prática: Empacotar o AppImage
-
-1.  **Empacotar\!**
-
-    ```bash
-    # Voltar ao diretório pai
-    cd ..
-
-    # Descarregar o appimagetool (só precisa de o fazer uma vez)
-    wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
-    chmod +x appimagetool-x86_64.AppImage
-
-    # Executar a ferramenta no seu diretório
-    # Temos de definir ARCH para aplicações baseadas em scripts
-    ARCH=x86_64 ./appimagetool-x86_64.AppImage HelloWorld.AppDir
-    ```
-
-    **Resultado:** Agora tem o `Hello-x86_64.AppImage`. Execute-o:
-    `./Hello-x86_64.AppImage`
-
------
-
-## Prática: O `Manifest` do Flatpak (`.yml`)
-
-Um Flatpak é construído a partir de um ficheiro "manifest" que atua como uma "receita".
-
-  * `app-id`: O nome único (ex: `com.example.HelloWorld`).
-  * `runtime` / `sdk`: O sistema base sobre o qual construir (ex: `org.gnome.Platform`). Não empacotamos o Python; usamos o que vem no `runtime`.
-  * `command`: O executável a correr.
-  * `modules`: A lista de "partes" a construir. É aqui que listamos o código da nossa aplicação e as suas dependências (como o `pygame` do PyPI ou o nosso jogo de um URL `git`).
-
------
-
-## Prática: Flatpak "Hello World"
-
-1.  **Criar o `script`:**
-
-    ```bash
-    # Criar um ficheiro chamado hello.sh
-    echo '#!/bin/sh' > hello.sh
-    echo 'echo "Hello from a Flatpak Sandbox!"' >> hello.sh
-    ```
-
------
-
-2.  **Criar o `manifest` (`com.example.HelloWorld.yml`):**
-
-    ```yaml
-    app-id: com.example.HelloWorld
-    runtime: org.freedesktop.Platform
-    runtime-version: '23.08'
-    sdk: org.freedesktop.Sdk
-    command: hello.sh
-    modules:
-      - name: hello-module
-        buildsystem: simple
-        build-commands:
-          # Instalar o script na sandbox
-          - install -Dm755 hello.sh /app/bin/hello.sh
-        sources:
-          # Dizer ao builder para encontrar o hello.sh no dir do projeto
-          - type: file
-            path: hello.sh
-    ```
-
------
-
-## Prática: A Ferramenta `flatpak-builder`
-
-O comando `flatpak-builder` lê o seu `manifest` `.yml` e realiza a compilação dentro de um ambiente limpo e em `sandbox`.
+`git init` é o comando que executa dentro de uma pasta de projeto para a transformar num repositório Git.
 
 ```bash
-# 1. Construir e instalar a aplicação
-flatpak-builder --user --install --force-clean \
-  build-dir com.example.HelloWorld.yml
+$mkdir o-meu-novo-projeto$ cd o-meu-novo-projeto
+$ git init
+Initialized empty Git repository in /caminho/para/o-meu-novo-projeto/.git/
 ```
 
-  * **`--user`**: Instala para o utilizador atual (sem `sudo`).
-  * **`--install`**: Instala a aplicação assim que é construída.
-  * **`--force-clean`**: Apaga o diretório de compilação antigo para um começo limpo.
-  * **`build-dir`**: Uma pasta temporária para o processo de compilação.
+Este comando cria uma sub-pasta oculta chamada `.git`. Esta pasta `.git` é o "cérebro" do seu repositório—contém todos os snapshots, branches e histórico.
 
-<!-- end list -->
+-----
 
-```bash
-# 2. Execute a sua nova aplicação!
-flatpak run com.example.HelloWorld
+## O Fluxo de Trabalho Central: `add` & `commit`
+
+1.  Modifica ficheiros no seu **Working Directory**.
+2.  Executa `git status` para ver o que mudou.
+3.  Usa `git add <nome-do-ficheiro>` para mover as alterações desejadas do Working Directory para a **Staging Area**.
+4.  Usa `git commit -m "A minha mensagem"` para pegar em tudo o que está na Staging Area, criar um **snapshot** permanente (um commit) e guardá-lo no seu **Repositório**.
+
+A mensagem de commit é vital. Deve explicar *porquê* fez a alteração, não *o que* alterou (o código mostra o que).
+
+-----
+
+## O Que Faz uma *Boa* Mensagem de Commit?
+
+Uma mensagem de commit é um registo para o seu eu futuro e para os seus colegas.
+Uma boa mensagem dá contexto e responde *porquê* uma alteração foi feita.
+O padrão da comunidade segue a regra "50/72":
+
+  * **Assunto:** Um breve resumo, 50 caracteres ou menos.
+  * (Deixar uma linha em branco)
+  * **Corpo:** Uma explicação detalhada, com quebra de linhas aos 72 caracteres.
+
+-----
+
+## As 7 Regras de uma Ótima Mensagem de Commit
+
+1.  **Use o modo imperativo no assunto.**
+  * **Bom:** `Add login page` (Adiciona página de login)
+  * **Mau:** `Added login page` ou `Adding login page` (Pense como um comando: "Este commit irá...")
+2.  **Separe o assunto do corpo com uma linha em branco.**
+3.  **Limite a linha do assunto a 50 caracteres.**
+4.  **Não termine a linha do assunto com um ponto.**
+5.  **Comece a linha do assunto com letra maiúscula.**
+6.  **Faça quebra de linha do corpo aos 72 caracteres.**
+7.  **Use o corpo para explicar *o quê* e *porquê* vs. *como*.** O código mostra *como*.
+
+-----
+
+## Exemplo: Bom vs. Mau
+
+**Commit Mau:**
+`git commit -m "corrigir coisas"`
+
+**Commit Bom:**
+
+```git
+git commit -m "Fix: Corrige lógica de autenticação do utilizador" -m "
+
+A função de login anterior falhava ao fazer o hash da password antes
+de a comparar com a base de dados, resultando numa vulnerabilidade
+de segurança crítica.
+
+Este commit aplica a função de hashing SHA-256 ao input do
+utilizador antes da consulta à base de dados. Isto resolve a falha
+de segurança."
 ```
 
 -----
 
-## Prática: Repositórios Flatpak
+## O Poder do Git: `branch`
 
-O Flatpak é descentralizado, como o `git`. Não existe uma "loja" (`store`) única.
+Um **branch** (ramo) é simplesmente um ponteiro leve e móvel para um dos seus commits. O branch principal é tipicamente chamado `main` ou `master` (descontinuado ultimamente).
 
-  * **O que é um Repositório?**
+**Porquê usar branches?** Para trabalhar em novas funcionalidades ou corrigir bugs em **isolamento**, sem estragar o código estável que está no `main`.
 
-      * Um servidor (ou pasta local) que aloja aplicações, gerido pelo `ostree`.
-      * Pode ter múltiplos "remotes" (repositórios) configurados.
-
-  * **Flathub: O Repositório "Principal"**
-
-      * `flathub.org` é o repositório central *de facto* para a maioria das aplicações `desktop` (Spotify, VS Code, GIMP, Steam).
-      * `flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo`
+  * `git branch <nome>`: Cria um novo branch.
+  * `git checkout <nome>`: Muda o seu Working Directory para esse branch.
+  * `git checkout -b <nome>`: Um atalho que cria e muda num só passo.
 
 -----
 
-  * **Como Publicar:**
+## Visualizar Branches & Merging
 
-      * Para colocar a sua aplicação no Flathub, submete o seu ficheiro `manifest` `.yml` ao repositório GitHub deles como um `pull request`.
-      * O sistema de compilação deles constrói, assina e publica automaticamente a sua aplicação por si.
+Este diagrama mostra a relação entre diferentes branches.
+
+  * O trabalho começa no **Main branch** (retângulos).
+  * Um novo `branch` é criado para trabalhar numa funcionalidade (círculos).
+  * Quando a funcionalidade está completa, é feito `merge` de volta para o branch principal.
+
+{ width=85% }
 
 -----
 
-## Conclusão
+## Ver o Histórico: `git log`
 
-  * O **Isolamento** resolve o "Inferno das Dependências" e adiciona **segurança**.
+Assim que tem commits, precisa de os ver.
 
-  * **AppImage:** Melhor para **portabilidade** simples. "Correr a partir de uma `pen` USB."
+  * `git log`: Mostra o histórico de commits completo, com autores, datas e mensagens.
+  * `git log --oneline`: Mostra uma visão compacta, de uma linha, do histórico.
+  * `git log --graph --oneline`: Mostra o histórico com arte ASCII representando os branches e merges.
 
-      * *Foco:* Estrutura de ficheiros (`AppDir`) e `script` `AppRun`.
+-----
 
-  * **Snap:** Forte em **IoT/Servidores** e no Ubuntu. Apoiado por uma corporação.
+## Combinar Trabalho: `merge`
 
-      * *Foco:* Loja central, segurança forte.
+Depois de terminar o seu trabalho num branch de funcionalidade (ex: `feature/login`), precisa de o integrar de volta no `main`.
 
-  * **Flatpak:** O líder no espaço **`desktop`**. Apoiado pela comunidade (GNOME/KDE) e Red Hat.
+Um **`merge`** (fusão) junta os históricos de dois branches.
 
-      * *Foco:* Escrever "receitas" declarativas (`manifests` `.yml`) e deixar o `flatpak-builder` e os `runtimes` partilhados fazer o trabalho pesado.
+1.  Mude para o branch que quer atualizar: `git checkout main`
+2.  Execute o merge: `git merge feature/login`
+
+O Git irá criar um novo "merge commit" que une os dois históricos.
+
+-----
+
+## O Inevitável: Conflitos de Merge\!
+
+Um conflito de merge acontece quando tenta fazer merge de dois branches que **editaram a mesma linha no mesmo ficheiro**. O Git não sabe qual a alteração correta, por isso para e pede-lhe para corrigir manualmente.
+
+1.  O Git irá marcar o ficheiro com `<<<<<<<` e `>>>>>>>` para lhe mostrar ambas as versões conflituantes.
+2.  Tem de abrir o ficheiro, apagar os marcadores e editar o código para ficar correto.
+3.  De seguida, faz `git add` ao ficheiro corrigido e `git commit` para finalizar o merge.
+
+-----
+
+## Alternativa ao Merging: `rebase`
+
+Um **`rebase`** é uma forma de "reescrever o histórico" para o manter limpo e linear.
+
+Em vez de um "merge commit" confuso, o `rebase` pega nos commits do seu branch de funcionalidade e **re-aplica-os, um por um,** em cima da versão mais recente do `main`.
+
+  * **Resultado:** Um histórico limpo, numa única linha.
+  * **Atenção:** Esta é uma ferramenta poderosa que reescreve o histórico. **NUNCA** faça rebase em branches públicos que outros colegas estejam a usar.
+
+-----
+
+## Colaboração - Git & GitHub: `remote` & `origin`
+
+Até agora, tudo tem sido local. Como partilha o seu trabalho?
+
+  * Um **`remote`** é uma ligação nomeada a um repositório Git noutro local (ex: num servidor).
+  * **`origin`** é o nome convencional padrão para o seu `remote` principal (o servidor de onde clonou ou para onde quer enviar o seu trabalho).
+
+-----
+
+## Os Principais Comandos de Colaboração
+
+  * `git clone [url]`: Descarrega uma cópia completa (um clone) de um repositório remoto para a sua máquina e configura a ligação `origin`.
+  * `git pull`: ("Puxa") Vai buscar as alterações do `origin` e faz merge para o seu branch local. É `git fetch` + `git merge`.
+  * `git push`: ("Empurra") Envia os seus commits locais (que o remote não tem) para o `origin`.
+
+-----
+
+## Git vs. GitHub
+
+Esta é uma distinção crítica.
+
+  * **Git** é a **ferramenta**. É o VCS distribuído, de linha de comandos, que instala no seu computador.
+  * **GitHub** é um **serviço**. É uma empresa baseada na web (fundada em 2008, agora propriedade da Microsoft) que **aloja** repositórios Git.
+
+O GitHub adiciona uma "camada social" por cima do Git, adicionando funcionalidades como gestão de issues, wikis e Pull Requests.
+
+-----
+
+## O Fluxo de Trabalho Open-Source: `fork`
+
+Não pode simplesmente fazer `push` das suas alterações para o repositório de outra pessoa (como o repositório oficial do Python).
+
+Um **`fork`** é uma **cópia pessoal, do lado do servidor,** do repositório de outra pessoa. Fica na sua conta GitHub, e tem controlo total sobre ela. Este é o primeiro passo para contribuir.
+
+-----
+
+## O Coração da Colaboração: `pull request`
+
+Um **Pull Request (PR)** é um pedido formal para que o dono de um projeto "puxe" (faça merge) das suas alterações (do seu *branch* ou *fork*) para o branch `main` dele.
+
+Um PR é o início de uma **conversa**. *Não* é apenas um comando. É uma página web no GitHub onde:
+
+  * Descreve *porquê* fez as alterações.
+  * A sua equipa pode fazer **revisão de código (code review)**, linha a linha.
+  * Podem discutir melhorias.
+  * Testes automatizados podem ser executados.
+  * O dono do projeto pode aprovar e fazer merge do seu código.
+
+-----
+
+## Um Fluxo de Trabalho Git Típico (Resumo)
+
+1.  `git clone [url]`: Obter o projeto de um servidor remoto (como o GitHub).
+2.  `git checkout -b nova-funcionalidade`: Criar um novo branch para trabalhar isolado.
+3.  ... *Escreve o seu código, faz as suas alterações* ...
+4.  `git add .` : Adicionar os seus ficheiros alterados à Staging Area.
+5.  `git commit -m "Adiciona funcionalidade de login"`: Guardar um snapshot do seu trabalho.
+
+-----
+
+6.  `git push origin nova-funcionalidade`: Enviar o seu branch para o servidor remoto.
+7.  **Ir ao GitHub:** Abrir um **Pull Request** para propor as suas alterações.
+8.  **Discutir / Rever:** A sua equipa revê o seu código.
+9.  **Merge:** Um responsável pelo projeto faz merge do seu PR no `main`.
+10. `git checkout main`: Voltar para o seu branch `main` local.
+11. `git pull origin main`: Atualizar o seu `main` local com o código que acabou de ser integrado.
+
+-----
+
+## Fluxo de Trabalho Avançado: "GitFlow"
+
+Embora o seu fluxo de trabalho típico seja ótimo para projetos pequenos, projetos maiores usam frequentemente um modelo mais estruturado e formal como o **GitFlow**.
+
+  * **`main`**: Apenas contém lançamentos (releases) oficiais, etiquetados (tagged). Nunca faz commit diretamente aqui.
+  * **`develop`**: O branch de integração principal para todas as novas funcionalidades.
+  * **`feature`** branches: Criados a partir do `develop` e integrados (merge) de volta no `develop`.
+  * **`release`** branches: Criados a partir do `develop` para preparar um novo lançamento (correções finais de bugs).
+  * **`hotfix`** branches: Criados a partir do `main` para corrigir bugs urgentes em produção.
+
+-----
+
+{ width=85% }
+
+-----
+
+## Marcar Versões: `tag` & `release`
+
+Quando o seu projeto atinge um ponto estável (ex: `v1.0.0`), quer marcá-lo.
+
+  * **`git tag v1.0.0`**: Uma "tag" (etiqueta) no Git é um ponteiro permanente que aponta para um commit específico. Ao contrário de um branch, uma tag não se move. É uma âncora no seu histórico.
+  * **GitHub Releases:** Um "Release" (lançamento) no GitHub é uma funcionalidade construída em cima de uma *tag*. É uma página web formal para o seu lançamento que lhe permite:
+      * Escrever "notas de lançamento" (um *changelog*).
+      * Anexar ficheiros binários (como `.exe` ou `.zip` instaladores).
+      * Marcá-lo como um "pré-lançamento".
+
+Esta é a forma oficial de apresentar uma nova versão aos seus utilizadores.
+
+-----
+
+## Resumo: Git vs. GitHub
+
+  * **Git** é a **ferramenta** distribuída no seu computador para seguir alterações (snapshots).
+      * `init`, `add`, `commit`, `branch`, `merge`, `pull`, `push`
+  * **GitHub** é o **serviço** web social que aloja os seus repositórios e facilita a colaboração.
+      * `Fork`, `Pull Request`, `Issues`, `Releases`
+  * **Fluxo de Trabalho Principal:**
+    `Branch` ➡️ `Add` ➡️ `Commit` ➡️ `Push` ➡️ `Pull Request` ➡️ `Merge`
+  * **Regra de Ouro:** Trabalhe isolado em branches. Apenas integre (merge) trabalho limpo e finalizado no `main`.
+
+-----
+
+## Leitura Adicional e Recursos 📚
+
+  * **Livro Pro Git:** O guia definitivo para o Git, disponível online gratuitamente (em inglês).
+      * [https://git-scm.com/book/](https://git-scm.com/book/)
+  * **Guia Hello World do GitHub:** Um tutorial simples de 10 minutos para começar.
+      * [https://docs.github.com/en/get-started/quickstart/hello-world](https://docs.github.com/en/get-started/quickstart/hello-world)
+  * **Learn Git Branching (Interativo):** Um tutorial interativo, semelhante a um jogo, para aprender a usar branches.
+      * [https://learngitbranching.js.org/](https://learngitbranching.js.org/)
+  * **Git Cheat Sheet (Atlassian):** Uma ótima folha de consulta de uma página para os comandos mais comuns.
+      * [https://www.atlassian.com/git/tutorials/atlassian-git-cheatsheet](https://www.atlassian.com/git/tutorials/atlassian-git-cheatsheet)

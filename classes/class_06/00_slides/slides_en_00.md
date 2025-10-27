@@ -208,12 +208,11 @@ A **branch** is simply a lightweight, movable pointer to one of your commits. Th
 
 This diagram shows the relationship between different branches.
 
-  * Work starts on the **Main branch** (blue rectangles).
-  * A new `branch` is created to work on a feature (green circles).
+  * Work starts on the **Main branch** (rectangles).
+  * A new `branch` is created to work on a feature (circles).
   * When the feature is complete, it is `merged` back into the main branch.
-  * This process can be nested, with branches created from other feature branches (red circles).
 
-  ![image](figures/git_branch_00.png)
+![Branching visualization](figures/git_branch_00.png){ width=85% }
 
 ---
 
@@ -326,6 +325,22 @@ A PR is the start of a **conversation**. It is *not* just a command. It's a web 
 9.  **Merge:** A project maintainer merges your PR into the `main` branch.
 10. `git checkout main`: Switch back to your local `main` branch.
 11. `git pull origin main`: Update your local `main` with the newly merged code.
+
+---
+
+## Advanced Workflow: "GitFlow"
+
+While your typical workflow is great for small projects, larger projects often use a more structured, formal model like **GitFlow**.
+
+  * **`main`**: Only contains official, tagged releases. You never commit here directly.
+  * **`develop`**: The main integration branch for all new features.
+  * **`feature`** branches: Created from `develop` and merged back into `develop`.
+  * **`release`** branches: Created from `develop` to prepare a new release (final bug fixes).
+  * **`hotfix`** branches: Created from `main` to patch urgent production bugs.
+
+-----
+
+![GitFlow](figures/git_flow_00.png){ width=85% }
 
 ---
 

@@ -7,14 +7,14 @@ date: September 15, 2025
 colorlinks: true
 highlight-style: tango
 mainfont: NotoSans
-mainfontfallback:
-  - "NotoColorEmoji:mode=harf"
+mainfontfallback: "NotoColorEmoji:mode=harf"
 header-includes:
- - \usetheme[sectionpage=none,numbering=fraction,progressbar=frametitle]{metropolis}
  - \usepackage{longtable,booktabs}
  - \usepackage{etoolbox}
- - \AtBeginEnvironment{longtable}{\scriptsize}
- - \AtBeginEnvironment{cslreferences}{\scriptsize}
+ - \AtBeginEnvironment{longtable}{\tiny}
+ - \AtBeginEnvironment{cslreferences}{\tiny}
+ - \AtBeginEnvironment{Shaded}{\normalsize}
+ - \AtBeginEnvironment{verbatim}{\normalsize}
  - \setmonofont[Contextuals={Alternate}]{FiraCodeNerdFontMono-Retina}
 ---
 

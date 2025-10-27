@@ -1,9 +1,9 @@
 ---
-title: Containers para Aplicações
+title: Git & Github
 subtitle: Introdução Engenharia Informática
 author: Mário Antunes
 institute: Universidade de Aveiro
-date: October 20, 2025
+date: 27 de Outubro de 2025
 colorlinks: true
 highlight-style: tango
 geometry: a4paper,margin=2cm
@@ -22,726 +22,357 @@ header-includes:
 
 # Exercícios
 
-## Exercícios Práticos: Flatpak & AppImage
+## Laboratório Prático: Git & GitHub
 
-**Objetivo:** Esta aula irá guiá-lo através dos fundamentos do empacotamento de aplicações. Começará com um simples "Hello World" e progredirá até ao empacotamento de uma aplicação gráfica (GUI) completa em Python, com as suas dependências.
+### Do Repositório Local à Colaboração Open-Source
 
-## 0. Setup: Configurar o Ambiente de Trabalho
+**Objetivo:** Este laboratório irá guiá-lo através do ciclo de vida completo de um repositório Git. 
+Irá aprender a criar um repositório local, gerir versões, trabalhar com branches e, finalmente, colaborar num projeto remoto usando o GitHub.
 
-Primeiro, temos de instalar todas as ferramentas necessárias para construir e testar os nossos pacotes de aplicação.
+**Pré-requisitos:**
 
-1.  **Atualizar o sistema:** Este comando descarrega a lista mais recente de software disponível e atualiza todos os pacotes atualmente instalados para as suas versões mais recentes.
+  * **Git Instalado:** Tem de ter o Git instalado na sua máquina.
+  * **Uma Conta GitHub:** Irá precisar de uma conta GitHub gratuita para os exercícios de colaboração.
+  * **Um Editor de Texto:** Qualquer editor de texto (como VS Code, Sublime Text, ou Nano) servirá.
 
-<!-- end list -->
+---
 
-```bash
-$ sudo apt update && sudo apt full-upgrade -y
-```
+### Parte 1: O Seu Repositório Local
 
-2.  **Instalar ferramentas:** Este comando instala todos os componentes necessários para a nossa aula.
+#### Exercício 1: `git init` (Criar um Repositório)
 
-<!-- end list -->
+O nosso primeiro passo é dizer ao Git para começar a seguir um novo projeto.
 
-  * `curl` & `wget`: Utilitários para descarregar ficheiros da internet.
-  * `file`: Um utilitário para identificar tipos de ficheiro.
-  * `libfuse2`: Uma biblioteca necessária ao AppImage para "montar" (mount) o pacote da aplicação como um sistema de ficheiros virtual (virtual filesystem).
-  * `flatpak`: A ferramenta de linha de comandos para executar e gerir aplicações Flatpak.
-  * `flatpak-builder`: A ferramenta específica usada para construir pacotes Flatpak a partir de um ficheiro `manifest`.
-  * `python3`, `python3-pip`, `python3-venv`: O interpretador Python, o seu gestor de pacotes (`pip`), e a ferramenta de **virtual environment** (`venv`).
-
-<!-- end list -->
-
-```bash
-$ sudo apt install curl wget file libfuse2 flatpak \
-flatpak-builder python3 python3-pip python3-venv
-```
-
-3.  **Adicionar o Flathub:** Este comando adiciona o repositório **Flathub** à configuração do Flatpak do seu sistema, mas apenas para o seu utilizador local (`--user`). Um "repositório" (ou "remote") é um servidor que aloja aplicações e `runtimes` do Flatpak. O Flathub é o maior e mais comum repositório, e precisamos dele para descarregar os "SDKs" (Software Development Kits) necessários para a compilação.
-
-<!-- end list -->
-
-```bash
-$ flatpak --user remote-add --if-not-exists \
-flathub https://flathub.org/repo/flathub.flatpakrepo
-```
-
-4.  **Instalar o `appimagetool`:** Isto descarrega o programa `appimagetool`, que é o que comprime um diretório `AppDir` num único ficheiro executável AppImage. Tornamo-lo executável (`chmod +x`) e movemo-lo para `~/.local/bin`, um diretório padrão para programas instalados pelo utilizador.
-
-<!-- end list -->
-
-```bash
-$ mkdir -p ~/.local/bin
-$ wget -O appimagetool \
-"https://github.com/AppImage/AppImageKit/\
-releases/download/continuous/appimagetool-x86_64.AppImage"
-$ chmod +x appimagetool
-$ mv appimagetool ~/.local/bin/
-```
-
-5.  **Aplicar a alteração ao PATH:** O `PATH` é uma variável de ambiente que indica à sua `shell` (como o `bash`) em que diretórios procurar por programas executáveis. Por defeito, `~/.local/bin` nem sempre está no `PATH`. Editamos o `~/.bashrc` (um ficheiro que é executado sempre que abre um novo terminal) para adicionar este diretório ao seu `PATH`. Isto torna o `appimagetool` executável a partir de qualquer lugar.
-
-    Pode usar o `nano` para editar o ficheiro: `nano ~/.bashrc`.
-    Adicione a seguinte configuração à *última* linha do ficheiro:
-
-<!-- end list -->
-
-```bash
-export PATH=${HOME}/.local/bin${PATH:+:${PATH}}
-```
-
-6.  **Termine a sessão e inicie novamente (Log out e log back in).** Isto recarrega o seu ficheiro `~/.bashrc` e aplica a alteração ao `PATH`. Para verificar que está a funcionar, abra um novo terminal e escreva o seguinte comando. Deverá ver a informação da versão da ferramenta.
-
-<!-- end list -->
-
-```bash
-$ appimagetool --version
-```
-
------
-
-## 1. "Hello World" 🌍
-
-Vamos empacotar um `script` de `shell` simples.
-
-### 1.A: Flatpak "Hello World"
-
-O Flatpak usa um ficheiro "manifest" (em formato YAML) para definir tudo sobre a aplicação e como a construir.
-
-1.  Crie um diretório para este exercício:
-
-<!-- end list -->
-
-```bash
-$ mkdir ex1-flatpak && cd ex1-flatpak
-```
-
-2.  Crie o `script` da aplicação, chamado `hello.sh`.
-    Este pode ser criado com qualquer editor; uma possibilidade é usar o `nano`: `nano hello.sh`
-
-<!-- end list -->
-
-```bash
-#!/bin/sh
-echo "Hello from a Flatpak Sandbox!"
-```
-
-3.  Crie o ficheiro `manifest`, `pt.ua.deti.iei.HelloWorld.yml`. Este ficheiro define:
-
-    * `app-id`: Um nome único, no formato DNS-reverso, para a sua aplicação.
-    * `runtime` / `sdk`: O sistema base onde a sua aplicação irá correr e ser construída.
-    * `command`: O programa a executar quando a aplicação arranca.
-    * `modules`: A lista de passos de compilação. Aqui, definimos um módulo que instala o nosso `script` `hello.sh` no caminho executável da `sandbox` (`/app/bin/`).
-
-<!-- end list -->
-
-```yaml
-app-id: pt.ua.deti.iei.HelloWorld
-runtime: org.freedesktop.Platform
-runtime-version: '25.08'
-sdk: org.freedesktop.Sdk
-command: hello.sh
-
-modules:
-  - name: hello-module
-    buildsystem: simple
-    build-commands:
-      # Installs the script into the sandbox's /app/bin/ folder
-      - install -Dm755 hello.sh /app/bin/hello.sh
-    sources:
-      # Tells the builder to find 'hello.sh' in our project dir
-      - type: file
-        path: hello.sh
-```
-
-4.  **Construir o pacote:** Este comando executa o `flatpak-builder` com várias opções importantes.
-
-      * `--user`: Constrói e instala a aplicação apenas para o seu utilizador, sem necessitar de `sudo`.
-      * `--install`: Instala automaticamente a aplicação após uma compilação bem-sucedida.
-      * `--install-deps-from=flathub`: Encontra e instala automaticamente quaisquer `SDKs` ou `runtimes` em falta a partir do Flathub.
-      * `--force-clean`: Apaga o `build-dir` para garantir uma compilação limpa.
-      * `build-dir`: O nome do diretório temporário a usar para a compilação.
-
-<!-- end list -->
-
-```bash
-$ flatpak-builder --user --install --install-deps-from=flathub \
---force-clean build-dir pt.ua.deti.iei.HelloWorld.yml
-```
-
-5.  **Executar e Limpar:** `flatpak run` executa a sua aplicação dentro da sua `sandbox`. Após usar, `cd ..` para sair do diretório.
-
-<!-- end list -->
-
-```bash
-$ flatpak run pt.ua.deti.iei.HelloWorld
-$ flatpak uninstall --user pt.ua.deti.iei.HelloWorld
-```
-
------
-
-### 1.B: AppImage "Hello World"
-
-O AppImage funciona ao empacotar um diretório inteiro (chamado `AppDir`).
-
-1.  Crie um diretório para este exercício:
-
-```bash
-$ mkdir ex1-appimage && cd ex1-appimage
-```
-
-2.  Crie o `AppDir` e o `script` `AppRun` principal. O ficheiro **`AppRun`** é um `script` especial que atua como ponto de entrada (entrypoint). É a *primeira* coisa que é executada quando abre o AppImage. Também criamos um ficheiro `icon.png` vazio (dummy).
-
-<!-- end list -->
-
-```bash
-$ mkdir -p HelloWorld.AppDir
-$ echo '#!/bin/sh' > HelloWorld.AppDir/AppRun
-$ echo 'echo "Hello from an AppImage!"' >> HelloWorld.AppDir/AppRun
-$ chmod +x HelloWorld.AppDir/AppRun
-$ touch HelloWorld.AppDir/icon.png
-```
-
-3.  Crie um ficheiro chamado `HelloWorld.AppDir/hello.desktop`. Este é um **ficheiro `.desktop`**, uma forma padrão de informar o ambiente de trabalho Linux sobre a sua aplicação. Ele define o `Name` (Nome) da aplicação, o comando a `Exec` (Executar) (o nosso `script` `AppRun`), e o `Icon` (Ícone) a usar. O `appimagetool` *exige* este ficheiro.
-
-<!-- end list -->
-
-```bash
-[Desktop Entry]
-Name=Hello
-Exec=AppRun
-Icon=icon
-Type=Application
-Categories=Utility;
-```
-
-4.  **Construir o pacote:** Executamos o `appimagetool` no nosso `AppDir`. Temos também de especificar `ARCH=x86_64` porque a ferramenta não consegue "adivinhar" a arquitetura a partir de um simples `script` de `shell`. Ela precisa disto para nomear o ficheiro final corretamente. Se necessário, altere a variável `ARCH` para `arm64`. Isto criará o ficheiro `Hello-x86_64.AppImage` ou `Hello-arm64.AppImage` em caso de sucesso.
-
-<!-- end list -->
-
-```bash
-$ ARCH=x86_64 appimagetool HelloWorld.AppDir
-```
-
-5.  **Executar e Limpar:** Após usar, `cd ..` para sair do diretório.
-
-```bash
-$ chmod +x Hello-x86_64.AppImage
-$ ./Hello-x86_64.AppImage
-
-# Cleanup
-$ rm -rf Hello-x86_64.AppImage
-```
-
------
-
-## 2. Aplicação CLI Python: Árvore ASCII 🌳
-
-Vamos empacotar uma aplicação CLI (Command-Line Interface) simples em Python.
-Criaremos um `script` `pytree.py` que lista recursivamente diretórios num formato de árvore.
-
-### 2.A: Executar com Virtual Environment (Venv)
-
-Primeiro, vamos executar a aplicação nativamente para confirmar que funciona. Usaremos um **Python virtual environment** para gerir dependências, embora este `script` simples não tenha nenhuma.
-
-Um `virtual environment` (`venv`) é uma "bolha" isolada para um projeto Python. Ele mantém o seu *próprio* interpretador Python e pacotes instalados, para que os pacotes deste projeto (ex: `pygame`) não entrem em conflito com os pacotes de outro projeto.
-
-1.  Crie um diretório de projeto:
-
-<!-- end list -->
-
-```bash
-$ mkdir ex2-pytree && cd ex2-pytree
-```
-
-2.  Crie o `script` `pytree.py`, e torne-o executável: `chmod +x pytree.py`.
-
-<!-- end list -->
-
-```python
-#!/usr/bin/env python3
-import os
-import sys
-
-def tree(startpath):
-    """Prints a directory tree."""
-    for root, dirs, files in os.walk(startpath):
-        # Don't visit .venv or __pycache__
-        if '.venv' in dirs:
-            dirs.remove('.venv')
-        if '__pycache__' in dirs:
-            dirs.remove('__pycache__')
-
-        level = root.replace(startpath, '').count(os.sep)
-        indent = '│   ' * (level - 1) + '├── ' if level > 0 else ''
-        
-        print(f'{indent} {os.path.basename(root)}/')
-        
-        subindent = '│   ' * level + '├── '
-        for f in files:
-            print(f'{subindent} {f}')
-
-if __name__ == "__main__":
-    # Use current directory or a specified path
-    path = sys.argv[1] if len(sys.argv) > 1 else '.'
-    tree(os.path.abspath(path))
-```
-
-3.  **Executar a aplicação:** Como esta aplicação não tem dependências, podemos executá-la diretamente. Após usar, `cd ..` para sair do diretório.
-
-<!-- end list -->
-
-```bash
-$ ./pytree.py
-# Tentar noutro diretório
-$ ./pytree.py /tmp
-```
-
------
-
-### 2.B: Empacotar o `pytree` como um Flatpak
-
-1.  Crie um diretório de projeto:
-
-<!-- end list -->
-
-```bash
-$ mkdir ex2-flatpak && cd ex2-flatpak
-```
-
-2.  Copie o ficheiro `pytree.py` do exercício anterior:
-
-<!-- end list -->
-
-```bash
-$ cp ../ex2-pytree/pytree.py .
-```
-
-3.  Crie o `manifest` `pt.ua.deti.iei.pytree.yml`. Usamos o `org.gnome.Platform` como o nosso `runtime` porque ele inclui convenientemente um interpretador Python 3, pelo que não temos de construir o Python nós mesmos.
-
-<!-- end list -->
-
-```yaml
-app-id: pt.ua.deti.iei.pytree
-runtime: org.gnome.Platform
-runtime-version: '48'
-sdk: org.gnome.Sdk
-command: pytree.py
-
-modules:
-  - name: pytree
-    buildsystem: simple
-    build-commands:
-    - install -Dm755 pytree.py /app/bin/pytree.py
-    sources:
-    - type: file
-      path: pytree.py
-```
-
-4.  **Construir e Instalar:**
-
-<!-- end list -->
-
-```bash
-$ flatpak-builder --user --install --install-deps-from=flathub \
---force-clean build-dir pt.ua.deti.iei.pytree.yml
-```
-
-5.  **Executar e Limpar:** Quando o executa pela primeira vez, ele lista apenas os ficheiros *dentro da sua própria sandbox*. Para o tornar útil, temos de lhe dar permissão para ver os nossos ficheiros do sistema anfitrião (host). `  --filesystem=home ` é um "portal" que abre um buraco na `sandbox`, dando à aplicação acesso ao nosso diretório home. Após usar, `cd ..` para sair do diretório.
-
-<!-- end list -->
-
-```bash
-$ flatpak run pt.ua.deti.iei.pytree
-
-# Ele corre dentro de uma sandbox, por isso só se vê a si mesmo!
-# Vamos dar-lhe acesso ao nosso diretório home para o testar:
-$ flatpak run --filesystem=home pt.ua.deti.iei.pytree ~/
-
-$ flatpak uninstall pt.ua.deti.iei.pytree
-```
-
------
-
-### 2.C: Empacotar o `pytree` como um AppImage
-
-1.  Crie um diretório de projeto:
-
+1.  Crie uma nova pasta para o seu projeto e navegue para dentro dela.
+    
     ```bash
-    $ mkdir ex2-appimage && cd ex2-appimage
+    $ mkdir o-meu-projeto-git
+    $ cd o-meu-projeto-git
+    ```
+2.  Agora, inicialize-a como um repositório Git.
+    
+    ```bash
+    $ git init
+    ```
+3.  Isto cria uma pasta oculta `.git`. Criou oficialmente um repositório!
+
+#### Exercício 2: O Ciclo Central (`add`, `commit`, `status`, `log`)
+
+Vamos criar um ficheiro, prepará-lo ("stage") e guardá-lo ("commit") no nosso histórico.
+
+1.  Crie um ficheiro chamado `index.html` dentro da sua pasta `o-meu-projeto-git` e adicione o seguinte conteúdo:
+    
+    ```html
+    <h1>Bem-vindo ao Meu Projeto</h1>
+    ```
+2.  Verifique o "estado" (status) do seu repositório.
+    
+    ```bash
+    $ git status
+    ```
+    O Git irá mostrar-lhe `index.html` como um "untracked file" (ficheiro não seguido).
+3.  Diga ao Git que quer seguir este ficheiro, adicionando-o à **Staging Area**.
+    
+    ```bash
+    $ git add index.html
+    ```
+4.  Verifique o estado novamente. O ficheiro está agora "staged" (em preparação) e pronto para o commit.
+    
+    ```bash
+    $ git status
+    ```
+5.  Agora, guarde este "snapshot" no seu histórico com um **commit**.
+    
+    ```bash
+    $ git commit -m "Commit inicial: Adiciona homepage"
+    ```
+6.  Finalmente, veja o log (registo) do histórico.
+    
+    ```bash
+    $ git log
     ```
 
-2.  Crie o `AppDir`:
+#### Exercício 3: Corrigir um Commit Mau (`--amend`)
 
+Boas mensagens de commit são vitais. Vamos corrigir uma má.
+
+1.  Faça uma pequena alteração ao `index.html`. Por exemplo, adicione um parágrafo:
+    
+    ```html
+    <h1>Bem-vindo ao Meu Projeto</h1>
+    <p>Este é um projeto para a minha cadeira de IEI.</p>
+    ```
+2.  Faça commit desta alteração com uma mensagem **má**. A flag `-a` é um atalho para `git add` (para ficheiros já seguidos) e `git commit`.
+    
     ```bash
-    $ mkdir -p Pytree.AppDir && cd Pytree.AppDir
+    $ git commit -a -m "corrigir coisas"
+    ```
+3.  Veja o seu log: `git log --oneline`. Verá a sua mensagem "corrigir coisas". Vamos corrigi-la.
+4.  Execute o comando **amend** (emendar). Isto irá substituir o seu commit *anterior* por um novo.
+    
+    ```bash
+    $ git commit --amend -m "Doc: Atualiza texto da homepage"
+    ```
+5.  Veja o seu log novamente: `git log --oneline`. O commit "corrigir coisas" desapareceu, substituído pela sua mensagem melhor.
+
+#### Exercício 4: Ignorar Ficheiros (`.gitignore`)
+
+Nunca queremos fazer commit de chaves secretas ou ficheiros temporários.
+
+1.  Crie um ficheiro chamado `.env` e adicione-lhe um "segredo".
+    
+    ```bash
+    $ echo "DATABASE_PASSWORD=12345" > .env
+    ```
+2.  Execute `git status`. Verá que o Git quer adicionar o `.env`. Não queremos isto.
+3.  Crie um ficheiro chamado `.gitignore` (sim, começa com um ponto).
+4.  Adicione a seguinte linha dentro do `.gitignore`:
+    
+    ```
+    .env
+    ```
+5.  Execute `git status` novamente. O ficheiro `.env` desapareceu da lista, mas o Git agora quer seguir o ficheiro `.gitignore`, que é exatamente o que queremos.
+6.  Adicione e faça commit do ficheiro `.gitignore`.
+    
+    ```bash
+    $ git add .gitignore
+    $ git commit -m "Feat: Adiciona .gitignore para ignorar ficheiros de ambiente"
     ```
 
-3.  **Descarregar e extrair o Python portátil:** Aqui, usamos o **`wget`** para descarregar uma versão do Python pré-construída e portátil. Um AppImage é apenas um sistema de ficheiros comprimido, por isso usamos `--appimage-extract` para o desempacotar. De seguida, movemos o seu conteúdo (`mv squashfs-root/* .`) para a raiz do nosso `AppDir`. Altere o URL do Python se usar outra arquitetura (como arm ou arm64).
+#### Exercício 5: Criar Ramificações (Branching) (`branch`, `checkout`)
 
-<!-- end list -->
+Vamos trabalhar numa nova funcionalidade isolados, sem estragar o nosso código principal.
 
-```bash
-$ wget "https://github.com/niess/python-appimage/releases/\
-download/python3.10/python3.10.19-cp310-cp310-manylinux_2_28_x86_64.AppImage" \
--O python.AppImage
-$ chmod +x python.AppImage
-$ ./python.AppImage --appimage-extract
-$ mv squashfs-root/* .
-$ rm -rf python* squashfs-root/
-```
+1.  Crie um novo branch para uma nova página "sobre".
+    
+    ```bash
+    $ git branch feature/pagina-sobre
+    ```
+2.  Mude para o seu novo branch.
+    
+    ```bash
+    $ git checkout feature/pagina-sobre
+    ```
+    
+    *(**Atalho:** `git checkout -b <nome-do-branch>` cria e muda num só comando.)*
 
-3.  **Copiar o seu `script`:** Copiamos o nosso `script` para o diretório `usr/bin` fornecido pelo Python portátil que acabámos de extrair.
+3.  Crie um ficheiro `sobre.html` com este conteúdo:
+    
+    ```html
+    <h1>Sobre Nós</h1>
+    <p>Esta é a página sobre.</p>
+    ```
+4.  Adicione e faça commit deste novo ficheiro *no seu branch de funcionalidade*.
+    
+    ```bash
+    $ git add sobre.html
+    $ git commit -m "Feat: Adiciona nova página sobre"
+    ```
+5.  Agora, volte para o seu branch principal e veja os seus ficheiros.
+    
+    ```bash
+    $ git checkout main
+    $ ls
+    ```
+    O ficheiro `sobre.html` desapareceu! Isto acontece porque ele apenas existe no branch `feature/pagina-sobre`.
 
-<!-- end list -->
+#### Exercício 6: Fazer Merge (`merge`)
 
-```bash
-$ cp ../../ex2-pytree/pytree.py usr/bin/
-```
+A sua funcionalidade "página sobre" está completa. Vamos fazer merge dela de volta para o branch `main`.
 
-4.  **Atualizar o ponto de entrada (entrypoint) `AppRun`:** O pacote Python portátil vem com o seu próprio `script` `AppRun`. Só precisamos de editar a sua *última linha* para chamar o nosso `script` `pytree.py` em vez de iniciar uma `shell` Python. Finalmente, torne-o executável: `chmod +x AppRun`
+1.  Certifique-se de que está no branch que quer receber as alterações (ou seja, `main`).
+    
+    ```bash
+    $ git checkout main
+    ```
+2.  Execute o comando merge para "puxar" as alterações do seu branch de funcionalidade.
+    
+    ```bash
+    $ git merge feature/pagina-sobre
+    ```
+3.  Verifique os seus ficheiros com `ls`. O ficheiro `sobre.html` está agora presente no `main`.
+4.  Veja o seu histórico para ver o merge commit.
+    
+    ```bash
+    $ git log --oneline --graph
+    ```
 
-<!-- end list -->
+#### Exercício 7: Resolver Conflitos de Merge
 
-```bash
-#! /bin/bash
-# Se estiver a executar a partir de uma imagem extraída, então exporta ARGV0 e APPDIR
-if [ -z "${APPIMAGE}" ]; then
-    export ARGV0="$0"
+O que acontece quando dois branches editam a mesma linha?
 
-    self=$(readlink -f -- "$0") # Proteger espaços (issue 55)
-    here="${self%/*}"
-    tmp="${here%/*}"
-    export APPDIR="${tmp%/*}"
-fi
-
-# Resolver o comando de chamada (preservando links simbólicos).
-export APPIMAGE_COMMAND=$(command -v -- "$ARGV0")
-
-# Exportar TCl/Tk
-export TCL_LIBRARY="${APPDIR}/usr/share/tcltk/tcl8.6"
-export TK_LIBRARY="${APPDIR}/usr/share/tcltk/tk8.6"
-export TKPATH="${TK_LIBRARY}"
-
-# Exportar certificado SSL
-export SSL_CERT_FILE="${APPDIR}/opt/_internal/certs.pem"
-
-# Chamar o Python
-"$APPDIR/opt/python3.10/bin/python3.10" "$APPDIR/usr/bin/pytree.py" "$@"
-```
-
-5.  Crie um ficheiro chamado `pytree.desktop` e preencha-o.
-    Também criamos um ficheiro `icon.png` vazio (dummy) para satisfazer o `appimagetool`.
-
-<!-- end list -->
-
-```bash
-[Desktop Entry]
-Name=PyTree
-Exec=AppRun
-Icon=icon
-Type=Application
-Categories=Utility;
-```
-
-```bash
-$ touch icon.png
-```
-
-6.  **Construir, Executar e Limpar:** Após usar, `cd ..` para sair do diretório.
-
-<!-- end list -->
-
-```bash
-$ cd ..  # Voltar ao diretório ex2-appimage
-$ ARCH=x86_64 appimagetool Pytree.AppDir
-
-$ chmod +x PyTree-x86_64.AppImage
-$ ./PyTree-x86_64.AppImage
-
-# Testar no seu diretório home
-$ ./PyTree-x86_64.AppImage ~/
-
-$ rm -rf PyTree-x86_64.AppImage
-```
-
------
-
-## 3\. Aplicação GUI Python: Jogo do Galo 🎮
-
-### 3.A: Executar com Virtual Environment (venv)
-
-Este passo simula o que um utilizador faria: descarregar o código-fonte, extraí-lo e executá-lo localmente.
-
-1.  Crie um diretório e descarregue o código-fonte: Este arquivo (um `.tar.gz`) contém uma pasta de nível superior. `tar --strip-components=1` é um comando útil para extrair o *conteúdo* dessa pasta diretamente para o nosso diretório atual, ignorando a própria pasta de nível superior.
-
-<!-- end list -->
-
-```bash
-$ mkdir ex3-tictactoe && cd ex3-tictactoe
-
-$ wget "https://github.com/mariolpantunes/tictactoe/archive/refs/tags/tictactoe-1.0.tar.gz"\
--O tictactoe-1.0.tar.gz
-
-# Extrair o código-fonte descarregado
-$ tar --strip-components=1 -zxvf tictactoe-1.0.tar.gz
-```
-
-2.  **Criar e ativar o `venv`:** Desta vez, criar um `virtual environment` é crucial porque temos dependências. Deverá ver `(venv)` no início do 'prompt' do seu terminal. Isto significa que a sua `shell` está agora a usar o Python e o `pip` de dentro do diretório `./venv`.
-
-<!-- end list -->
-
-```bash
-$ python3 -m venv ./venv
-$ source venv/bin/activate
-```
-
-3.  **Instalar dependências a partir do ficheiro:** Um ficheiro `requirements.txt` lista todos os pacotes Python que um projeto necessita. `pip install -r` lê este ficheiro e instala-os (como o `pygame`) no `virtual environment` *ativo*.
-
-<!-- end list -->
-
-```bash
-$ pip install -r requirements.txt
-```
-
-4.  **Executar o jogo:**
-
-<!-- end list -->
-
-```bash
-$ python main.py
-```
-
-5.  **Desativar o venv:** Este comando restaura a sua `shell` para usar o Python padrão do sistema. Após usar, `cd ..` para sair do diretório.
-
-<!-- end list -->
-
-```bash
-$ deactivate
-```
+1.  A partir do seu branch `main`, crie um novo branch.
+    
+    ```bash
+    $ git checkout -b alterar-titulo-A
+    ```
+2.  Neste branch `alterar-titulo-A`, edite o `index.html` para dizer:
+    
+    ```html
+    <h1>Bem-vindo ao Projeto IEI</h1>
+    ```
+3.  Faça commit desta alteração.
+    
+    ```bash
+    $ git commit -a -m "Atualiza título no branch A"
+    ```
+4.  Agora, volte ao `main` e crie uma alteração *conflituante*.
+    
+    ```bash
+    $ git checkout main
+    $ git checkout -b alterar-titulo-B
+    ```
+5.  Neste branch `alterar-titulo-B`, edite a *mesma linha* no `index.html` para dizer:
+    
+    ```html
+    <h1>Bem-vindo ao Projeto TIA</h1>
+    ```
+6.  Faça commit desta alteração: `git commit -a -m "Atualiza título no branch B"`
+7.  Agora, vamos tentar fazer merge do `alterar-titulo-B` para o `alterar-titulo-A`.
+    
+    ```bash
+    $ git checkout alterar-titulo-A
+    $ git merge alterar-titulo-B
+    ```
+    **CONFLITO!** O Git irá parar e dizer-lhe que há um conflito no `index.html`.
+8.  **Corrija:** Abra o `index.html`. Verá os marcadores de conflito (`<<<<<`, `=====`, `>>>>>`). Edite o ficheiro para ficar correto (p. ex., apague os marcadores e escolha um título, ou escreva um novo).
+9.  **Finalize:** Assim que estiver corrigido, faça `add` do ficheiro e `commit`.
+    
+    ```bash
+    $ git add index.html
+    $ git commit -m "Merge: Resolve conflito de título"
+    ```
 
 -----
 
-### 3.B: Empacotar o Jogo do Galo como um Flatpak
+### Parte 2: GitHub - Colaboração
 
-1.  Crie um novo diretório para esta compilação:
+#### Exercício 8: `clone`, `remote`, & `origin`
 
-<!-- end list -->
+Vamos ligar o nosso repositório local a um repositório remoto no GitHub.
 
-```bash
-$ mkdir ex3-flatpak && cd ex3-flatpak
-```
+1.  Vá ao **GitHub.com**. Crie um **repositório público, novo e vazio**. Dê-lhe o nome `git-practice-repo`.
+2.  **NÃO** o inicialize com um README. Queremos que esteja vazio.
+3.  O GitHub irá mostrar-lhe um URL. Copie o URL HTTPS.
+4.  No seu terminal local, volte para a pasta `o-meu-projeto-git`.
+5.  Adicione este novo repositório GitHub como o seu "remote" chamado "origin".
+    
+    ```bash
+    $ git remote add origin <COLE_O_SEU_URL_DO_GITHUB_AQUI>
+    ```
+6.  Verifique que o remote foi adicionado.
+    
+    ```bash
+    $ git remote -v
+    ```
 
-2.  **Crie o `manifest` `pt.ua.deti.iei.tictactoe.yml`:** Este `manifest` é mais complexo.
+#### Exercício 9: `push` (Enviar o Seu Trabalho)
 
-      * `finish-args`: Define o `PYTHONPATH` para que o interpretador Python dentro da `sandbox` possa encontrar o nosso módulo `minMaxAgent.py`, que instalamos em `/app/lib/game`.
-      * módulo `python-deps`: Especifica manualmente o URL e o `checksum` (`sha256`) para o código-fonte do `pygame`. O `flatpak-builder` descarrega isto e constrói-o de raiz.
-      * módulo `game`: Descarrega o código-fonte do jogo a partir do seu URL (tal como o `wget` fez). Os `build-commands` instalam então todas as partes do jogo: os `scripts` Python, a pasta `assets`, e os ficheiros `.desktop` e `icon` para integração no menu de aplicações.
+O seu repositório local tem histórico, mas o remoto está vazio. Vamos enviar o seu trabalho.
 
-<!-- end list -->
+1.  Primeiro, vamos renomear o nosso branch local `master` para `main` para corresponder ao padrão do GitHub.
+    
+    ```bash
+    $ git branch -M main
+    ```
+2.  Agora, faça **push** do seu branch `main` local para o `origin` remoto. A flag `-u` define-o como o padrão, para que no futuro possa usar apenas `git push`.
+    
+    ```bash
+    $ git push -u origin main
+    ```
+3.  Atualize a página do seu repositório GitHub. Todos os seus ficheiros (`index.html`, `sobre.html`, `.gitignore`) e o seu histórico de commits estão agora online!
 
-```yaml
-app-id: pt.ua.deti.iei.tictactoe
-runtime: org.gnome.Platform
-runtime-version: "48"
-sdk: org.gnome.Sdk
-command: game
-finish-args:
-  - --share=ipc
-  - --socket=x11
-  - --socket=wayland
-  - --device=dri
-  - --env=PYTHONPATH=/app/lib/game
-modules:
-  - name: python-deps
-    buildsystem: simple
-    build-options:
-      env:
-        MAKEFLAGS: -j$(nproc)
-    build-commands:
-      - pip3 install --isolated --no-index --find-links="file://${PWD}" --prefix=/app pygame
-    sources:
-      - type: file
-        url: https://pypi.io/packages/source/p/pygame/pygame-2.6.1.tar.gz
-        sha256: 56fb02ead529cee00d415c3e007f75e0780c655909aaa8e8bf616ee09c9feb1f
-  - name: game
-    buildsystem: simple
-    build-commands:
-      - install -d /app/lib/game/
-      - install -Dm644 minMaxAgent.py /app/lib/game/minMaxAgent.py
-      - install -d /app/share/game/
-      - cp -r assets /app/share/game/
-      - install -Dm755 main.py /app/bin/game
-      - install -Dm644 pt.ua.deti.iei.tictactoe.desktop
-        /app/share/applications/pt.ua.deti.iei.tictactoe.desktop
-      - install -Dm644 assets/icon.png
-        /app/share/icons/hicolor/128x128/apps/pt.ua.deti.iei.tictactoe.png
-    sources:
-      - type: archive
-        url: https://github.com/mariolpantunes/tictactoe/archive/refs/tags/tictactoe-1.0.zip
-        sha256: 4210c04451ae8520770b0a7ab61e8b72f0ca46fbf2d65504d7d98646fda79b5a
-```
+#### Exercício 10: `tag` & `release` (Marcar uma Versão)
 
-4.  **Construir e Instalar:** Após a instalação, o seu jogo deverá aparecer no menu de aplicações do seu `desktop`\!
+O seu projeto está num ponto estável. Vamos marcá-lo como versão 1.0.
 
-<!-- end list -->
-
-```bash
-$ flatpak-builder --user --install --install-deps-from=flathub \
---force-clean build-dir pt.ua.deti.iei.tictactoe.yml
-```
-
-5.  **Executar e Limpar:** Após usar, `cd ..` para sair do diretório.
-
-<!-- end list -->
-
-```bash
-$ flatpak run pt.ua.deti.iei.tictactoe
-$ flatpak uninstall pt.ua.deti.iei.tictactoe
-```
+1.  Crie uma "tag" que aponte para o seu último commit.
+    
+    ```bash
+    $ git tag -a v1.0.0 -m "Primeiro lançamento estável"
+    ```
+2.  Faça push da sua nova tag para o GitHub (as tags não são enviadas automaticamente).
+    
+    ```bash
+    $ git push origin v1.0.0
+    ```
+3.  **No GitHub:** Vá à página principal do seu repositório. Encontre "Releases" no lado direito. Clique em "Create a new release" (ou "Draft a new release").
+4.  Selecione a sua tag `v1.0.0`, dê-lhe um título como "Versão 1.0.0", e escreva uma breve descrição. Clique em "Publish release". Agora tem um lançamento (release) oficial!
 
 -----
 
-### 3.C: Empacotar o Jogo do Galo como um AppImage
+### Parte 3: O Fluxo de Trabalho Open-Source Completo
 
-1.  Crie um diretório de compilação:
+#### Exercício 11: `fork` (Contribuir para um Projeto)
 
-<!-- end list -->
+Irá agora contribuir para um projeto que não lhe pertence.
 
-```bash
-$ mkdir ex3-appimage && cd ex3-appimage
-```
+1.  Vá a este repositório no GitHub (o repositório tictactoe da aula passada):
+    **[https://github.com/mariolpantunes/tictactoe](https://github.com/mariolpantunes/tictactoe)**
+2.  No canto superior direito, clique no botão **"Fork"**. Isto irá criar uma cópia do repositório na sua própria conta GitHub.
+3.  Agora, na página do GitHub do **seu** fork, clique no botão verde "<> Code" e copie o URL HTTPS.
+4.  No seu terminal (fora da pasta do seu projeto antigo), faça **clone** do *seu fork*.
+    
+    ```bash
+    $ git clone <COLE_O_URL_DO_SEU_FORK_AQUI>
+    $ cd tictactoe
+    ```
 
-2.  **Descarregar o código-fonte do jogo:**
+#### Exercício 12: O Pull Request (`pull request`)
 
-<!-- end list -->
+Vamos fazer uma alteração e propô-la ao projeto original.
 
-```bash
-$ wget "https://github.com/mariolpantunes/tictactoe/archive/refs/tags/tictactoe-1.0.tar.gz" \
--O tictactoe-1.0.tar.gz
-```
-
-3.  Crie o `AppDir`:
-
-<!-- end list -->
-
-```bash
-$ mkdir -p TTT.AppDir && cd TTT.AppDir
-```
-
-4.  **Descarregar e extrair o Python portátil:** Isto é igual ao Exercício 2.C.
-
-<!-- end list -->
-
-```bash
-$ wget "https://github.com/niess/python-appimage/releases/\
-download/python3.10/python3.10.19-cp310-cp310-manylinux_2_28_x86_64.AppImage" \
--O python.AppImage
-$ chmod +x python.AppImage
-$ ./python.AppImage --appimage-extract
-$ mv squashfs-root/* .
-$ rm -rf python* squashfs-root/
-```
-
-5.  **Extrair o código-fonte do seu jogo:**
-
-<!-- end list -->
-
-```bash
-$ tar --strip-components=1 -zxvf ../tictactoe-1.0.tar.gz
-```
-
-6.  **Instalar dependências a partir do `requirements.txt`:** Usamos o `pip` do Python *embutido* (`bundled`) para instalar pacotes. A `flag` `--target` diz ao `pip` para instalar o `pygame` *dentro* da pasta `site-packages` do nosso `AppDir`, e não no sistema anfitrião.
-
-<!-- end list -->
-
-```bash
-$ ./usr/bin/python3.10 -m pip install -r ./requirements.txt \
---target ./usr/lib/python3.10/site-packages/
-```
-
-7.  **Copiar os ficheiros do seu jogo:** Movemos os `scripts` e `assets` do jogo para dentro do `AppDir`.
-
-<!-- end list -->
-
-```bash
-$ mv main.py minMaxAgent.py assets usr/bin/
-```
-
-8.  **Atualizar o ponto de entrada (entrypoint) `AppRun`:** Este `script` `AppRun` é atualizado para definir a variável `PYTHONPATH`. Isto diz ao interpretador Python para procurar módulos em *dois* locais: o nosso diretório `site-packages` (para encontrar o `pygame`) e o nosso diretório `usr/bin` (para encontrar o `minMaxAgent.py`). Finalmente, torne-o executável: `chmod +x AppRun`.
-
-<!-- end list -->
-
-```bash
-#! /bin/bash
-# Se estiver a executar a partir de uma imagem extraída, então exporta ARGV0 e APPDIR
-if [ -z "${APPIMAGE}" ]; then
-    export ARGV0="$0"
-
-    self=$(readlink -f -- "$0") # Proteger espaços (issue 55)
-    here="${self%/*}"
-    tmp="${here%/*}"
-    export APPDIR="${tmp%/*}"
-fi
-
-# Resolver o comando de chamada (preservando links simbólicos).
-export APPIMAGE_COMMAND=$(command -v -- "$ARGV0")
-
-# Exportar TCl/Tk
-export TCL_LIBRARY="${APPDIR}/usr/share/tcltk/tcl8.6"
-export TK_LIBRARY="${APPDIR}/usr/share/tcltk/tk8.6"
-export TKPATH="${TK_LIBRARY}"
-
-# Exportar certificado SSL
-export SSL_CERT_FILE="${APPDIR}/opt/_internal/certs.pem"
-
-# Exportar PyGame
-export PYTHONPATH="$APPDIR/usr/lib/python3.10/site-packages:$APPDIR/usr/bin"
-
-# Chamar o Python
-"$APPDIR/opt/python3.10/bin/python3.10" "$APPDIR/usr/bin/main.py" "$@"
-```
-
-9.  **Adicionar metadados:** Movemos o ficheiro `.desktop` e copiamos o ícone para a raiz do `AppDir` para que o `appimagetool` os possa encontrar.
-
-<!-- end list -->
-
-```bash
-$ mv pt.ua.deti.iei.tictactoe.desktop ./tictactoe.desktop
-$ cp usr/bin/assets/icon.png ./pt.ua.deti.iei.tictactoe.png
-```
-
-10. **Construir, Executar e Limpar:**
-
-<!-- end list -->
-
-```bash
-$ cd .. # Voltar ao diretório ex3-appimage
-$ appimagetool TTT.AppDir
-
-$ chmod +x TicTacToe-x86_64.AppImage
-$ ./TicTacToe-x86_64.AppImage
-
-$ rm -rf *.AppImage tictactoe-v1.0.tar.gz
-```
+1.  Crie um novo branch para a sua alteração.
+    
+    ```bash
+    $ git checkout -b adicionar-o-meu-nome
+    ```
+2.  Edite o ficheiro `CONTRIBUTORS.md` e adicione o seu nome à lista.
+3.  Adicione e faça commit da sua alteração.
+    
+    ```bash
+    $ git add CONTRIBUTORS.md
+    $ git commit -m "Adiciona [O Seu Nome] à lista de contribuidores"
+    ```
+4.  Faça push deste novo branch *para o seu fork* (`origin`).
+    
+    ```bash
+    $ git push origin adicionar-o-meu-nome
+    ```
+5.  **Vá ao GitHub:** Vá à página do seu fork. Deverá ver uma faixa verde a dizer "This branch is 1 commit ahead..." Clique no botão **"Contribute"** e depois em **"Open a pull request"**.
+6.  Reveja as alterações, adicione uma mensagem simpática e clique em **"Create pull request"**.
+7.  **Parabéns!** Acabou de fazer um pull request, o coração da colaboração open-source.
 
 -----
 
-## Conclusão
+### Desafio Extra: `rebase` (Limpar o Histórico)
 
-Nestes exercícios, empacotou uma aplicação Python de duas formas distintas: como um **AppImage** auto-suficiente e como um **Flatpak** em `sandbox`.
+Vamos refazer o Exercício 6, mas com `rebase` para um histórico mais limpo.
 
-Embora ambos os métodos alcancem a portabilidade, este workshop destaca as vantagens significativas do ecossistema Flatpak, especialmente para aplicações complexas.
-
-O processo **AppImage** exigiu que criássemos *manualmente* um `bundle`. Tivemos de:
-
-1.  Descarregar um interpretador Python portátil.
-2.  Instalar manualmente dependências numa pasta `site-packages` específica.
-3.  Escrever um `script` `AppRun` personalizado para definir variáveis de ambiente como o `PYTHONPATH`.
-
-O processo **Flatpak**, em contraste, é **declarativo** (declarative) e **reprodutível** (reproducible).
-
-1.  **O 'Manifest' é a Receita:** Nós simplesmente *declaramos* todas as nossas necessidades num único ficheiro `manifest` `.yml`. Este ficheiro define a aplicação, as suas fontes (como o URL do GitHub), as suas dependências Python e as suas permissões de `sandbox`.
-2.  **Os 'Runtimes' são Eficientes:** Em vez de empacotar um interpretador Python de 100MB+, nós simplesmente requisitámos o `org.gnome.Platform`. Este `runtime` é descarregado *uma vez* pelo utilizador e partilhado por todas as suas aplicações Flatpak, tornando o pacote do nosso jogo incrivelmente pequeno e rápido de construir.
-3.  **A Compilação é Mais Fácil:** Não precisámos de escrever nenhuns `scripts` de `shell` complexos. O `flatpak-builder` tratou de todo o trabalho de descarregar o `SDK`, construir o `pygame`, e colocar os ficheiros nos diretórios corretos com base nos nossos simples comandos `install`.
-
-No geral, o uso de `manifests` e `runtimes` partilhados pelo Flatpak resulta num processo de compilação que é muito mais automatizado, fácil de manter e eficiente, tanto para os developers como para os utilizadores finais.
+1.  Volte a um estado anterior ao merge. Uma boa forma é fazer reset ao `main`.
+    
+    ```bash
+    $ cd ~/o-meu-projeto-git  # Volte para o seu primeiro projeto
+    $ git checkout main
+    $ git reset --hard HEAD~1  # Isto rebobina o 'main' em um commit (apaga o merge)
+    ```
+2.  Você ainda tem o seu branch `feature/pagina-sobre`. Vamos fazer outro commit no `main` para criar uma divergência.
+    
+    ```bash
+    $ echo "" >> index.html
+    $ git commit -a -m "Adiciona um comentário à homepage"
+    ```
+3.  Agora, o `main` tem um commit que o `feature/pagina-sobre` não tem.
+4.  Mude para o seu branch de funcionalidade e use `rebase` para reaplicar os commits do seu branch *em cima* do novo `main`.
+    
+    ```bash
+    $ git checkout feature/pagina-sobre
+    $ git rebase main
+    ```
+5.  Agora, volte ao `main` e faça merge.
+    
+    ```bash
+    $ git checkout main
+    $ git merge feature/pagina-sobre
+    ```
+6.  Irá dizer "Fast-forward". Veja o seu log (`git log --oneline --graph`). O histórico está perfeitamente linear e limpo!
