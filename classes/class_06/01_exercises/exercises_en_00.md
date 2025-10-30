@@ -36,6 +36,79 @@ header-includes:
 
 ---
 
+## Part 0: Setup & Authentication
+
+Before we can work with remote repositories, we need to install Git and tell GitHub who we are.
+
+### Step 1: Install Git
+
+On Debian-based systems (like debian trixieOS or Ubuntu), you can install Git using `apt`.
+
+1.  First, update your package list:
+    ```bash
+    $ sudo apt update
+    ```
+2.  Then, install Git:
+    ```bash
+    $ sudo apt install git
+    ```
+
+### Step 2: Configure Your Identity
+
+You must tell Git your name and email. This information will be baked into every commit you make.
+
+```bash
+$ git config --global user.name "Your Name"
+$ git config --global user.email "your.email@ua.pt"
+```
+
+*(Use your UA email.)*
+
+### Step 3: Authenticate to GitHub
+
+To push your code to GitHub, you must prove who you are. 
+You have two main options: SSH (recommended) or a Personal Access Token (PAT).
+
+**Method 1: Using an SSH Key (Recommended)**
+
+This method is more secure and convenient. You add a "key" to your GitHub account, and your computer uses it to authenticate automatically.
+
+1.  Generate a new `ed25519` SSH key. This command creates a key pair without asking for a password (`-N ""`).
+    ```bash
+    $ ssh-keygen -t ed25519 -C "your.email@example.com" -f ~/.ssh/id_ed25519 -N ""
+    ```
+2.  Display your new **public** key in the terminal so you can copy it.
+    ```bash
+    $ cat ~/.ssh/id_ed25519.pub
+    ```
+3.  Copy the entire output (starting with `ssh-ed25519...` and ending with your email).
+4.  Add the key to GitHub:
+      * Go to **GitHub.com** and click your profile icon in the top-right.
+      * Go to **Settings** -\> **SSH and GPG keys** (in the "Access" sidebar).
+      * Click **New SSH key**.
+      * Give it a **Title** (e.g., "My TrixieOS Laptop").
+      * Paste your copied key into the **Key** box.
+      * Click **Add SSH key**.
+
+**Method 2: Using a Fine-Grained Personal Access Token (PAT)**
+
+A PAT is like a password that you can use for Git operations.
+
+1.  Go to **GitHub.com** -\> **Settings** -\> **Developer settings** (at the bottom of the sidebar).
+2.  Go to **Personal access tokens** -\> **Fine-grained tokens**.
+3.  Click **Generate new token**.
+4.  Set the following options:
+      * **Token name:** Give it a descriptive name (e.g., "IEI Class Token").
+      * **Expiration:** Select **No expiration**.
+      * **Repository access:** Select **All repositories**.
+      * **Permissions:** Scroll down to "Repository permissions" and find **Contents**. Change its access to **Read and write**.
+5.  Click **Generate token**.
+6.  **IMPORTANT:** Copy the token (it starts with `github_pat_...`) *immediately*. You will **never** see it again after you leave this page.
+7.  When you need to connect to GitHub (in Part 2 and 3), you will use this token in the URL:
+    `https://<YOUR_USERNAME>:<YOUR_TOKEN>@github.com/<YOUR_USERNAME>/<REPOSITORY>.git`
+
+---
+
 ### Part 1: Your Local Repository
 
 #### Exercise 1: `git init` (Creating a Repository)
@@ -221,16 +294,22 @@ Let's connect our local repository to a remote one on GitHub.
 
 1.  Go to **GitHub.com**. Create a **new, empty, public repository**. Name it `git-practice-repo`.
 2.  **Do NOT** initialize it with a README. We want it to be empty.
-3.  GitHub will show you a URL. Copy the HTTPS URL.
+3.  GitHub will show you URLs. Find the **Code** button.
+      * **If you set up an SSH Key:** Select the **SSH** tab and copy the URL (e.g., `git@github.com:<YOUR_USERNAME>/git-practice-repo.git`).
+      * **If you created a PAT:** Select the **HTTPS** tab and copy the URL (e.g., `https://github.com/<YOUR_USERNAME>/git-practice-repo.git`).
 4.  In your local terminal, go back to your `my-git-project` folder.
-5.  Add this new GitHub repository as your "remote" named "origin".
-    ```bash
-    $ git remote add origin <PASTE_YOUR_GITHUB_URL_HERE>
-    ```
+5.  Add this new GitHub repository as your "remote" named "origin", using the URL that matches your authentication method.
+      * **If using SSH:**
+        ```bash
+        $ git remote add origin <PASTE_YOUR_SSH_URL_HERE>
+        ```
+      * **If using PAT:** Use the special URL format from Part 0, replacing the placeholders.
+        ```bash
+        $ git remote add origin https://<YOUR_USERNAME>:<YOUR_TOKEN>@github.com/<YOUR_USERNAME>/git-practice-repo.git
+        ```
 6.  Verify that the remote was added.
     ```bash
     $ git remote -v
-    ```
 
 #### Exercise 9: `push` (Pushing Your Work)
 
@@ -272,12 +351,20 @@ You will now contribute to a project that you do not own.
 1.  Go to this repository on GitHub (the tictactoe repository from last class):
     **[https://github.com/mariolpantunes/tictactoe](https://github.com/mariolpantunes/tictactoe)**
 2.  In the top-right corner, click the **"Fork"** button. This will create a copy of the repository under your own GitHub account.
-3.  Now, on **your** fork's GitHub page, click the green "\<\> Code" button and copy the HTTPS URL.
-4.  In your terminal (outside your old project folder), **clone** *your fork*.
-    ```bash
-    $ git clone <PASTE_YOUR_FORK_URL_HERE>
-    $ cd tictactoe
-    ```
+3.  Now, on **your** fork's GitHub page, click the green "\<\> Code" button.
+      * **If you set up an SSH Key:** Select the **SSH** tab and copy the URL (e.g., `git@github.com:<YOUR_USERNAME>/tictactoe.git`).
+      * **If you created a PAT:** Select the **HTTPS** tab and copy the URL (e.g., `https://github.com/<YOUR_USERNAME>/tictactoe.git`).
+4.  In your terminal (outside your old project folder), **clone** *your fork* using the correct command for your auth method.
+      * **If using SSH:**
+        ```bash
+        $ git clone <PASTE_YOUR_SSH_URL_HERE>
+        $ cd tictactoe
+        ```
+      * **If using PAT:**
+        ```bash
+        $ git clone https://<YOUR_USERNAME>:<YOUR_TOKEN>@github.com/<YOUR_USERNAME>/tictactoe.git
+        $ cd tictactoe
+        ```
 
 #### Exercise 12: The Pull Request (`pull request`)
 
