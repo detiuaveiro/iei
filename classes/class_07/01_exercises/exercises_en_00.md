@@ -22,8 +22,6 @@ header-includes:
 
 # Exercises
 
-
-
 ## Practical Lab: Exploring and Using the Network
 
 **Objective:** This lab will guide you through the practical fundamentals of networking. You will inspect your local network, explore the wider internet, scan for services, and use professional tools like SSH and `rsync`.
@@ -32,7 +30,7 @@ header-includes:
 
 Before you begin, you must set up your environment with the necessary tools and a target to work with.
 
-#### 1\. Install Networking Tools (Linux)
+#### 1. Install Networking Tools (Linux)
 
 Open your terminal and install the following packages, which contain the tools for our exercises:
 
@@ -41,36 +39,36 @@ $ sudo apt update
 $ sudo apt install -y nmap traceroute dnsutils curl python3-pip
 ```
 
-#### 2\. Install Python Libraries (for Exercise 12)
-
-We will need two Python libraries for the Geo-Traceroute project:
-
-```bash
-$ pip install requests folium
-```
-
-#### 3\. Create an SSH Keypair
+#### 2. Create an SSH Keypair
 
 We will use key-based authentication, the most secure method for logging into remote servers.
 
 ```bash
-# Press Enter three times to accept the defaults (no passphrase)
-$ ssh-keygen -t rsa -b 4096
+$ ssh-keygen -t ed25519 -N ""
 ```
 
-This creates a **private key** (`~/.ssh/id_rsa`) and a **public key** (`~/.ssh/id_rsa.pub`). Never share your private key.
+This creates a **private key** (`~/.ssh/id_ed25519`) and a **public key** (`~/.ssh/id_ed25519.pub`). **NEVER** share your private key.
 
-#### 4. Launch a Secure Target (SSH Server)
+#### 3. Launch a Secure Target (SSH Server)
 
 We need a "remote" server to connect to. We will use Docker to launch a simple, pre-configured SSH server container.
 
 1.  Create a folder named `ssh-server` and `cd` into it.
-2.  Create a file named `docker-compose.yml`:
+2.  Create a `custom-openssh-server.Dockerfile`:
+    
+    ```yaml
+    FROM lscr.io/linuxserver/openssh-server:latest
+    RUN apk update && apk add rsync && rm -rf /var/cache/apk/*
+    ```
+2.  Create a file named `compose.yml`:
+    
     ```yaml
     services:
       ssh:
-        image: lscr.io/linuxserver/openssh-server:latest
-        container_name: ssh-target
+        build:
+          context: .
+          dockerfile: custom-openssh-server.Dockerfile
+        container_name: ssh
         environment:
           - PUID=1000
           - PGID=1000
@@ -85,10 +83,12 @@ We need a "remote" server to connect to. We will use Docker to launch a simple, 
     ```
 3.  Create a folder for your public key: `mkdir authorized_keys`
 4.  Copy your public key (from step 2) into this folder so the server will trust you:
+    
     ```bash
     $ cp ~/.ssh/id_rsa.pub ./authorized_keys/student.pub
     ```
 5.  Start the server:
+    
     ```bash
     $ docker compose up -d
     ```
@@ -130,6 +130,7 @@ $ ip route show default
 
   * The output will be something like `default via 192.168.1.1 dev eth0`.
   * Now, `ping` that address to confirm you can reach your router.
+    
     ```bash
     $ ping 192.168.1.1 -c 4
     ```
@@ -178,6 +179,7 @@ $ dig google.com
 
   * Look in the "ANSWER SECTION" to find the `A` record (the IPv4 address).
   * **Bonus:** Find the mail servers for `google.com` by querying the `MX` record.
+    
     ```bash
     $ dig google.com MX
     ```
@@ -228,11 +230,13 @@ $ ssh student@localhost -p 2222
 `rsync` is the best way to copy files over SSH. It's smart and only copies the differences.
 
 1.  On your **host machine**, create a new folder and a file.
+    
     ```bash
     $ mkdir my-project
     $ echo "This is a test file" > ./my-project/README.md
     ```
 2.  Use `rsync` to "push" this folder to the server's home directory.
+    
     ```bash
     # Note the -e flag to specify the SSH port
     $ rsync -avzP -e "ssh -p 2222" ./my-project student@localhost:~/
@@ -245,7 +249,7 @@ $ ssh student@localhost -p 2222
 
 #### Exercise 12: Build a Visual Traceroute
 
-In this project, you will combine `traceroute`, a public API, and a mapping library to visualize the physical path your data takes across the world. Download the code from [here](todo.html).
+In this project, you will combine `traceroute`, a public API, and a mapping library to visualize the physical path your data takes across the world. Download the code from [here](https://github.com/mariolpantunes/geotraceroute/archive/refs/tags/v1.0.tar.gz).
 
 The code does the following:
 
@@ -254,7 +258,7 @@ The code does the following:
 3.  Caches results in a `cache.json` file to avoid re-querying and hitting rate limits.
 4.  Plots all the points and the path on an interactive.
 
-Try it, follow the `README.md` instructions to setup the project.
+Try it, follow the [`README.md`](https://github.com/mariolpantunes/geotraceroute) instructions to setup the project.
 
 -----
 
@@ -263,10 +267,12 @@ Try it, follow the `README.md` instructions to setup the project.
 Let's use advanced SSH port forwarding to securely access a "hidden" web server.
 
 1.  Log into your SSH container:
+    
     ```bash
     $ ssh student@localhost -p 2222
     ```
 2.  **Inside the container,** run a simple web server on port 8000. This port is *not* exposed in your `docker-compose.yml`, so it's inaccessible from your host.
+    
     ```bash
     # Inside the SSH container
     $ cd ~
@@ -275,6 +281,7 @@ Let's use advanced SSH port forwarding to securely access a "hidden" web server.
     ```
 3.  Open a **new host terminal** (leave the server running).
 4.  Create an SSH tunnel. This command says "forward *my* local port 8080 to `localhost:8000` *on the remote server*."
+    
     ```bash
     # In a NEW host terminal
     $ ssh -N -L 8080:localhost:8000 student@localhost -p 2222

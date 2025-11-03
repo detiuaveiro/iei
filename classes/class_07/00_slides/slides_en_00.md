@@ -35,7 +35,7 @@ It's no longer just about computers; it's about *everything*.
 
 Understanding networking is no longer optional; it's a fundamental skill for any technologist.
 
-# Part 1: The Building Blocks 🧱 {.allowframebreaks}
+# Part 1: The Building Blocks 🧱
 
 ## Key Network Equipment {.allowframebreaks}
 
@@ -46,6 +46,12 @@ First, let's meet the hardware that builds a network.
 * **Router:** A "gateway" that connects *different* networks. Your home router connects your private LAN to your provider's WAN (the Internet).
 * **Access Point (AP):** A "translator" that connects wireless devices (using Wi-Fi) to the wired network (the switch).
 * **ONT (Optical Network Terminal):** Your "modem" for a fiber-optic connection. It translates light signals from the fiber cable into electrical signals for your router (Ethernet).
+
+![Common Network Devices](figures/networkdevices00.png)
+
+## Key Network Equipment Connected
+
+![Network Devices Connected](figures/networkdevices01.png)
 
 ## The Two-Address System: MAC & IP {.allowframebreaks}
 
@@ -62,6 +68,8 @@ Both are crucial.
   * **Used for:** Communication *between* different networks (on the WAN/Internet).
 
 **Analogy:** A MAC address is like your **passport number** (permanent, identifies you). An IP address is like your **home address** (logical, changes if you move).
+
+![From MAC to IP](figures/mac2ip.png)
 
 ## How LANs *Really* Work: ARP {.allowframebreaks}
 
@@ -120,6 +128,10 @@ IPv6 is the successor and has its own special types.
   * **Link-Local:** `fe80::...` (Automatically assigned for *local* LAN communication. Like ARP for IPv6).
   * **Unique Local:** `fd00::...` (The equivalent of private IPv4 ranges).
 
+## IPv4 vs. IPv6
+
+![](figures/ipv4vsipv6.png)
+
 ## Addresses Aren't Enough: Ports {.allowframebreaks}
 
 An IP address gets a data packet to the right *computer*. 
@@ -157,6 +169,8 @@ Once the packet reaches your router, what's next?
 
   * It allows an entire private network (e.g., all 50 devices in your home with `192.168.1.x` addresses) to "hide" behind **one single public IP address**.
   * Your router acts as a "receptionist," keeping track of all outgoing requests and ensuring the responses get back to the correct private device.
+
+Try using the [IPinfo](https://ipinfo.io/what-is-my-ip) to identify your public IP.
 
 ## The "Phonebook": DNS {.allowframebreaks}
 
