@@ -55,7 +55,7 @@ Precisamos de um servidor "remoto" ao qual nos possamos ligar. Vamos usar o Dock
 
 1.  Crie uma pasta chamada `ssh-server` e entre nela com `cd`.
 
-2.  Crie um `custom-openssh-server.Dockerfile`:
+2.  Crie um ficheiro chamado `custom-openssh-server.Dockerfile`:
 
     ```yaml
     FROM lscr.io/linuxserver/openssh-server:latest
@@ -89,7 +89,7 @@ Precisamos de um servidor "remoto" ao qual nos possamos ligar. Vamos usar o Dock
 5.  Copie a sua chave pública (do passo 2) para esta pasta, para que o servidor confie em si:
 
     ```bash
-    $ cp ~/.ssh/id_rsa.pub ./authorized_keys/student.pub
+    $ cp ~/.ssh/id_ed25519.pub ./authorized_keys/student.pub
     ```
 
 6.  Inicie o servidor:

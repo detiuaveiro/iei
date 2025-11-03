@@ -54,7 +54,7 @@ This creates a **private key** (`~/.ssh/id_ed25519`) and a **public key** (`~/.s
 We need a "remote" server to connect to. We will use Docker to launch a simple, pre-configured SSH server container.
 
 1.  Create a folder named `ssh-server` and `cd` into it.
-2.  Create a `custom-openssh-server.Dockerfile`:
+2.  Create a file named `custom-openssh-server.Dockerfile`:
     
     ```yaml
     FROM lscr.io/linuxserver/openssh-server:latest
@@ -85,7 +85,7 @@ We need a "remote" server to connect to. We will use Docker to launch a simple, 
 4.  Copy your public key (from step 2) into this folder so the server will trust you:
     
     ```bash
-    $ cp ~/.ssh/id_rsa.pub ./authorized_keys/student.pub
+    $ cp ~/.ssh/id_ed25519.pub ./authorized_keys/student.pub
     ```
 5.  Start the server:
     
