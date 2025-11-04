@@ -1,5 +1,5 @@
 ---
-title: Git & Github
+title: Git & GitHub
 subtitle: Introdução Engenharia Informática
 author: Mário Antunes
 institute: Universidade de Aveiro
@@ -66,7 +66,7 @@ $ git config --global user.email "your.email@ua.pt"
 
 ### Step 3: Authenticate to GitHub
 
-To push your code to GitHub, you must prove who you are. 
+To push your code to GitHub, you must prove who you are.
 You have two main options: SSH (recommended) or a Personal Access Token (PAT).
 
 **Method 1: Using an SSH Key (Recommended)**

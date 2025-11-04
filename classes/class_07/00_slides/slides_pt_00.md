@@ -1,5 +1,5 @@
 ---
-title: Networks
+title: Rede Informática
 subtitle: Introdução Engenharia Informática
 author: Mário Antunes
 institute: Universidade de Aveiro
