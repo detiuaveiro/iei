@@ -1,5 +1,5 @@
 ---
-title: Git & Github
+title: Git & GitHub
 subtitle: Introdução Engenharia Informática
 author: Mário Antunes
 institute: Universidade de Aveiro

@@ -1,5 +1,5 @@
 ---
-title: Git & Github
+title: Networks
 subtitle: Introdução Engenharia Informática
 author: Mário Antunes
 institute: Universidade de Aveiro
@@ -36,7 +36,7 @@ Open your terminal and install the following packages, which contain the tools f
 
 ```bash
 $ sudo apt update
-$ sudo apt install -y nmap traceroute dnsutils curl python3-pip
+$ sudo apt install -y nmap traceroute dnsutils curl python3-pip python3-tk
 ```
 
 #### 2. Create an SSH Keypair
@@ -54,14 +54,14 @@ This creates a **private key** (`~/.ssh/id_ed25519`) and a **public key** (`~/.s
 We need a "remote" server to connect to. We will use Docker to launch a simple, pre-configured SSH server container.
 
 1.  Create a folder named `ssh-server` and `cd` into it.
-2.  Create a `custom-openssh-server.Dockerfile`:
-    
+2.  Create a file named `custom-openssh-server.Dockerfile`:
+
     ```yaml
     FROM lscr.io/linuxserver/openssh-server:latest
     RUN apk update && apk add rsync && rm -rf /var/cache/apk/*
     ```
 2.  Create a file named `compose.yml`:
-    
+
     ```yaml
     services:
       ssh:
@@ -83,12 +83,12 @@ We need a "remote" server to connect to. We will use Docker to launch a simple, 
     ```
 3.  Create a folder for your public key: `mkdir authorized_keys`
 4.  Copy your public key (from step 2) into this folder so the server will trust you:
-    
+
     ```bash
-    $ cp ~/.ssh/id_rsa.pub ./authorized_keys/student.pub
+    $ cp ~/.ssh/id_ed25519.pub ./authorized_keys/student.pub
     ```
 5.  Start the server:
-    
+
     ```bash
     $ docker compose up -d
     ```
@@ -130,7 +130,7 @@ $ ip route show default
 
   * The output will be something like `default via 192.168.1.1 dev eth0`.
   * Now, `ping` that address to confirm you can reach your router.
-    
+
     ```bash
     $ ping 192.168.1.1 -c 4
     ```
@@ -179,7 +179,7 @@ $ dig google.com
 
   * Look in the "ANSWER SECTION" to find the `A` record (the IPv4 address).
   * **Bonus:** Find the mail servers for `google.com` by querying the `MX` record.
-    
+
     ```bash
     $ dig google.com MX
     ```
@@ -230,13 +230,13 @@ $ ssh student@localhost -p 2222
 `rsync` is the best way to copy files over SSH. It's smart and only copies the differences.
 
 1.  On your **host machine**, create a new folder and a file.
-    
+
     ```bash
     $ mkdir my-project
     $ echo "This is a test file" > ./my-project/README.md
     ```
 2.  Use `rsync` to "push" this folder to the server's home directory.
-    
+
     ```bash
     # Note the -e flag to specify the SSH port
     $ rsync -avzP -e "ssh -p 2222" ./my-project student@localhost:~/
@@ -267,12 +267,12 @@ Try it, follow the [`README.md`](https://github.com/mariolpantunes/geotraceroute
 Let's use advanced SSH port forwarding to securely access a "hidden" web server.
 
 1.  Log into your SSH container:
-    
+
     ```bash
     $ ssh student@localhost -p 2222
     ```
 2.  **Inside the container,** run a simple web server on port 8000. This port is *not* exposed in your `docker-compose.yml`, so it's inaccessible from your host.
-    
+
     ```bash
     # Inside the SSH container
     $ cd ~
@@ -281,7 +281,7 @@ Let's use advanced SSH port forwarding to securely access a "hidden" web server.
     ```
 3.  Open a **new host terminal** (leave the server running).
 4.  Create an SSH tunnel. This command says "forward *my* local port 8080 to `localhost:8000` *on the remote server*."
-    
+
     ```bash
     # In a NEW host terminal
     $ ssh -N -L 8080:localhost:8000 student@localhost -p 2222

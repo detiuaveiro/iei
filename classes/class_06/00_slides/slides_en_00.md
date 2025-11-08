@@ -1,5 +1,5 @@
 ---
-title: Git & Github
+title: Git & GitHub
 subtitle: Introdução Engenharia Informática
 author: Mário Antunes
 institute: Universidade de Aveiro
@@ -139,9 +139,9 @@ The commit message is vital. It should explain *why* you made the change, not *w
 
 ---
 
-## What Makes a *Good* Commit Message? 
+## What Makes a *Good* Commit Message?
 
-A commit message is a log for your future self and your teammates. 
+A commit message is a log for your future self and your teammates.
 A good message provides context and answers *why* a change was made.
 The community standard follows a *50/72* rule:
 

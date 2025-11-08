@@ -1,5 +1,5 @@
 ---
-title: Git & Github
+title: Rede Informática
 subtitle: Introdução Engenharia Informática
 author: Mário Antunes
 institute: Universidade de Aveiro
@@ -36,10 +36,10 @@ Abra o seu terminal e instale os seguintes pacotes, que contêm as ferramentas p
 
 ```bash
 $ sudo apt update
-$ sudo apt install -y nmap traceroute dnsutils curl python3-pip
-````
+$ sudo apt install -y nmap traceroute dnsutils curl python3-pip python3-tk
+```
 
-#### 2\. Criar um Par de Chaves SSH
+#### 2. Criar um Par de Chaves SSH
 
 Vamos usar autenticação baseada em chaves, o método mais seguro para fazer login em servidores remotos.
 
@@ -49,13 +49,13 @@ $ ssh-keygen -t ed25519 -N ""
 
 Isto cria uma **chave privada** (`~/.ssh/id_ed25519`) e uma **chave pública** (`~/.ssh/id_ed25519.pub`). **NUNCA** partilhe a sua chave privada.
 
-#### 3\. Lançar um Alvo Seguro (Servidor SSH)
+#### 3. Lançar um Alvo Seguro (Servidor SSH)
 
 Precisamos de um servidor "remoto" ao qual nos possamos ligar. Vamos usar o Docker para lançar um contentor de servidor SSH simples e pré-configurado.
 
 1.  Crie uma pasta chamada `ssh-server` e entre nela com `cd`.
 
-2.  Crie um `custom-openssh-server.Dockerfile`:
+2.  Crie um ficheiro chamado `custom-openssh-server.Dockerfile`:
 
     ```yaml
     FROM lscr.io/linuxserver/openssh-server:latest
@@ -89,7 +89,7 @@ Precisamos de um servidor "remoto" ao qual nos possamos ligar. Vamos usar o Dock
 5.  Copie a sua chave pública (do passo 2) para esta pasta, para que o servidor confie em si:
 
     ```bash
-    $ cp ~/.ssh/id_rsa.pub ./authorized_keys/student.pub
+    $ cp ~/.ssh/id_ed25519.pub ./authorized_keys/student.pub
     ```
 
 6.  Inicie o servidor:
