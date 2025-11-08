@@ -1,0 +1,10 @@
+msc {
+  arcgradient=8;
+
+  Client, Server;
+
+  Client->Server [label="Datagram 1 (e.g., 'Hello')"];
+  Client->Server [label="Datagram 2 (e.g., 'World')"];
+  Server->Client [label="Datagram 3 (e.g., 'Reply')"];
+  Server note Server [label="No guarantee Datagram 1 or 2 arrived, or in what order."];
+}

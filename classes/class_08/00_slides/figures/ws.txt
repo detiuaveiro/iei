@@ -1,0 +1,16 @@
+msc {
+  arcgradient=8;
+
+  Client, Server;
+
+  Client->Server [label="HTTP GET /chat (Headers: Upgrade: websocket)"];
+  Server->Client [label="HTTP 101 Switching Protocols"];
+
+  Client note Server [label="Connection Upgraded!"];
+
+  Client<=>Server [label="WebSocket Frames (Full-Duplex)"];
+
+  Client->Server [label="Message: 'Hello!'"];
+  Server->Client [label="Message: 'Hi back!'"];
+  Server->Client [label="Message: 'Update: New data'"];
+}

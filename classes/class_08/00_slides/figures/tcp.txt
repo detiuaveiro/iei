@@ -1,0 +1,15 @@
+msc {
+  arcgradient=8;
+
+  Client, Server;
+
+  Client->Server [label="SYN (Synchronize)"];
+  Server->Client [label="SYN-ACK (Synchronize-Acknowledge)"];
+  Client->Server [label="ACK (Acknowledge)"];
+  Client<=>Server [label="Data Transfer (Request/Response)"];
+  ...;
+  Client->Server [label="FIN (Finish)"];
+  Server->Client [label="ACK"];
+  Server->Client [label="FIN"];
+  Client->Server [label="ACK"];
+}

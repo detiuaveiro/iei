@@ -3,7 +3,7 @@ title: Rede Informática
 subtitle: Introdução Engenharia Informática
 author: Mário Antunes
 institute: Universidade de Aveiro
-date: November 03, 2025
+date: November 10, 2025
 colorlinks: true
 highlight-style: tango
 geometry: a4paper,margin=2cm

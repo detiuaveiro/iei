@@ -1,0 +1,17 @@
+msc {
+  arcgradient=8;
+
+  Publisher, Broker, SubscriberA, SubscriberB;
+
+  SubscriberA->Broker [label="SUBSCRIBE('home/temp')"];
+  SubscriberB->Broker [label="SUBSCRIBE('home/temp')"];
+  SubscriberB->Broker [label="SUBSCRIBE('home/lights')"];
+  ...;
+  Publisher->Broker   [label="PUBLISH('home/temp', 21.5)"];
+  Broker->SubscriberA [label="MESSAGE('home/temp', 21.5)"];
+  Broker->SubscriberB [label="MESSAGE('home/temp', 21.5)"];
+  ...;
+  Publisher->Broker   [label="PUBLISH('home/lights', 'on')"];
+  Broker->SubscriberB [label="MESSAGE('home/lights', 'on')"];
+  SubscriberA note  SubscriberA [label="Does not receive 'lights' message."];
+}

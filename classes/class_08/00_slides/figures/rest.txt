@@ -1,0 +1,13 @@
+msc {
+  arcgradient=8;
+
+  Client, Server;
+
+  Client->Server [label="HTTP GET /users/42"];
+  Server->Client [label="HTTP 200 OK (Response)"];
+  Client->Server [label="Body: { 'name': 'Alice', ... }"];
+  ...;
+  Client->Server [label="HTTP POST /users"];
+  Server->Client [label="Body: { 'id': 43, 'name': 'Alice', ... }"];
+  Server->Client [label="HTTP 201 Created"];
+}
