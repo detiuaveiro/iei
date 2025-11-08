@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MQTT Chat Room</title>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <style>
+        body { font-family: sans-serif; display: grid; grid-template-rows: auto 1fr auto; height: 95vh; }
+        #chat-box { border: 1px solid #ccc; padding: 10px; overflow-y: scroll; }
+        #chat-box div { margin-bottom: 5px; }
+        #chat-box .system { font-style: italic; color: #888; }
+        #connect-bar, #message-bar { display: flex; padding: 10px; }
+        #message-bar { border-top: 1px solid #ccc; }
+        input { flex-grow: 1; margin-right: 10px; }
+        #status { text-align: center; padding: 5px; background: #eee; }
+    </style>
+</head>
+<body>
+    <div id="connect-bar">
+        <input id="broker" type="text" value="ws://localhost:9001">
+        <input id="username" type="text" placeholder="Enter username">
+        <button id="connect-btn">Connect</button>
+    </div>
+
+    <div id="chat-box"></div>
+
+    <div id="message-bar" style="display: none;">
+        <input id="message" type="text" placeholder="Your message...">
+        <button id="send-btn">Send</button>
+    </div>
+    
+    <div id="status">Status: Disconnected</div>
+
+    <script>
+        // DOM Elements
+        const brokerInput = document.getElementById("broker");
+        const usernameInput = document.getElementById("username");
+        const connectBtn = document.getElementById("connect-btn");
+        const chatBox = document.getElementById("chat-box");
+        const messageInput = document.getElementById("message");
+        const sendBtn = document.getElementById("send-btn");
+        const statusDiv = document.getElementById("status");
+        const connectBar = document.getElementById("connect-bar");
+        const messageBar = document.getElementById("message-bar");
+
+        let client = null;
+        const chatTopic = "class/chat/main_room"; // Our main chat topic
+
+        // --- 1. Connect to the Broker ---
+        connectBtn.onclick = () => {
+            const brokerUrl = brokerInput.value;
+            const username = usernameInput.value;
+
+            if (!brokerUrl || !username) {
+                alert("Please enter a Broker URL and Username.");
+                return;
+            }
+
+            // Create a unique client ID
+            const clientId = "mqtt-chat_" + username + Math.random().toString(16).substr(2, 8);
+
+            // Create a "Last Will and Testament" (LWT) message
+            // The broker will send this message if we disconnect ungracefully
+            const lwtPayload = JSON.stringify({ type: 'leave', user: username });
+            
+            const options = {
+                clientId: clientId,
+                username: username, // Can be used for auth (but we are anonymous)
+                will: {
+                    topic: chatTopic,
+                    payload: lwtPayload,
+                    qos: 1, // At least once
+                    retain: false
+                }
+            };
+
+            setStatus("Connecting...");
+            console.log(`Connecting to ${brokerUrl} as ${clientId}`);
+            client = mqtt.connect(brokerUrl, options);
+
+            // --- 2. Set up Event Handlers ---
+
+            // On successful connection
+            client.on("connect", () => {
+                setStatus("Connected!");
+                console.log("Successfully connected to broker.");
+
+                // Show chat UI
+                connectBar.style.display = "none";
+                messageBar.style.display = "flex";
+
+                // Subscribe to the chat topic
+                client.subscribe(chatTopic, (err) => {
+                    if (err) {
+                        console.error("Subscription error:", err);
+                        setStatus("Subscription failed.");
+                    } else {
+                        console.log(`Subscribed to topic: ${chatTopic}`);
+                        // Send a "join" message
+                        const joinPayload = JSON.stringify({ type: 'join', user: username });
+                        client.publish(chatTopic, joinPayload, { qos: 1 });
+                    }
+                });
+            });
+
+            // On receiving a message
+            client.on("message", (topic, payload) => {
+                const message = JSON.parse(payload.toString());
+                
+                if (topic === chatTopic) {
+                    switch (message.type) {
+                        case 'chat':
+                            addChatMessage(message.user, message.text);
+                            break;
+                        case 'join':
+                            addSystemMessage(`${message.user} joined the chat.`);
+                            break;
+                        case 'leave':
+                            addSystemMessage(`${message.user} left the chat.`);
+                            break;
+                    }
+                }
+            });
+
+            // On connection error
+            client.on("error", (err) => {
+                console.error("Connection error:", err);
+                setStatus("Connection error. Check console.");
+                client.end(); // Close the connection
+            });
+
+            // On disconnection
+            client.on("close", () => {
+                setStatus("Disconnected.");
+                console.log("Client disconnected.");
+                connectBar.style.display = "flex";
+                messageBar.style.display = "none";
+            });
+        };
+
+        // --- 3. Send a Message ---
+        sendBtn.onclick = () => {
+            const text = messageInput.value;
+            const username = usernameInput.value;
+            
+            if (!text || !client) return;
+
+            const payload = JSON.stringify({
+                type: 'chat',
+                user: username,
+                text: text
+            });
+
+            // Publish the message to the chat topic
+            client.publish(chatTopic, payload, { qos: 1 });
+
+            messageInput.value = ""; // Clear input
+        };
+        
+        // Allow sending with Enter key
+        messageInput.onkeydown = (e) => {
+            if (e.key === "Enter") {
+                sendBtn.click();
+            }
+        };
+
+        // --- UI Helper Functions ---
+        function setStatus(text) {
+            statusDiv.textContent = text;
+        }
+
+        function addChatMessage(user, text) {
+            const msgDiv = document.createElement("div");
+            msgDiv.innerHTML = `<strong>${user}:</strong> ${text}`;
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function addSystemMessage(text) {
+            const msgDiv = document.createElement("div");
+            msgDiv.className = "system";
+            msgDiv.textContent = text;
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+    </script>
+</body>
+</html>

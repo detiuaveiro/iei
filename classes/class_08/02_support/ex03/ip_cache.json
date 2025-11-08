@@ -1,0 +1,40 @@
+{
+    "8.8.8.8": {
+        "timestamp": 1762561851.8117776,
+        "data": {
+            "status": "success",
+            "country": "United States",
+            "countryCode": "US",
+            "region": "VA",
+            "regionName": "Virginia",
+            "city": "Ashburn",
+            "zip": "20149",
+            "lat": 39.03,
+            "lon": -77.5,
+            "timezone": "America/New_York",
+            "isp": "Google LLC",
+            "org": "Google Public DNS",
+            "as": "AS15169 Google LLC",
+            "query": "8.8.8.8"
+        }
+    },
+    "8.8.8.2": {
+        "timestamp": 1762561904.647386,
+        "data": {
+            "status": "success",
+            "country": "United States",
+            "countryCode": "US",
+            "region": "CA",
+            "regionName": "California",
+            "city": "Mountain View",
+            "zip": "94043",
+            "lat": 37.4223,
+            "lon": -122.085,
+            "timezone": "America/Los_Angeles",
+            "isp": "Google LLC",
+            "org": "Level 3",
+            "as": "AS15169 Google LLC",
+            "query": "8.8.8.2"
+        }
+    }
+}
