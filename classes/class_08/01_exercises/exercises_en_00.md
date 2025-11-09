@@ -22,270 +22,280 @@ header-includes:
 
 # Exercises
 
-## Practical Lab: Exploring and Using the Network
+## Step 0: Setup
 
-**Objective:** This lab will guide you through the practical fundamentals of networking. You will inspect your local network, explore the wider internet, scan for services, and use professional tools like SSH and `rsync`.
+Before you begin, let's set up your system with all the necessary tools for these exercises.
 
-### Part 0: Setup & Preparation
+### 1. System Tools and Python
 
-Before you begin, you must set up your environment with the necessary tools and a target to work with.
-
-#### 1. Install Networking Tools (Linux)
-
-Open your terminal and install the following packages, which contain the tools for our exercises:
+First, update your package lists and install the core utilities: `curl` and `wget` for testing web services, and Python's package manager (`pip`) and virtual environment module (`venv`).
 
 ```bash
-$ sudo apt update
-$ sudo apt install -y nmap traceroute dnsutils curl python3-pip python3-tk
+# Update your package lists
+sudo apt update; sudo apt full-upgrade -y; sudo apt autoremove -y; sudo apt autoclean
+
+# Install general tools and Python essentials
+sudo apt install -y curl wget python3-pip python3-venv
 ```
 
-#### 2. Create an SSH Keypair
+### 2. Thonny IDE (for Exercise 5)
 
-We will use key-based authentication, the most secure method for logging into remote servers.
+Thonny is a simple IDE for MicroPython. We'll install it using Flatpak to get the latest version.
 
 ```bash
-$ ssh-keygen -t ed25519 -N ""
+# 1. Install Flatpak
+sudo apt install -y flatpak
+
+# 2. Add the Flathub repository
+flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+
+# 3. Install Thonny
+flatpak --user install flathub org.thonny.Thonny
 ```
 
-This creates a **private key** (`~/.ssh/id_ed25519`) and a **public key** (`~/.ssh/id_ed25519.pub`). **NEVER** share your private key.
+You can then run Thonny from your application menu or with `flatpak run org.thonny.Thonny`.
 
-#### 3. Launch a Secure Target (SSH Server)
+### 3. 🐍 Python Best Practices
 
-We need a "remote" server to connect to. We will use Docker to launch a simple, pre-configured SSH server container.
+For each Python exercise, please follow these steps:
 
-1.  Create a folder named `ssh-server` and `cd` into it.
-2.  Create a file named `custom-openssh-server.Dockerfile`:
-
-    ```yaml
-    FROM lscr.io/linuxserver/openssh-server:latest
-    RUN apk update && apk add rsync && rm -rf /var/cache/apk/*
-    ```
-2.  Create a file named `compose.yml`:
-
-    ```yaml
-    services:
-      ssh:
-        build:
-          context: .
-          dockerfile: custom-openssh-server.Dockerfile
-        container_name: ssh
-        environment:
-          - PUID=1000
-          - PGID=1000
-          - TZ=Europe/Lisbon
-          - USER_NAME=student
-          - PUBLIC_KEY_FILE=/config/authorized_keys/student.pub
-        volumes:
-          - ./authorized_keys:/config/authorized_keys
-        ports:
-          - "2222:2222" # Map Host port 2222 to Container port 2222
-        restart: unless-stopped
-    ```
-3.  Create a folder for your public key: `mkdir authorized_keys`
-4.  Copy your public key (from step 2) into this folder so the server will trust you:
-
+1.  Create a new directory for the project (e.g., `mkdir ex01 && cd ex01`).
+2.  Create an isolated virtual environment:
     ```bash
-    $ cp ~/.ssh/id_ed25519.pub ./authorized_keys/student.pub
+    python3 -m venv venv
     ```
-5.  Start the server:
-
+3.  Activate the environment:
     ```bash
-    $ docker compose up -d
+    source venv/bin/activate
     ```
-    You now have an SSH server running on `localhost` at port `2222`.
-
------
-
-### Part 1: Local Network Exploration (LAN)
-
-#### Exercise 1: Find Your IP Address
-
-Use the `ip` command to find your computer's logical address.
-
-```bash
-$ ip addr show
-```
-
-  * Identify your main network interface (e.g., `eth0` or `wlan0`).
-  * Find your **IPv4 address** (e.g., `192.168.1.50/24`). The `/24` is your **subnet mask**.
-  * Find your **MAC address** (e.g., `link/ether 0a:1b:2c:3d:4e:5f`).
-
-#### Exercise 2: Check the Loopback Interface
-
-Test that your computer's internal network stack is working. The "loopback" interface (`127.0.0.1` or `localhost`) is a virtual interface that points to your own machine.
-
-```bash
-$ ping 127.0.0.1 -c 4
-```
-
-You should get an instant reply. This confirms your system's networking service is active.
-
-#### Exercise 3: Find Your Default Gateway
-
-The "Default Gateway" is your router's IP address—the "door" from your LAN to the internet.
-
-```bash
-$ ip route show default
-```
-
-  * The output will be something like `default via 192.168.1.1 dev eth0`.
-  * Now, `ping` that address to confirm you can reach your router.
-
+4.  Create a `requirements.txt` file (as specified in each exercise) and install from it:
     ```bash
-    $ ping 192.168.1.1 -c 4
+    pip install -r requirements.txt
     ```
+5.  **Use the `logging` module** instead of `print()` for all your status messages.
+    ```python
+    import logging
+    logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(message)s', datefmt='%H:%M:%S')
+    logger = logging.GoogletLogger(__name__)
 
-#### Exercise 4: View the ARP Table
-
-Now that you've pinged your gateway, your computer knows its physical MAC address. Use the **Address Resolution Protocol (ARP)** table to see this mapping.
-
-```bash
-$ arp -n
-```
-
-You will see a list of local IPs and their corresponding MAC addresses. This is how your switch knows where to send local packets.
-
------
-
-### Part 2: Exploring the Wide Area Network (WAN)
-
-#### Exercise 5: Test External Connectivity (`ping`)
-
-Check if you can reach a server on the internet and measure your **latency** (the round-trip time).
-
-```bash
-$ ping google.com -c 4
-```
-
-  * Note the `time=...` value (e.g., `time=15.2 ms`). This is your latency to Google's servers.
-
-#### Exercise 6: Trace the Path (`traceroute`)
-
-Find out the exact path your data takes to reach a server. `traceroute` shows every "hop" (router) along the way.
-
-```bash
-$ traceroute 8.8.8.8
-```
-
-You will see a list of IP addresses, starting with your own router, then your ISP's routers, and finally Google's.
-
-#### Exercise 7: Query the "Phonebook" (`dig`)
-
-Use **DNS** to translate a domain name into an IP address.
-
-```bash
-$ dig google.com
-```
-
-  * Look in the "ANSWER SECTION" to find the `A` record (the IPv4 address).
-  * **Bonus:** Find the mail servers for `google.com` by querying the `MX` record.
-
-    ```bash
-    $ dig google.com MX
+    logger.info("This is an info message.")
     ```
 
 -----
 
-### Part 3: Service Discovery (`nmap`)
+### Exercise 1: UDP File Transfer
 
-#### Exercise 8: Scan Yourself
+**Goal:** Explore the provided `file_transfer.py` script.
+Understand how it uses `asyncio` to create a persistent server that can handle multiple file uploads from clients.
 
-Use **Nmap** (Network Mapper) to scan your own computer for open ports.
+**Details:**
 
-```bash
-$ nmap localhost
-```
+  * **Server:** The server is persistent. It uses a `dict` to manage file transfers from different clients, keyed by their IP and port (`addr`).
+  * **Client:** The client sends the file metadata (filename, size) first, then sends the data chunks, showing a progress bar using `tqdm`.
+  * **Protocol:** The script uses a simple newline-based protocol:
+      * `START:<total_chunks>:<total_size>:<filename>`
+      * `DATA:<chunk_num>:<data_chunk>`
+      * `END`
+      * The server responds with `ACK_ALL` or `ACK_FAIL`.
 
-You will likely see port `2222` open because of the SSH server you started in Part 0.
+**Instructions:**
 
-#### Exercise 9: Scan a Public Server
+1.  Create a new directory `ex01`.
+2.  Download the solution [code](https://github.com/detiuaveiro/iei/tree/master/classes/class_08/02_support/ex01) into this directory.
+3.  Activate a `venv` and install the requirements:
 
-Let's see what ports are open on a public website. `scanme.nmap.org` is a server *specifically* for practicing Nmap.
+    ```bash
+    python3 -m venv venv
+    source venv/bin/activate
+    pip install -r requirements.txt
+    ```
 
-```bash
-$ nmap scanme.nmap.org
-```
+4.  Create a file to send, e.g., `echo "This is a UDP test file." > test.txt`.
+5.  **Run the Server (Terminal 1):**
 
-  * What services are running? This output shows you why ports `80` (HTTP) and `22` (SSH) are important.
+    ```bash
+    python file_transfer.py receive --port 9999
+    ```
+
+6.  **Run the Client (Terminal 2):**
+
+    ```bash
+    python file_transfer.py send test.txt --host 127.0.0.1 --port 9999
+    ```
 
 -----
 
-### Part 4: Secure Remote Operations (SSH & `rsync`)
+### Exercise 2: Remote Tic-Tac-Toe
 
-#### Exercise 10: Connect to Your Server (`ssh`)
+**Goal:** Analyze the provided `main.py` script to see how `asyncio` can be integrated with a GUI library like Pygame to create a networked application.
 
-It's time to log in to the SSH server you launched in Part 0. Your public key is already authorized.
+**Details:**
 
-```bash
-# Connect to user 'student' on localhost at port 2222
-$ ssh student@localhost -p 2222
-```
+  * **GUI Menus:** The script uses Pygame to draw all its own menus. It does not use `argparse`.
+  * **Async Game Loop:** The main `while running:` loop is `async`. It yields control to the `asyncio` event loop by calling `await asyncio.sleep(1/FPS)`.
+  * **Networking:** The script uses `asyncio.start_server` (for the host) and `asyncio.open_connection` (for the client) to create reliable TCP streams.
+  * **Error Handling:** The `run()` and `close_connection()` functions use `try...finally` and handle `asyncio.CancelledError` to ensure the application shuts down cleanly.
 
-  * You are now *inside* the Docker container.
-  * Run commands like `whoami`, `ls -l`, or `pwd` to prove you are in a different environment.
-  * Type `exit` to log out.
+**Instructions:**
 
-#### Exercise 11: Sync Files Securely (`rsync`)
-
-`rsync` is the best way to copy files over SSH. It's smart and only copies the differences.
-
-1.  On your **host machine**, create a new folder and a file.
+1.  Create a new directory `ex02`.
+2.  Download the solution [code](https://github.com/mariolpantunes/tictactoe/archive/refs/tags/tictactoe-2.0.tar.gz) into this directory. (Don't forget the `assets` folder if you have one).
+3.  Activate a `venv` and install the requirements:
 
     ```bash
-    $ mkdir my-project
-    $ echo "This is a test file" > ./my-project/README.md
+    python3 -m venv venv
+    source venv/bin/activate
+    pip install -r requirements.txt
     ```
-2.  Use `rsync` to "push" this folder to the server's home directory.
+
+4.  **Run the Host (Player X):**
 
     ```bash
-    # Note the -e flag to specify the SSH port
-    $ rsync -avzP -e "ssh -p 2222" ./my-project student@localhost:~/
+    python main.py
     ```
-3.  Log back into the SSH server (`ssh student@localhost -p 2222`) and run `ls`. You will see `my-project` has been copied.
+
+      * In the GUI, click "Host Game" -> enter a port (e.g., `8888`) -> Press Enter.
+5.  **Run the Client (Player O):**
+
+    ```bash
+    python main.py
+    ```
+
+      * In the GUI, click "Join Game" -> enter the host's IP (`127.0.0.1` if on the same machine) -> Press Enter -> enter the port (`8888`) -> Press Enter.
 
 -----
 
-### Part 5: Project - Geo-Traceroute
+### Exercise 3: FastAPI Caching Service
 
-#### Exercise 12: Build a Visual Traceroute
+**Goal:** Run and test the provided `main.py` script to understand how to build a high-performance, caching API endpoint.
 
-In this project, you will combine `traceroute`, a public API, and a mapping library to visualize the physical path your data takes across the world. Download the code from [here](https://github.com/mariolpantunes/geotraceroute/archive/refs/tags/v1.0.tar.gz).
+**Details:**
 
-The code does the following:
+  * **Endpoint:** The script provides a `GET /ip/{ip_address}` endpoint.
+  * **Cache:** It uses a local `ip_cache.json` file.
+  * **Logic:** It checks the `timestamp` of a cached entry against a `CACHE_DEADLINE_SECONDS`.
+  * **External API:** If the cache is stale or missing, it uses the `requests` library to fetch live data.
 
-1.  Runs `traceroute` and parses the IP addresses of each hop.
-2.  Looks up the geographic location of each IP using the `ip-api.com` API.
-3.  Caches results in a `cache.json` file to avoid re-querying and hitting rate limits.
-4.  Plots all the points and the path on an interactive.
+**Instructions:**
 
-Try it, follow the [`README.md`](https://github.com/mariolpantunes/geotraceroute) instructions to setup the project.
+1.  Create a new directory `ex03`.
+2.  Download the solution [code](https://github.com/detiuaveiro/iei/tree/master/classes/class_08/02_support/ex03) into this directory.
+3.  Activate a `venv` and install the requirements:
+
+    ```bash
+    python3 -m venv venv
+    source venv/bin/activate
+    pip install -r requirements.txt
+    ```
+
+3.  **Run the Server:**
+
+    ```bash
+    uvicorn main:app --reload
+    ```
+
+5.  **Test the Service (in a new terminal):**
+      * **Test 1 (Cache Miss):**
+
+        ```bash
+        curl http://127.0.0.1:8000/ip/8.8.8.8
+        ```
+
+        *(Check the server logs; it should say "Querying external API".)*
+      * **Test 2 (Cache Hit):**
+
+        ```bash
+        curl http://127.0.0.1:8000/ip/8.8.8.8
+        ```
+
+        *(Check the server logs; it should say "Returning cached data".)*
 
 -----
 
-### Bonus Exercise: SSH Tunneling
+### Exercise 4: Pub/Sub Chat
 
-Let's use advanced SSH port forwarding to securely access a "hidden" web server.
+**Goal:** Use Docker to run an MQTT broker and connect to it with a pure JavaScript client to create a "serverless" chat application.
 
-1.  Log into your SSH container:
+**Details:**
+
+  * **No Python Server:** You will not write *any* server code. The Mosquitto broker *is* the server.
+  * **Broker:** The `docker-compose.yml` file starts Mosquitto and loads `mosquitto.conf`.
+  * **Configuration:** The `.conf` file enables anonymous access and opens port `9001` for **MQTT-over-WebSockets**.
+  * **Client:** The `chat_client.html` file uses the **MQTT.js** library (loaded from a CDN) to connect to `ws://localhost:9001`. It implements a Pub/Sub chat.
+
+**Instructions:**
+
+1.  Create a new directory `ex04`.
+
+2.  Download the [code](https://github.com/detiuaveiro/iei/tree/master/classes/class_08/02_support/ex04) solution file into the same directory.
+
+4.  **Start the Broker:**
 
     ```bash
-    $ ssh student@localhost -p 2222
+    docker-compose up -d
     ```
-2.  **Inside the container,** run a simple web server on port 8000. This port is *not* exposed in your `docker-compose.yml`, so it's inaccessible from your host.
 
-    ```bash
-    # Inside the SSH container
-    $ cd ~
-    $ echo "Hello from inside the tunnel!" > index.html
-    $ python3 -m http.server 8000
-    ```
-3.  Open a **new host terminal** (leave the server running).
-4.  Create an SSH tunnel. This command says "forward *my* local port 8080 to `localhost:8000` *on the remote server*."
+5.  **Test the Client:**
 
-    ```bash
-    # In a NEW host terminal
-    $ ssh -N -L 8080:localhost:8000 student@localhost -p 2222
-    ```
-    (The `-N` flag just opens the tunnel without starting a shell).
-5.  Open your **host's** web browser and go to `http://localhost:8080`.
-6.  You should see the "Hello from inside the tunnel\!" message. You have successfully accessed a hidden port through a secure SSH tunnel.
+      * Open `index.html` in your web browser.
+      * Open `index.html` in a *second* browser tab or window.
+      * Enter different usernames and connect. Messages sent in one window should appear in the other.
+
+-----
+
+### Exercise 5: RPi Pico MQTT Sensor
+
+**Goal:** Deploy the provided MicroPython code to a Raspberry Pi Pico W to publish its internal temperature to your MQTT broker.
+
+**Details:**
+
+  * **Hardware:** This exercise requires a **Raspberry Pi Pico W**.
+  * **Sensor:** The code uses the Pico's built-in internal temperature sensor, so **no external hardware is needed**.
+  * **Secrets:** Best practice is to store WiFi credentials in a separate `config.py` file, which is not checked into version control.
+  * **MQTT Library:** MicroPython requires a special lightweight MQTT library, `umqtt.simple`.
+
+**Instructions:**
+
+1.  **Flash MicroPython:**
+      * Hold the "BOOTSEL" button on your Pico while plugging it in.
+      * It will mount as a USB drive.
+      * Download the latest "Pico W" UF2 file from the [MicroPython website](https://micropython.org/download/RPI_PICO_W/) and drag it onto the USB drive. The Pico will reboot.
+2.  **Use Thonny:**
+      * Open Thonny.
+      * Connect to your Pico (click the bottom-right interpreter menu and select "MicroPython (Raspberry Pi Pico)").
+      * In Thonny, go to **Tools -\> Manage Packages**.
+      * Search for `micropython-umqtt.simple` and install it.
+3.  **Create the Files:**
+      * In Thonny, create a new file named `config.py`. Copy the code from the solution and **fill in your WiFi credentials**. Save it to the **MicroPython device (the Pico)**.
+      * Create a new file named `main.py`. Copy the `pico_mqtt.py` solution code into it. **Change `MQTT_BROKER` to your computer's IP address** (not `localhost`).
+      * Save this file as `main.py` on the **MicroPython device**.
+4.  **Run:**
+      * Press the "Run" button in Thonny.
+      * Watch the Thonny Shell. It should connect to your WiFi, then to your MQTT broker, and start sending temperature data.
+
+-----
+
+### 🌟 Bonus Exercise: The Classic Echo Server
+
+**Goal:** Write a simple Echo Server in Python using the built-in `socket` module. This is the "Hello, World!" of network programming.
+
+**Task:**
+This is the only exercise where you **must write the code yourself.**
+
+Create a single Python script `echo_server.py`. The script should be able to run in one of two modes using `argparse`:
+
+1.  `python echo_server.py tcp --port <num>`
+2.  `python echo_server.py udp --port <num>`
+
+**Requirements:**
+
+  * **TCP Mode:** The server must listen on the given port, accept a client connection, and `recv` data from the client. It must then `sendall` the *exact same data* back. It must handle clients disconnecting gracefully.
+  * **UDP Mode:** The server must bind to the given port, `recvfrom` a datagram, and `sendto` the *exact same data* back to the address it came from.
+  * You must write this code from scratch. **Do not use `asyncio` for this exercise.**
+  * Test your TCP server with `netcat`: `nc 127.0.0.1 <port>`.
+  * Test your UDP server with `netcat`: `nc -u 127.0.0.1 <port>`.
+
+**Helpful Documentation:**
+
+  * **Python `socket` Module:** [https://docs.python.org/3/library/socket.html](https://docs.python.org/3/library/socket.html)
+  * **Python Socket Programming HOWTO Guide:** [https://docs.python.org/3/howto/sockets.html](https://docs.python.org/3/howto/sockets.html)

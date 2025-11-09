@@ -35,7 +35,7 @@ A **socket** is an endpoint for communication. It's an abstraction (represented 
 
 Two main types for internet communication: **TCP** and **UDP**.
 
------
+
 
 ## TCP vs. UDP: The Two Pillars {.allowframebreaks}
 
@@ -48,15 +48,15 @@ Two main types for internet communication: **TCP** and **UDP**.
 | **Use Cases** | Web (HTTP), Email (SMTP), File Transfer (FTP) | Streaming video, online gaming, DNS, VoIP |
 | **Python Module** | `socket.SOCK_STREAM` | `socket.SOCK_DGRAM` |
 
------
+
 
 ## TCP Communication Pattern (Req/Rep)
 
 TCP uses a **3-way handshake** to establish a reliable connection.
 
-![](figures/tcp.svg){ width=85% }
+![TCP 3-way handshake](figures/tcp.svg){ width=33% }
 
------
+
 
 ## Python TCP Server (Echo) {.allowframebreaks}
 
@@ -72,11 +72,9 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.bind((HOST, PORT))
     s.listen()
     print(f"TCP server listening on {HOST}:{PORT}")
-
     # conn is a new socket object usable to send/recv data
     # addr is the address bound to the client
     conn, addr = s.accept()
-
     with conn:
         print(f"Connected by {addr}")
         while True:
@@ -87,7 +85,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             conn.sendall(data) # Echo back
 ```
 
------
+
 
 ## Python TCP Client {.allowframebreaks}
 
@@ -101,20 +99,19 @@ PORT = 65432        # The port used by the server
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.connect((HOST, PORT))
     s.sendall(b'Hello, world') # Send as bytes
-
     data = s.recv(1024)
     print(f"Received echo: {data.decode()}")
 ```
 
------
+
 
 ## UDP Communication Pattern (Datagram)
 
 UDP is "fire and forget." No connection is established.
 
-![](figures/udp.svg)
+![UDP - does not use session concepts](figures/udp.svg){ width=65% }
 
------
+
 
 ## Python UDP Server (Echo) {.allowframebreaks}
 
@@ -140,7 +137,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
         s.sendto(data, addr) # Echo back to the sender
 ```
 
------
+
 
 ## Python UDP Client {.allowframebreaks}
 
@@ -159,7 +156,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
     print(f"Received echo: {data.decode()} from {addr}")
 ```
 
------
+
 
 ## The Problem: Blocking I/O {.allowframebreaks}
 
@@ -177,7 +174,7 @@ If you are handling one client, all other clients must wait\!
   * **High Resource Use:** RAM, OS-level context switching.
   * **Python Issue (GIL):** The Global Interpreter Lock (GIL) in CPython prevents true parallel execution of Python code, limiting this approach.
 
------
+
 
 ## The Solution: Async IO {.allowframebreaks}
 
@@ -189,7 +186,7 @@ If you are handling one client, all other clients must wait\!
 
 > This is **concurrency**, not parallelism. It's about *waiting* efficiently.
 
------
+
 
 ## Python `asyncio` TCP Server {.allowframebreaks}
 
@@ -237,7 +234,7 @@ async def main():
 asyncio.run(main())
 ```
 
------
+
 
 ## Python `asyncio` UDP Server {.allowframebreaks}
 
@@ -274,7 +271,7 @@ async def main():
 asyncio.run(main())
 ```
 
------
+# REST APIs: The Language of the Web
 
 ## REST APIs: The Language of the Web {.allowframebreaks}
 
@@ -286,7 +283,7 @@ Sockets are powerful but low-level. Most modern web services don't expose socket
   * It builds *on top of* HTTP (which builds on top of TCP).
   * It's **stateless**: Every request must contain all info needed to process it.
 
------
+
 
 ## REST Communication Pattern (Req/Rep) {.allowframebreaks}
 
@@ -296,9 +293,7 @@ Client-server communication over HTTP.
   * **Verbs:** HTTP methods (GET, POST, PUT, DELETE).
   * **Data:** Usually sent/received as **JSON**.
 
-![](figures/rest.svg)
-
------
+![HTTP comunication](figures/rest.svg){ width=45% }
 
 ## Data Format: JSON {.allowframebreaks}
 
@@ -323,7 +318,7 @@ Client-server communication over HTTP.
 }
 ```
 
------
+
 
 ## Example: FastAPI (Python) {.allowframebreaks}
 
@@ -359,7 +354,7 @@ def read_item(item_id: int):
 3.  Run: `uvicorn main:app --reload`
 4.  Access in browser: `http://127.0.0.1:8000/items/1`
 
------
+
 
 ## Sockets vs. REST APIs {.allowframebreaks}
 
@@ -373,7 +368,9 @@ def read_item(item_id: int):
 
 > **Key takeaway:** You *could* build a REST API on raw sockets... but you'd just be re-inventing HTTP. REST gives you a massive head start with standardization, security (HTTPS), and tooling.
 
------
+
+
+# WebSockets: The Real-Time Channel
 
 ## WebSockets: The Real-Time Channel {.allowframebreaks}
 
@@ -390,13 +387,12 @@ What if REST is too slow? What if the server needs to push data to the client *w
 
 ![](figures/http_vs_ws.jpg)
 
------
+
 
 ## WebSocket Communication Pattern
 
-![](figures/ws.svg)
+![WebSocket Communication](figures/ws.svg){ width=45% }
 
------
 
 ## WebSocket Example: JavaScript Client {.allowframebreaks}
 
@@ -441,8 +437,6 @@ The browser is the *native* platform for WebSockets.
 </html>
 ```
 
------
-
 ## WebSocket Example: Python Server {.allowframebreaks}
 
 Using the `websockets` library: `pip install websockets`
@@ -484,7 +478,7 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
------
+
 
 ## Advantages & When to Use {.allowframebreaks}
 
@@ -508,7 +502,9 @@ if __name__ == "__main__":
   * **Ubiquity:** Runs on every desktop, laptop, and phone.
   * **Integrated APIs:** Access to graphics (WebGL), audio, storage, and more.
 
------
+
+
+# MQTT: The IoT Protocol
 
 ## MQTT: The IoT Protocol {.allowframebreaks}
 
@@ -524,8 +520,6 @@ What if you have thousands of tiny, battery-powered devices on an unreliable net
   * Designed for constrained devices (IoT) and low-bandwidth networks.
   * Minimal overhead (can be a 2-byte header).
 
------
-
 ## Communication Pattern: Publish/Subscribe {.allowframebreaks}
 
 This is a fundamental shift from Request/Response.
@@ -536,13 +530,9 @@ This is a fundamental shift from Request/Response.
 
 **This fully decouples clients from each other.**
 
------
+## MQTT (Pub/Sub)
 
-## MQTT (Pub/Sub) {.allowframebreaks}
-
-![](figures/mqtt.svg)
-
------
+![MQTT Pub/Sub pattern](figures/mqtt.svg){ width=60% }
 
 ## MQTT Protocol Details {.allowframebreaks}
 
@@ -556,7 +546,7 @@ This is a fundamental shift from Request/Response.
       * **QoS 2:** Exactly once. (Guarantees delivery, no duplicates. Slowest)
   * **Last Will & Testament (LWT):** A message the broker sends *on behalf of* a client if it disconnects ungracefully. (e.g., `device/123/status` -\> "offline")
 
------
+
 
 ## Python Publisher Example {.allowframebreaks}
 
@@ -592,7 +582,7 @@ except KeyboardInterrupt:
     client.loop_stop()
 ```
 
------
+
 
 ## Python Subscriber Example {.allowframebreaks}
 
@@ -622,9 +612,11 @@ client.connect("test.mosquitto.org", 1883, 60)
 client.loop_forever()
 ```
 
------
 
-## Beyond: Other Communication Patterns {.allowframebreaks}
+
+# Other Communication Patterns
+
+## Other Communication Patterns {.allowframebreaks}
 
 Sockets, REST, WebSockets, and MQTT cover most cases, but other powerful patterns exist.
 
@@ -640,7 +632,7 @@ We'll look at two major examples:
       * **Smart clients, no server.**
       * A library that provides high-level patterns (Pub/Sub, Push/Pull) over raw sockets.
 
------
+
 
 ## Pattern: Message Broker (RabbitMQ) {.allowframebreaks}
 
@@ -660,7 +652,7 @@ Uses the **AMQP** protocol (or others). It's a server that acts as a post office
 
 **Use Case:** Microservice backends, task queues (e.g., Celery), financial transactions.
 
------
+
 
 ## Pattern: Brokerless (ZeroMQ / ØMQ) {.allowframebreaks}
 
@@ -682,7 +674,7 @@ ZeroMQ is **not** a broker. It's a **socket library on steroids.** It gives you 
 
 **Use Case:** High-speed data (HPC), financial trading, inter-process communication.
 
------
+
 
 ## Summary: Choosing the Right Tool {.allowframebreaks}
 
@@ -705,7 +697,7 @@ ZeroMQ is **not** a broker. It's a **socket library on steroids.** It gives you 
       * **Use:** High-speed, low-latency messaging.
       * **Pattern:** Various (Pub/Sub, Push/Pull, etc.).
 
------
+
 
 ## 📚 Further Resources {.allowframebreaks}
 
