@@ -58,12 +58,12 @@ flatpak --user install flathub org.thonny.Thonny
 sudo usermod -a -G dialout $USER
 ```
 
-The `dialout` group provides full and direct access to serial ports. 
+The `dialout` group provides full and direct access to serial ports.
 Members of this group can connect to serial devices (through serial connections or USB).
 
 You can then run Thonny from your application menu or with `flatpak run org.thonny.Thonny`.
 
-For native Linux users, no more steps are needed. 
+For native Linux users, no more steps are needed.
 For WSL and virtualized OSs, however, a few additional steps are required.
 Check Sections [5.1](#wsl-usb-passthrough) and [5.2](#virtualbox-usb-passthrough) respectively.
 
@@ -73,25 +73,25 @@ For each Python exercise, please follow these steps:
 
 1.  Create a new directory for the project (e.g., `mkdir ex01 && cd ex01`).
 2.  Create an isolated virtual environment:
-    
+
     ```bash
     python3 -m venv venv
     ```
 
 3.  Activate the environment:
-    
+
     ```bash
     source venv/bin/activate
     ```
 
 4.  Create a `requirements.txt` file (as specified in each exercise) and install from it:
-    
+
     ```bash
     pip install -r requirements.txt
     ```
 
 5.  **Use the `logging` module** instead of `print()` for all your status messages.
-    
+
     ```python
     import logging
     logging.basicConfig(level=logging.INFO, format='%(message)s')
@@ -102,7 +102,7 @@ For each Python exercise, please follow these steps:
 
 ### 4. Network architecture
 
-You will typically use Eduroam to access the internet during classes. 
+You will typically use Eduroam to access the internet during classes.
 For most activities, this is sufficient; however, this network (managed by the university) blocks communication between student **equipment**.
 
 As such, we provide a separate wireless network named `TheOffice` that can be used to connect user applications **to each other**.
@@ -230,10 +230,10 @@ Understand how it uses `asyncio` to create a persistent server that can handle m
         ```bash
         # Private IP (has to fail)
         curl http://127.0.0.1:8000/ip/192.168.132.132
-        
+
         # Google DNS
         curl http://127.0.0.1:8000/ip/8.8.8.8
-        
+
         # Public IP from MEO
         curl http://127.0.0.1:8000/ip/144.64.3.83
 
@@ -250,10 +250,10 @@ Understand how it uses `asyncio` to create a persistent server that can handle m
         ```bash
         # Private IP (has to fail)
         curl http://127.0.0.1:8000/ip/192.168.132.132
-        
+
         # Google DNS
         curl http://127.0.0.1:8000/ip/8.8.8.8
-        
+
         # Public IP from MEO
         curl http://127.0.0.1:8000/ip/144.64.3.83
 
@@ -298,7 +298,7 @@ Understand how it uses `asyncio` to create a persistent server that can handle m
 
 ## Exercise 5: RPi Pico MQTT Sensor
 
-As stated at the beginning, native Linux users can skip these steps (skip to Section [5.3](#code-deployment)).
+As stated at the beginning, native Linux users can skip these steps (skip to Section [5.3](#build-the-sensor)).
 For WSL and virtualized OSs follow the steps bellow.
 **Important** you need to turn off the Firewall for this exercise.
 
@@ -396,16 +396,16 @@ sudo usermod -a -G vboxusers $USER
 3.  Open a terminal *inside the Debian VM*.
 4.  First, re-confirm your user is in the `dialout` group (from the main **Step 2** of this guide).
 5.  Next, check if the device is present:
-    
+
     ```bash
     ls /dev/tty*
     ```
-You should see a new device, typically named `/dev/ttyACM0` (for Picos) or `/dev/ttyUSB0` (for ESP-based boards). 
+You should see a new device, typically named `/dev/ttyACM0` (for Picos) or `/dev/ttyUSB0` (for ESP-based boards).
 Thonny will now be able to find and connect to this port.
 
 ### 5.3 Build the sensor
 
-In this exercise, we will explore the RPI Pico W with a DHT11 temperature and humidity sensor. 
+In this exercise, we will explore the RPI Pico W with a DHT11 temperature and humidity sensor.
 Before assembling the circuit, take some time to check the pinout of both the board and the sensor.
 
 ![RPI Pico Pinout](figures/pico-pinout.pdf){ width=100% }
@@ -457,7 +457,7 @@ The wiring diagram for the circuit is presented in the figure below.
 7. **MQTT5 Explorer**
   * MQTT5 Explorer can be used to debug the MQTT connection.
   * Install using the command:
-  
+
   ```bash
   flatpak --user install flathub io.github.Omniaevo.mqtt5-explorer
   ```

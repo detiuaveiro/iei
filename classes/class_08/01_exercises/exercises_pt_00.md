@@ -13,7 +13,7 @@ mainfontfallback:
 header-includes:
  - \usepackage{longtable,booktabs}
  - \usepackage{etoolbox}
- - \AtBeginEnvironment{longtable}{\tiny}
+ - \AtBeginEnvironment{longtable}{\normalsize}
  - \AtBeginEnvironment{cslreferences}{\tiny}
  - \AtBeginEnvironment{Shaded}{\normalsize}
  - \AtBeginEnvironment{verbatim}{\normalsize}
@@ -22,286 +22,518 @@ header-includes:
 
 # Exercícios
 
-## Laboratório Prático: Explorar e Usar a Rede
+## Passo 0: Configuração
 
-**Objetivo:** Este laboratório irá guiá-lo através dos fundamentos práticos de redes. Irá inspecionar a sua rede local, explorar a Internet, procurar por serviços e usar ferramentas profissionais como SSH e `rsync`.
+Antes de começar, vamos configurar o seu sistema com todas as ferramentas necessárias para estes exercícios.
 
-### Parte 0: Configuração & Preparação
+### 1. Ferramentas de Sistema e Python
 
-Antes de começar, tem de configurar o seu ambiente com as ferramentas necessárias e um alvo (target) com o qual trabalhar.
-
-#### 1. Instalar Ferramentas de Rede (Linux)
-
-Abra o seu terminal e instale os seguintes pacotes, que contêm as ferramentas para os nossos exercícios:
+Primeiro, atualize as suas listas de pacotes e instale os utilitários principais: `curl` e `wget` para testar serviços web,
+e o gestor de pacotes do Python (`pip`) e o módulo de ambientes virtuais (`venv`).
 
 ```bash
-$ sudo apt update
-$ sudo apt install -y nmap traceroute dnsutils curl python3-pip python3-tk
+# 1. Atualize as suas listas de pacotes
+sudo apt update; sudo apt full-upgrade -y; \
+sudo apt autoremove -y; sudo apt autoclean
+
+# 2. Instale ferramentas gerais, flatpak, e essenciais do Python
+sudo apt install -y udisks2 curl wget \
+flatpak python3-pip python3-venv
+
+# 3. Adicione o repositório Flathub
+flatpak --user remote-add --if-not-exists \
+flathub https://flathub.org/repo/flathub.flatpakrepo
 ```
 
-#### 2. Criar um Par de Chaves SSH
+### 2. IDE Thonny (para o Exercício 5)
 
-Vamos usar autenticação baseada em chaves, o método mais seguro para fazer login em servidores remotos.
+Thonny é um IDE simples para MicroPython.
+Vamos instalá-lo usando Flatpak para obter a versão mais recente.
 
 ```bash
-$ ssh-keygen -t ed25519 -N ""
+# 1. Instalar o Thonny
+flatpak --user install flathub org.thonny.Thonny
+
+# 2. Adicionar utilizador ao grupo dialout
+sudo usermod -a -G dialout $USER
 ```
 
-Isto cria uma **chave privada** (`~/.ssh/id_ed25519`) e uma **chave pública** (`~/.ssh/id_ed25519.pub`). **NUNCA** partilhe a sua chave privada.
+O grupo `dialout` fornece acesso total e direto às portas série.
+Membros deste grupo podem ligar-se a dispositivos série (através de conexões série ou USB).
 
-#### 3. Lançar um Alvo Seguro (Servidor SSH)
+Pode então executar o Thonny a partir do menu de aplicações ou com `flatpak run org.thonny.Thonny`.
 
-Precisamos de um servidor "remoto" ao qual nos possamos ligar. Vamos usar o Docker para lançar um contentor de servidor SSH simples e pré-configurado.
+Para utilizadores de Linux nativo, não são necessários mais passos.
+No entanto, para WSL e SOs virtualizados, são necessários alguns passos adicionais.
+Verifique as Secções [5.1](#passagem-passthrough-de-usb-no-wsl) e [5.2](#passagem-passthrough-de-usb-no-virtualbox) respetivamente.
 
-1.  Crie uma pasta chamada `ssh-server` e entre nela com `cd`.
+### 3. 🐍 Boas Práticas de Python
 
-2.  Crie um ficheiro chamado `custom-openssh-server.Dockerfile`:
+Para cada exercício de Python, por favor, siga estes passos:
 
-    ```yaml
-    FROM lscr.io/linuxserver/openssh-server:latest
-    RUN apk update && apk add rsync && rm -rf /var/cache/apk/*
-    ```
+1.  Crie um novo diretório para o projeto (ex: `mkdir ex01 && cd ex01`).
 
-3.  Crie um ficheiro chamado `compose.yml`:
-
-    ```yaml
-    services:
-      ssh:
-        build:
-          context: .
-          dockerfile: custom-openssh-server.Dockerfile
-        container_name: ssh
-        environment:
-          - PUID=1000
-          - PGID=1000
-          - TZ=Europe/Lisbon
-          - USER_NAME=student
-          - PUBLIC_KEY_FILE=/config/authorized_keys/student.pub
-        volumes:
-          - ./authorized_keys:/config/authorized_keys
-        ports:
-          - "2222:2222" # Mapeia a porta 2222 do Host para a porta 2222 do Contentor
-        restart: unless-stopped
-    ```
-
-4.  Crie uma pasta para a sua chave pública: `mkdir authorized_keys`
-
-5.  Copie a sua chave pública (do passo 2) para esta pasta, para que o servidor confie em si:
+2.  Crie um ambiente virtual isolado:
 
     ```bash
-    $ cp ~/.ssh/id_ed25519.pub ./authorized_keys/student.pub
+    python3 -m venv venv
     ```
 
-6.  Inicie o servidor:
+3.  Ative o ambiente:
 
     ```bash
-    $ docker compose up -d
+    source venv/bin/activate
     ```
 
-    Tem agora um servidor SSH a correr em `localhost` na porta `2222`.
-
------
-
-### Parte 1: Exploração da Rede Local (LAN)
-
-#### Exercício 1: Encontre o Seu Endereço IP
-
-Use o comando `ip` para encontrar o endereço lógico do seu computador.
-
-```bash
-$ ip addr show
-```
-
-  * Identifique a sua interface de rede principal (ex: `eth0` ou `wlan0`).
-  * Encontre o seu **endereço IPv4** (ex: `192.168.1.50/24`). O `/24` é a sua **máscara de sub-rede**.
-  * Encontre o seu **endereço MAC** (ex: `link/ether 0a:1b:2c:3d:4e:5f`).
-
-#### Exercício 2: Verifique a Interface de Loopback
-
-Teste se a pilha de rede interna do seu computador está a funcionar. A interface "loopback" (`127.0.0.1` ou `localhost`) é uma interface virtual que aponta para a sua própria máquina.
-
-```bash
-$ ping 127.0.0.1 -c 4
-```
-
-Deverá obter uma resposta instantânea. Isto confirma que o serviço de rede do seu sistema está ativo.
-
-#### Exercício 3: Encontre o Seu Default Gateway
-
-O "Default Gateway" (Gateway Padrão) é o endereço IP do seu router—a "porta" da sua LAN para a Internet.
-
-```bash
-$ ip route show default
-```
-
-  * O output será algo como `default via 192.168.1.1 dev eth0`.
-
-  * Agora, faça `ping` a esse endereço para confirmar que consegue alcançar o seu router.
+4.  Crie um ficheiro `requirements.txt` (conforme especificado em cada exercício) e instale a partir dele:
 
     ```bash
-    $ ping 192.168.1.1 -c 4
+    pip install -r requirements.txt
     ```
 
-#### Exercício 4: Veja a Tabela ARP
+5.  **Use o módulo `logging`** em vez de `print()` para todas as suas mensagens de estado.
 
-Agora que fez ping ao seu gateway, o seu computador conhece o endereço MAC físico dele. Use a tabela do **Address Resolution Protocol (ARP)** para ver este mapeamento.
+    ```python
+    import logging
+    logging.basicConfig(level=logging.INFO, format='%(message)s')
+    logger = logging.GoogletLogger(__name__)
 
-```bash
-$ arp -n
-```
+    logger.info("Esta é uma mensagem de informação.")
+    ```
 
-Verá uma lista de IPs locais e os seus correspondentes endereços MAC. É assim que o seu switch sabe para onde enviar pacotes locais.
+### 4. Arquitetura de Rede
 
------
+Tipicamente, usará a rede Eduroam para aceder à internet durante as aulas.
+Para a maioria das atividades, isto é suficiente; no entanto, esta rede (gerida pela universidade) bloqueia a comunicação entre **equipamentos** dos estudantes.
 
-### Parte 2: Explorar a Rede Alargada (WAN)
+Como tal, fornecemos uma rede sem fios separada chamada `TheOffice` que pode ser usada para ligar aplicações de utilizadores **entre si**.
+Isto é **opcional** (mas recomendado) para os **exercícios** 1-4, mas **obrigatório** para o exercício 5.
 
-#### Exercício 5: Testar Conectividade Externa (`ping`)
+📶 Detalhes da Rede Wi-Fi:
 
-Verifique se consegue alcançar um servidor na Internet e meça a sua **latência** (o tempo de ida e volta).
+| SSID (Nome da Rede) | Palavra-passe |
+| :--- | :--- |
+| `TheOffice` | `8006002030` |
+| `TheOffice5G` | `8006002030` |
 
-```bash
-$ ping google.com -c 4
-```
+{ width=50% }
 
-  * Note o valor `time=...` (ex: `time=15.2 ms`). Esta é a sua latência para os servidores do Google.
+## Exercício 1: Transferência de Ficheiros por UDP
 
-#### Exercício 6: Traçar o Caminho (`traceroute`)
+**Objetivo:** Explorar o script `file_transfer.py` fornecido.
+Perceber como ele usa `asyncio` para criar um servidor persistente que pode lidar com múltiplos uploads de ficheiros de clientes.
 
-Descubra o caminho exato que os seus dados levam para chegar a um servidor. O `traceroute` mostra cada "salto" (hop) (router) ao longo do caminho.
+**Detalhes:**
 
-```bash
-$ traceroute 8.8.8.8
-```
+  * **Servidor:** O servidor é persistente. Usa um `dict` para gerir transferências de ficheiros de diferentes clientes, usando como chave o seu IP e porta (`addr`).
+  * **Cliente:** O cliente envia primeiro os metadados do ficheiro (nome, tamanho), depois envia os pedaços (chunks) de dados, mostrando uma barra de progresso com `tqdm`.
+  * **Protocolo:** O script usa um protocolo simples baseado em nova linha (newline):
+      * `START:<total_chunks>:<total_size>:<filename>`
+      * `DATA:<chunk_num>:<data_chunk>`
+      * `END`
+  * O servidor responde com `ACK_ALL` ou `ACK_FAIL`.
 
-Verá uma lista de endereços IP, começando com o seu próprio router, depois os routers do seu ISP e, finalmente, os do Google.
+**Instruções:**
 
-#### Exercício 7: Consultar a "Lista Telefónica" (`dig`)
+1.  Crie um novo diretório `ex01` e entre nele `cd ex01`.
 
-Use o **DNS** para traduzir um nome de domínio num endereço IP.
+2.  Descarregue o [código](https://github.com/detiuaveiro/iei/tree/master/classes/class_08/02_support/ex01) da solução para este diretório.
 
-```bash
-$ dig google.com
-```
-
-  * Procure na "ANSWER SECTION" para encontrar o registo `A` (o endereço IPv4).
-
-  * **Bónus:** Encontre os servidores de email de `google.com` consultando o registo `MX`.
+3.  Ative um `venv` e instale os requisitos:
 
     ```bash
-    $ dig google.com MX
+    python3 -m venv venv
+    source venv/bin/activate
+    pip install -r requirements.txt
     ```
 
------
+4.  Crie um ficheiro para enviar, ex: `echo "Este é um ficheiro de teste UDP." > test.txt`.
 
-### Parte 3: Descoberta de Serviços (`nmap`)
+5.  **Execute o Servidor (Terminal 1):**
 
-#### Exercício 8: Faça Scan a Si Mesmo
+    ```bash
+    python file_transfer.py receive --port 9999
+    ```
 
-Use o **Nmap** (Network Mapper) para procurar portas abertas no seu próprio computador.
+6.  **Execute o Cliente (Terminal 2):**
 
-```bash
-$ nmap localhost
+    ```bash
+    python file_transfer.py send test.txt --host 127.0.0.1 --port 9999
+    ```
+
+## Exercício 2: Jogo do Galo Remoto
+
+**Objetivo:** Analisar o script `main.py` fornecido para ver como o `asyncio` pode ser integrado com uma biblioteca gráfica (GUI) como o Pygame para criar uma aplicação de rede.
+
+**Detalhes:**
+
+  * **Menus GUI:** O script usa Pygame para desenhar todos os seus próprios menus. Não usa `argparse`.
+  * **Loop de Jogo Async:** O loop principal `while running:` é `async`. Ele cede o controlo ao event loop do `asyncio` ao chamar `await asyncio.sleep(1/FPS)`.
+  * **Rede:** O script usa `asyncio.start_server` (para o anfitrião/host) e `asyncio.open_connection` (para o cliente) para criar streams TCP fiáveis.
+  * **Tratamento de Erros:** As funções `run()` e `close_connection()` usam `try...finally` e tratam `asyncio.CancelledError` para garantir que a aplicação encerra de forma limpa.
+
+**Instruções:**
+
+1.  Crie um novo diretório `ex02` e entre nele `cd ex02`.
+
+2.  Descarregue o [código](https://github.com/mariolpantunes/tictactoe/archive/refs/tags/tictactoe-2.0.tar.gz) da solução para este diretório.
+
+3.  Ative um `venv` e instale os requisitos:
+
+    ```bash
+    python3 -m venv venv
+    source venv/bin/activate
+    pip install -r requirements.txt
+    ```
+
+4.  **Execute o Anfitrião (Host - Jogador X):**
+
+    ```bash
+    python main.py
+    ```
+
+      * Na GUI, clique em "Host Game" -\> insira uma porta (ex: `8888`) -\> Pressione Enter.
+
+5.  **Execute o Cliente (Jogador O):**
+
+    ```bash
+    python main.py
+    ```
+
+      * Na GUI, clique em "Join Game" -\> insira o IP do anfitrião (`127.0.0.1` se for na mesma máquina) -\> Pressione Enter -\> insira a porta (`8888`) -\> Pressione Enter.
+
+## Exercício 3: Serviço de Cache com FastAPI
+
+**Objetivo:** Executar e testar o script `main.py` fornecido para entender como construir um endpoint de API de alta performance com cache.
+
+**Detalhes:**
+
+  * **Endpoint:** O script fornece um endpoint `GET /ip/{ip_address}`.
+  * **Cache:** Usa um ficheiro local `ip_cache.json`.
+  * **Lógica:** Verifica o `timestamp` de uma entrada em cache contra um `CACHE_DEADLINE_SECONDS`.
+  * **API Externa:** Se a cache estiver desatualizada (stale) ou em falta, usa a biblioteca `requests` para obter dados ao vivo.
+
+**Instruções:**
+
+1.  Crie um novo diretório `ex03` e entre nele `cd ex03`.
+
+2.  Descarregue o [código](https://github.com/detiuaveiro/iei/tree/master/classes/class_08/02_support/ex03) da solução para este diretório.
+
+3.  Ative um `venv` e instale os requisitos:
+
+    ```bash
+    python3 -m venv venv
+    source venv/bin/activate
+    pip install -r requirements.txt
+    ```
+
+4.  **Execute o Servidor:**
+
+    ```bash
+    uvicorn main:app --reload
+    ```
+
+5.  **Teste o Serviço (num novo terminal):**
+
+      * **Teste 1 (Falha na Cache - Miss):**
+
+        ```bash
+        # IP Privado (tem de falhar)
+        curl [http://127.0.0.1:8000/ip/192.168.132.132](http://127.0.0.1:8000/ip/192.168.132.132)
+
+        # DNS Google
+        curl [http://127.0.0.1:8000/ip/8.8.8.8](http://127.0.0.1:8000/ip/8.8.8.8)
+
+        # IP Público da MEO
+        curl [http://127.0.0.1:8000/ip/144.64.3.83](http://127.0.0.1:8000/ip/144.64.3.83)
+
+        # UA
+        curl [http://127.0.0.1:8000/ip/193.137.169.135](http://127.0.0.1:8000/ip/193.137.169.135)
+
+        # IP Estático de São Tomé
+        curl [http://127.0.0.1:8000/ip/197.159.166.30](http://127.0.0.1:8000/ip/197.159.166.30)
+        ```
+
+        *(Verifique os logs do servidor; deve dizer "Querying external API".)*
+
+      * **Teste 2 (Sucesso na Cache - Hit):**
+
+        ```bash
+        # IP Privado (tem de falhar)
+        curl [http://127.0.0.1:8000/ip/192.168.132.132](http://127.0.0.1:8000/ip/192.168.132.132)
+
+        # DNS Google
+        curl [http://127.0.0.1:8000/ip/8.8.8.8](http://127.0.0.1:8000/ip/8.8.8.8)
+
+        # IP Público da MEO
+        curl [http://127.0.0.1:8000/ip/144.64.3.83](http://127.0.0.1:8000/ip/144.64.3.83)
+
+        # UA
+        curl [http://127.0.0.1:8000/ip/193.137.169.135](http://127.0.0.1:8000/ip/193.137.169.135)
+
+        # IP Estático de São Tomé
+        curl [http://127.0.0.1:8000/ip/197.159.166.30](http://127.0.0.1:8000/ip/197.159.166.30)
+        ```
+
+        *(Verifique os logs do servidor; deve dizer "Returning cached data".)*
+
+## Exercício 4: Chat Pub/Sub
+
+**Objetivo:** Usar Docker para executar um broker MQTT e ligar-se a ele com um cliente puramente JavaScript para criar uma aplicação de chat "serverless".
+
+**Detalhes:**
+
+  * **Sem Servidor Python:** Você não vai escrever *nenhum* código de servidor. O broker Mosquitto *é* o servidor.
+  * **Broker:** O ficheiro `docker-compose.yml` inicia o Mosquitto e carrega o `mosquitto.conf`.
+  * **Configuração:** O ficheiro `.conf` ativa o acesso anónimo e abre a porta `9001` para **MQTT-sobre-WebSockets**.
+  * **Cliente:** O ficheiro `chat_client.html` usa a biblioteca **MQTT.js** (carregada de um CDN) para se ligar a `ws://localhost:9001`. Implementa um chat Pub/Sub.
+
+**Instruções:**
+
+1.  Crie um novo diretório `ex04` e entre nele `cd ex04`.
+
+2.  Descarregue o [código](https://github.com/detiuaveiro/iei/tree/master/classes/class_08/02_support/ex04) para o mesmo diretório.
+
+3.  **Inicie o Broker:**
+
+    ```bash
+    docker-compose up -d
+    ```
+
+4.  **Teste o Cliente:**
+
+      * Abra `http://localhost:8080/` no seu navegador web.
+      * Abra `http://localhost:8080/` num *segundo* separador ou janela do navegador.
+      * Insira nomes de utilizador diferentes e ligue-se. As mensagens enviadas numa janela devem aparecer na outra.
+      * Pode usar a rede `TheOffice` para conversar com outros estudantes.
+
+## Exercício 5: Sensor MQTT com RPi Pico
+
+Como afirmado no início, utilizadores de Linux nativo podem saltar estes passos (saltar para a Secção [5.3](#construir-o-sensor).
+Para WSL e SOs virtualizados, siga os passos abaixo.
+**Importante:** precisa de desligar a Firewall para este exercício.
+
+### 5.1 Passagem (Passthrough) de USB no WSL
+
+Os passos nesta secção são baseados no [guia](https://learn.microsoft.com/en-us/windows/wsl/connect-usb) original da Microsoft.
+
+Num terminal **PowerShell**, execute os seguintes comandos:
+
+```powershell
+# 1. Atualize a versão do WSL
+wsl --update
+
+# 2. Desligue a VM leve do WSL
+wsl --shutdown
+
+# 3. Atualize as opções de rede do WSL
+$wslConfig = @'
+[wsl2]
+networkingMode=mirrored
+'@
+
+Add-Content -Path $env:UserProfile.wslconfig -Value $wslConfig
+
+# 4. Instale a aplicação USBIPD
+winget install --interactive --exact dorssel.usbipd-win
 ```
 
-Provavelmente verá a porta `2222` aberta por causa do servidor SSH que iniciou na Parte 0.
+Após estes passos, pode reiniciar a VM leve do WSL. Basta abrir o terminal correspondente.
 
-#### Exercício 9: Faça Scan a um Servidor Público
+Para anexar um dispositivo USB à VM leve do WSL, use as seguintes instruções num terminal PowerShell com privilégios de administração. **Lembre-se** de ter o terminal WSL já a correr.
 
-Vamos ver que portas estão abertas num website público. `scanme.nmap.org` é um servidor *especificamente* para praticar Nmap.
+```powershell
+# 1. Liste os dispositivos USB
+usbipd list
 
-```bash
-$ nmap scanme.nmap.org
+# 2. Encontre um com um nome semelhante a "USB Serial Device (COM4)"
+# E faça o bind usando o seu BUSID (exemplo 2-7)
+usbipd bind --force --busid <BUSID>
+
+# 3. Anexe-o à VM leve do WSL
+usbipd attach --wsl --busid <BUSID>
 ```
 
-  * Que serviços estão a correr? Este output mostra-lhe porque é que as portas `80` (HTTP) e `22` (SSH) são importantes.
+O dispositivo deve agora estar disponível na VM leve do WSL.
+Após completar o exercício, por favor, execute o seguinte comando para desanexar o dispositivo.
 
------
-
-### Parte 4: Operações Remotas Seguras (SSH & `rsync`)
-
-#### Exercício 10: Ligue-se ao Seu Servidor (`ssh`)
-
-É altura de fazer login no servidor SSH que lançou na Parte 0. A sua chave pública já está autorizada.
-
-```bash
-# Ligar ao utilizador 'student' em localhost na porta 2222
-$ ssh student@localhost -p 2222
+```powershell
+usbipd detach --busid <BUSID>
 ```
 
-  * Agora está *dentro* do contentor Docker.
-  * Execute comandos como `whoami`, `ls -l`, ou `pwd` para provar que está num ambiente diferente.
-  * Escreva `exit` para sair.
+### 5.2 Passagem (Passthrough) de USB no VirtualBox
 
-#### Exercício 11: Sincronize Ficheiros de Forma Segura (`rsync`)
+Para convidados (guests) Debian (ou outro Linux) a correr no VirtualBox, precisa de configurar o VirtualBox na sua **máquina anfitriã (host)** para "passar" o dispositivo USB diretamente para a **VM convidada (guest)**.
+Estes passos são realizados na **máquina anfitriã (host)** (o computador que corre o VirtualBox).
 
-O `rsync` é a melhor forma de copiar ficheiros através de SSH. É inteligente e copia apenas as diferenças.
+#### 1. Instalar o VirtualBox Extension Pack (No Anfitrião)
 
-1.  Na sua **máquina anfitriã (host)**, crie uma nova pasta e um ficheiro.
+Isto é **obrigatório** para suporte USB 2.0 e 3.0, que a maioria dos dispositivos série modernos usa.
 
-    ```bash
-    $ mkdir o-meu-projeto
-    $ echo "Este é um ficheiro de teste" > ./o-meu-projeto/README.md
-    ```
+1.  Vá à [página de downloads do VirtualBox](https://www.virtualbox.org/wiki/Downloads).
+2.  Encontre o **VirtualBox Extension Pack** e descarregue-o.
+3.  **Garanta que a versão do Extension Pack corresponde à sua versão instalada do VirtualBox.**
+4.  Faça duplo clique no ficheiro descarregado (`.vbox-extpack`) e siga as instruções no gestor do VirtualBox para o instalar.
 
-2.  Use o `rsync` para "empurrar" (push) esta pasta para o diretório home do servidor.
+#### 2. Adicionar Utilizador Anfitrião (Host) ao Grupo `vboxusers` (Em Anfitriões Linux/macOS)
 
-    ```bash
-    # Note a flag -e para especificar a porta SSH
-    $ rsync -avzP -e "ssh -p 2222" ./o-meu-projeto student@localhost:~/
-    ```
+Em **máquinas anfitriãs (host) Linux ou macOS**, a sua conta de utilizador deve estar no grupo `vboxusers` para dar permissão ao VirtualBox para aceder ao hardware USB.
 
-3.  Faça login novamente no servidor SSH (`ssh student@localhost -p 2222`) e execute `ls`. Verá que `o-meu-projeto` foi copiado.
+```bash
+# Este comando é para anfitriões Linux
+sudo usermod -a -G vboxusers $USER
 
------
+# No macOS, o instalador do Extension Pack deve tratar disto.
+```
 
-### Parte 5: Projeto - Geo-Traceroute
+> **Importante:** Após executar este comando, **tem de fazer logout completo e login novamente** na sua máquina anfitriã para que a alteração do grupo tenha efeito. (Este passo não é necessário se a sua máquina anfitriã for Windows).
 
-#### Exercício 12: Construa um Traceroute Visual
+#### 3. Configurar Definições USB da VM (No Anfitrião)
 
-Neste projeto, irá combinar `traceroute`, uma API pública e uma biblioteca de mapeamento para visualizar o caminho físico que os seus dados percorrem pelo mundo. Descarregue o código [aqui](https://github.com/mariolpantunes/geotraceroute/archive/refs/tags/v1.0.tar.gz).
+1.  **Desligue** a sua VM Debian completamente (não faça apenas "Save State").
+2.  Abra o gestor do VirtualBox, selecione a sua VM Debian, e clique em **Settings (Definições)**.
+3.  Vá ao separador **USB**.
+4.  Selecione o **Controlador USB 3.0 (xHCI)**.
+5.  **Ligue o seu dispositivo MicroPython** (ex: Raspberry Pi Pico, ESP32) ao seu computador anfitrião.
+6.  Clique no ícone **"Adicionar novo filtro USB"** (o pequeno conector USB com um `+` verde).
+7.  Selecione o seu dispositivo da lista. Pode chamar-se "USB Serial Device", "CP210x", "CH340", "Raspberry Pi Pico", ou similar.
 
-O código faz o seguinte:
+<!-- end list -->
 
-1.  Executa `traceroute` e extrai os endereços IP de cada salto.
-2.  Procura a localização geográfica de cada IP usando a API `ip-api.com`.
-3.  Armazena os resultados em cache num ficheiro `cache.json` para evitar repetir consultas e atingir os limites da API.
-4.  Plota todos os pontos e o caminho num mapa interativo.
+  - Isto cria um filtro que passará automaticamente este dispositivo *específico* para a sua VM quando for ligado.
 
-Experimente, siga as instruções do [`README.md`](https://github.com/mariolpantunes/geotraceroute) para configurar o projeto.
+<!-- end list -->
 
------
+8.  Clique **OK** para guardar as definições.
 
-### Exercício Bónus: Túnel SSH (SSH Tunneling)
+#### 4. Anexar e Verificar (Na VM Convidada)
 
-Vamos usar o encaminhamento de portas (port forwarding) avançado do SSH para aceder de forma segura a um servidor web "escondido".
+1.  **Inicie** a sua VM Debian.
 
-1.  Faça login no seu contentor SSH:
+2.  Se o filtro foi configurado corretamente, o dispositivo deve ser automaticamente capturado pela VM convidada.
 
-    ```bash
-    $ ssh student@localhost -p 2222
-    ```
+3.  Abra um terminal *dentro da VM Debian*.
 
-2.  **Dentro do contentor,** execute um servidor web simples na porta 8000. Esta porta *não* está exposta no seu `docker-compose.yml`, por isso está inacessível a partir do seu host.
+4.  Primeiro, re-confirme que o seu utilizador está no grupo `dialout` (do **Passo 2** principal deste guia).
 
-    ```bash
-    # Dentro do contentor SSH
-    $ cd ~
-    $ echo "Olá de dentro do túnel!" > index.html
-    $ python3 -m http.server 8000
-    ```
-
-3.  Abra um **novo terminal do host** (deixe o servidor a correr).
-
-4.  Crie um túnel SSH. Este comando diz "encaminha a *minha* porta local 8080 para `localhost:8000` *no servidor remoto*."
+5.  A seguir, verifique se o dispositivo está presente:
 
     ```bash
-    # Num NOVO terminal do host
-    $ ssh -N -L 8080:localhost:8000 student@localhost -p 2222
+    ls /dev/tty*
     ```
 
-    (A flag `-N` apenas abre o túnel sem iniciar uma shell).
+Deverá ver um novo dispositivo, tipicamente chamado `/dev/ttyACM0` (para Picos) ou `/dev/ttyUSB0` (para placas baseadas em ESP).
+O Thonny será agora capaz de encontrar e ligar-se a esta porta.
 
-5.  Abra o browser na sua máquina **host** e vá a `http://localhost:8080`.
+### 5.3 Construir o sensor
 
-6.  Deverá ver a mensagem "Olá de dentro do túnel\!". Acedeu com sucesso a uma porta escondida através de um túnel SSH seguro.
+Neste exercício, vamos explorar o RPI Pico W com um sensor de temperatura e humidade DHT11.
+Antes de montar o circuito, dedique algum tempo a verificar o pinout tanto da placa como do sensor.
+
+{ width=100% }
+
+{ width=45% }
+
+O diagrama de ligações para o circuito é apresentado na figura abaixo.
+
+{ width=65% }
+
+### 5.4 Implementação (Deployment) do Código
+
+**Objetivo:** Implementar o código MicroPython fornecido num Raspberry Pi Pico W para publicar a sua temperatura interna no seu broker MQTT.
+
+**Detalhes:**
+
+  * **Hardware:** Este exercício requer um **Raspberry Pi Pico W**.
+  * **Sensor:** O código usa o sensor de temperatura interno incorporado no Pico, por isso **não é necessário hardware externo**.
+  * **Segredos:** A boa prática é armazenar as credenciais de WiFi num ficheiro `config.py` separado, que não é submetido para o controlo de versões.
+  * **Biblioteca MQTT:** O MicroPython requer uma biblioteca MQTT leve especial, `umqtt.simple`.
+
+**Instruções:**
+
+1.  Crie um novo diretório chamado `ex05` e entre nele:
+
+<!-- end list -->
+
+```bash
+mkdir ex05 && cd ex05
+```
+
+2.  Descarregue o [código](https://github.com/detiuaveiro/iei/tree/master/classes/class_08/02_support/ex05) para o mesmo diretório.
+
+3.  **Inicie o Broker:**
+
+<!-- end list -->
+
+```bash
+docker-compose up -d
+```
+
+4.  **Use o Thonny**
+
+<!-- end list -->
+
+  * Abra o Thonny.
+  * Ligue-se ao seu Pico (clique no menu do interpretador no canto inferior direito e selecione "MicroPython (Raspberry Pi Pico)").
+
+<!-- end list -->
+
+5.  **Execute o código**
+
+<!-- end list -->
+
+  * Abra o `main.py` fornecido no editor.
+  * Edite o endereço IP do broker MQTT (`mqtt_host`) e o ID do cliente (`mqtt_host`). Estas devem ser as únicas alterações necessárias.
+  * Execute o script (clique no botão "Run") para executar o código na placa.
+
+<!-- end list -->
+
+6.  **Abra a Página Web**
+
+<!-- end list -->
+
+  * Abra `http://localhost:8080/` no seu navegador web.
+  * Preencha o IP do broker (se estiver a correr na mesma máquina, use `localhost`) e o tópico (padrão: `deti/pico/dht11`).
+  * Observe o gráfico a mostrar informação em tempo real.
+
+<!-- end list -->
+
+7.  **MQTT5 Explorer**
+
+<!-- end list -->
+
+  * O MQTT5 Explorer pode ser usado para depurar (debug) a conexão MQTT.
+  * Instale usando o comando:
+
+<!-- end list -->
+
+```bash
+flatpak --user install flathub io.github.Omniaevo.mqtt5-explorer
+```
+
+  * Abra a aplicação e preencha a informação pedida.
+
+## 🌟 Exercício Bónus: O Clássico Servidor de Eco (Echo Server)
+
+**Objetivo:** Escrever um Servidor de Eco (Echo Server) simples em Python usando o módulo `socket` incorporado. Este é o "Olá, Mundo\!" da programação em rede.
+
+**Tarefa:**
+Este é o único exercício onde **tem de escrever o código você mesmo.**
+
+Crie um único script Python `echo_server.py`. O script deve ser capaz de correr num de dois modos usando `argparse`:
+
+1.  `python echo_server.py tcp --port <num>`
+2.  `python echo_server.py udp --port <num>`
+
+**Requisitos:**
+
+  * **Modo TCP:** O servidor deve escutar na porta indicada, aceitar uma conexão de cliente, e `recv` (receber) dados do cliente. Deve então `sendall` (enviar tudo) os *exatos mesmos dados* de volta. Deve lidar graciosamente com clientes que se desligam.
+  * **Modo UDP:** O servidor deve fazer `bind` à porta indicada, `recvfrom` (receber de) um datagrama, e `sendto` (enviar para) os *exatos mesmos dados* de volta para o endereço de onde vieram.
+  * Tem de escrever este código de raiz. **Não use `asyncio` para este exercício.**
+  * Teste o seu servidor TCP com `netcat`: `nc 127.0.0.1 <porta>`.
+  * Teste o seu servidor UDP com `netcat`: `nc -u 127.0.0.1 <porta>`.
+
+**Documentação Útil:**
+
+  * **Módulo `socket` do Python:** [https://docs.python.org/3/library/socket.html](https://docs.python.org/3/library/socket.html)
+  * **Guia HOWTO de Programação de Sockets em Python:** [https://docs.python.org/3/howto/sockets.html](https://docs.python.org/3/howto/sockets.html)

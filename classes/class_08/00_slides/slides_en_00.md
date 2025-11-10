@@ -111,8 +111,6 @@ UDP is "fire and forget." No connection is established.
 
 ![UDP - does not use session concepts](figures/udp.svg){ width=65% }
 
-
-
 ## Python UDP Server (Echo) {.allowframebreaks}
 
 ```python
@@ -283,15 +281,15 @@ Sockets are powerful but low-level. Most modern web services don't expose socket
   * It builds *on top of* HTTP (which builds on top of TCP).
   * It's **stateless**: Every request must contain all info needed to process it.
 
-
-
-## REST Communication Pattern (Req/Rep) {.allowframebreaks}
+## REST Communication Pattern (Req/Rep) i
 
 Client-server communication over HTTP.
 
   * **Resource:** An entity (e.g., `/users`, `/products/123`).
   * **Verbs:** HTTP methods (GET, POST, PUT, DELETE).
   * **Data:** Usually sent/received as **JSON**.
+
+## REST Communication Pattern (Req/Rep) ii
 
 ![HTTP comunication](figures/rest.svg){ width=45% }
 
@@ -392,7 +390,6 @@ What if REST is too slow? What if the server needs to push data to the client *w
 ## WebSocket Communication Pattern
 
 ![WebSocket Communication](figures/ws.svg){ width=45% }
-
 
 ## WebSocket Example: JavaScript Client {.allowframebreaks}
 
@@ -611,8 +608,6 @@ client.connect("test.mosquitto.org", 1883, 60)
 # and handles reconnecting.
 client.loop_forever()
 ```
-
-
 
 # Other Communication Patterns
 

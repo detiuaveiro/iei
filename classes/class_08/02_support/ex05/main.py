@@ -11,7 +11,7 @@ from umqtt.simple import MQTTClient
 ssid = 'TheOffice'
 password = '8006002030'
 #ntptime.host = 'pt.pool.ntp.org'
-ntptime.host = 'time.ua.pt'
+#ntptime.host = 'time.ua.pt'
 
 led = Pin("LED", Pin.OUT)
 
@@ -28,12 +28,12 @@ while wlan.isconnected() == False:
 status = wlan.ifconfig()
 print('Connected to WiFi: %s' %status[0])
 
-led.on()
-ntptime.settime()
-print(time.localtime())
-led.off()
+#led.on()
+#ntptime.settime()
+#print(time.localtime())
+#led.off()
 
-mqtt_host = "192.168.1.6"
+mqtt_host = "192.168.0.100"
 mqtt_username = ""
 mqtt_password = ""
 mqtt_publish_topic = "deti/pico/dht11"
