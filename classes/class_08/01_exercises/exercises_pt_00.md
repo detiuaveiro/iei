@@ -239,19 +239,19 @@ Perceber como ele usa `asyncio` para criar um servidor persistente que pode lida
 
         ```bash
         # IP Privado (tem de falhar)
-        curl [http://127.0.0.1:8000/ip/192.168.132.132](http://127.0.0.1:8000/ip/192.168.132.132)
+        curl http://127.0.0.1:8000/ip/192.168.132.132
 
         # DNS Google
-        curl [http://127.0.0.1:8000/ip/8.8.8.8](http://127.0.0.1:8000/ip/8.8.8.8)
+        curl http://127.0.0.1:8000/ip/8.8.8.8
 
         # IP Público da MEO
-        curl [http://127.0.0.1:8000/ip/144.64.3.83](http://127.0.0.1:8000/ip/144.64.3.83)
+        curl http://127.0.0.1:8000/ip/144.64.3.83
 
         # UA
-        curl [http://127.0.0.1:8000/ip/193.137.169.135](http://127.0.0.1:8000/ip/193.137.169.135)
+        curl http://127.0.0.1:8000/ip/193.137.169.135
 
         # IP Estático de São Tomé
-        curl [http://127.0.0.1:8000/ip/197.159.166.30](http://127.0.0.1:8000/ip/197.159.166.30)
+        curl http://127.0.0.1:8000/ip/197.159.166.30
         ```
 
         *(Verifique os logs do servidor; deve dizer "Querying external API".)*
@@ -260,19 +260,19 @@ Perceber como ele usa `asyncio` para criar um servidor persistente que pode lida
 
         ```bash
         # IP Privado (tem de falhar)
-        curl [http://127.0.0.1:8000/ip/192.168.132.132](http://127.0.0.1:8000/ip/192.168.132.132)
+        curl http://127.0.0.1:8000/ip/192.168.132.132
 
         # DNS Google
-        curl [http://127.0.0.1:8000/ip/8.8.8.8](http://127.0.0.1:8000/ip/8.8.8.8)
+        curl http://127.0.0.1:8000/ip/8.8.8.8
 
         # IP Público da MEO
-        curl [http://127.0.0.1:8000/ip/144.64.3.83](http://127.0.0.1:8000/ip/144.64.3.83)
+        curl http://127.0.0.1:8000/ip/144.64.3.83
 
         # UA
-        curl [http://127.0.0.1:8000/ip/193.137.169.135](http://127.0.0.1:8000/ip/193.137.169.135)
+        curl http://127.0.0.1:8000/ip/193.137.169.135
 
         # IP Estático de São Tomé
-        curl [http://127.0.0.1:8000/ip/197.159.166.30](http://127.0.0.1:8000/ip/197.159.166.30)
+        curl http://127.0.0.1:8000/ip/197.159.166.30
         ```
 
         *(Verifique os logs do servidor; deve dizer "Returning cached data".)*
