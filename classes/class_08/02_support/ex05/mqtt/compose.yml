@@ -1,9 +1,0 @@
-services:
-  mosquitto:
-    image: eclipse-mosquitto
-    container_name: mosquitto_broker
-    ports:
-      - "1883:1883" # Standard MQTT port
-      - "9001:9001" # WebSocket port
-    volumes:
-      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf

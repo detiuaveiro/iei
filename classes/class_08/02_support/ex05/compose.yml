@@ -1,0 +1,19 @@
+services:
+  mosquitto:
+    image: eclipse-mosquitto
+    container_name: mqtt
+    ports:
+      - "1883:1883" # Standard MQTT port
+      - "9001:9001" # WebSocket port
+    volumes:
+      - ./mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf
+  
+  webserver:
+    image: nginx:alpine 
+    container_name: nginx
+    volumes:
+      - ./html/:/usr/share/nginx/html:ro
+    ports:
+      - "8080:80"
+    depends_on:
+      - mosquitto 
