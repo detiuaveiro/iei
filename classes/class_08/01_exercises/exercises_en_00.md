@@ -321,7 +321,7 @@ $wslConfig = @'
 networkingMode=mirrored
 '@
 
-Add-Content -Path $env:UserProfile\.wslconfig -Value $wslConfig
+Add-Content -Path ($env:UserProfile + "\.wslconfig") -Value $wslConfig
 
 # 4. Install the USBIPD application
 winget install --interactive --exact dorssel.usbipd-win
@@ -414,7 +414,7 @@ Before assembling the circuit, take some time to check the pinout of both the bo
 
 The wiring diagram for the circuit is presented in the figure below.
 
-![DHT11 and DHT22 Pinout](figures/pico_dht11_bb.pdf){ width=65% }
+![DHT11 and DHT22 Pinout](figures/dht11-pico2_bb.pdf){ width=65% }
 
 ### 5.4 Code deployment
 

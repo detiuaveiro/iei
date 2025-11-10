@@ -332,7 +332,7 @@ $wslConfig = @'
 networkingMode=mirrored
 '@
 
-Add-Content -Path $env:UserProfile.wslconfig -Value $wslConfig
+Add-Content -Path ($env:UserProfile + "\.wslconfig") -Value $wslConfig
 
 # 4. Instale a aplicação USBIPD
 winget install --interactive --exact dorssel.usbipd-win
@@ -430,13 +430,13 @@ O Thonny será agora capaz de encontrar e ligar-se a esta porta.
 Neste exercício, vamos explorar o RPI Pico W com um sensor de temperatura e humidade DHT11.
 Antes de montar o circuito, dedique algum tempo a verificar o pinout tanto da placa como do sensor.
 
-{ width=100% }
+![RPI Pico Pinout](figures/pico-pinout.pdf){ width=100% }
 
-{ width=45% }
+![DHT11 and DHT22 Pinout](figures/dht-pinout.png){ width=45% }
 
 O diagrama de ligações para o circuito é apresentado na figura abaixo.
 
-{ width=65% }
+![DHT11 and DHT22 Pinout](figures/dht11-pico2_bb.pdf){ width=65% }
 
 ### 5.4 Implementação (Deployment) do Código
 
