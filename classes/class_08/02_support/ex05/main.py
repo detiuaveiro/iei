@@ -2,7 +2,7 @@ from machine import Pin
 import time
 import dht
 import network
-import ntptime
+#import ntptime
 import picozero
 import ujson
 
@@ -15,8 +15,8 @@ password = '8006002030'
 
 led = Pin("LED", Pin.OUT)
 
-sensor = dht.DHT11(Pin(22))
-#sensor = dht.DHT22(Pin(22))
+#sensor = dht.DHT11(Pin(22))
+sensor = dht.DHT22(Pin(22))
 
 wlan = network.WLAN(network.STA_IF)
 wlan.active(True)
@@ -33,7 +33,7 @@ print('Connected to WiFi: %s' %status[0])
 #print(time.localtime())
 #led.off()
 
-mqtt_host = "192.168.0.100"
+mqtt_host = "192.168.0.102"
 mqtt_username = ""
 mqtt_password = ""
 mqtt_publish_topic = "deti/pico/dht11"

@@ -435,7 +435,7 @@ The wiring diagram for the circuit is presented in the figure below.
   mkdir ex05 && cd ex05
   ```
 
-2. Download the [code](https://github.com/detiuaveiro/iei/tree/master/classes/class_08/02_support/ex05) into the same directory.
+2. Download the [code](https://github.com/detiuaveiro/iei/blob/master/classes/class_08/02_support/ex05/ex05.tar.xz) into the same directory.
 
 3. **Start the Broker:**
 

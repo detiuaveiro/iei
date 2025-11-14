@@ -453,13 +453,12 @@ O diagrama de ligações para o circuito é apresentado na figura abaixo.
 
 1.  Crie um novo diretório chamado `ex05` e entre nele:
 
-<!-- end list -->
 
 ```bash
 mkdir ex05 && cd ex05
 ```
 
-2.  Descarregue o [código](https://github.com/detiuaveiro/iei/tree/master/classes/class_08/02_support/ex05) para o mesmo diretório.
+2.  Descarregue o [código](https://github.com/detiuaveiro/iei/blob/master/classes/class_08/02_support/ex05/ex05.tar.xz) para o mesmo diretório.
 
 3.  **Inicie o Broker:**
 
