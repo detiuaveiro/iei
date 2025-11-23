@@ -1,0 +1,17 @@
+services:
+  web:
+    image: nginx:alpine
+    container_name: frontend_server
+    ports: ["8080:80"]
+    volumes:
+      - ./frontend:/usr/share/nginx/html
+
+  auth:
+    build: ./auth-service
+    container_name: auth_server
+    ports: ["3000:3000"]
+
+  geo:
+    build: ./geo-service
+    container_name: geo_server
+    ports: ["8000:8000"]
