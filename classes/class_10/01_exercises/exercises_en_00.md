@@ -1,9 +1,9 @@
 ---
-title: WebPage & deployment
+title: Web programming
 subtitle: Introdução Engenharia Informática
 author: Mário Antunes
 institute: Universidade de Aveiro
-date: November 17, 2025
+date: November 24, 2025
 colorlinks: true
 highlight-style: tango
 geometry: a4paper,margin=2cm
@@ -371,7 +371,7 @@ function handleLoginState(isLoggedIn) {
         guestMessage.classList.add('hidden');
         loginBtn.style.display = 'none';
         logoutBtn.style.display = 'inline-block';
-        
+
         // Load dynamic features
         loadGallery();
         initChat();
@@ -430,7 +430,7 @@ Append this to `frontend/app.js`. This code makes the Chat Window defined in HTM
 function initChat() {
     const chatInput = document.getElementById('chatInput');
     const chatMessages = document.getElementById('chatMessages');
-    
+
     // Connect to Node.js WebSocket
     const socket = new WebSocket('ws://localhost:3000');
 
@@ -531,7 +531,7 @@ function initMap() {
     }).addTo(map);
 
     const marker = L.marker([40.64427, -8.64554]).addTo(map);
-    
+
     // Connect to Python WebSocket
     const geoSocket = new WebSocket('ws://localhost:8000/ws/location');
 
@@ -544,4 +544,11 @@ function initMap() {
 }
 ```
 
-**Final Step:** Run `docker compose up -d --build` and enjoy your app\!
+**Final Step:** Run `docker compose up -d --build` and enjoy your app!
+
+## Phase 5 (Optional)
+
+Implement two major changes in the code:
+
+1. For a more realistic approach, the server should compare password hashes instead of the passwords directly. Implement this modification on the webpage and the authentication server.
+2. Create multiple chat windows, updating the webpage and server to support this.

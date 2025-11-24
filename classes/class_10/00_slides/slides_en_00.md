@@ -1,9 +1,9 @@
 ---
-title: WebPage & deployment
+title: Web programming
 subtitle: Introdução Engenharia Informática
 author: Mário Antunes
 institute: Universidade de Aveiro
-date: November 17, 2025
+date: November 24, 2025
 colorlinks: true
 highlight-style: tango
 toc: true
@@ -249,6 +249,56 @@ socket.onmessage = (event) => {
     displayMessage(message);
 };
 ```
+
+# Debugging in the Browser
+
+## The Challenge of Interpreted Languages {.allowframebreaks}
+
+Unlike C, C++, or Rust, JavaScript is an **Interpreted** (or JIT compiled) language.
+
+**Compiled Languages (C/C++):**
+
+*   The compiler scans the entire code **before** execution.
+*   Syntax errors and type mismatches are caught at **Compile Time**.
+*   *Result:* You cannot run the program until these errors are fixed.
+
+**Interpreted Languages (JavaScript):**
+
+*   The browser reads and executes code line-by-line (or block-by-block) at **Runtime**.
+*   *Result:* The application might load perfectly and run for minutes.
+*   **The Crash:** The error only occurs when the execution flow hits the specific buggy line (e.g., when a user clicks a specific button).
+
+**Consequence:**
+"It works on my machine" is common. You might not encounter the error because you didn't trigger the specific execution path that contains the bug.
+
+## The Environment Gap: Editor vs. Browser {.allowframebreaks}
+
+Debugging Web Applications introduces a disconnect between where you **write** code and where you **run** code.
+
+**1. The Context Switch:**
+*   You write code in an **IDE** (VS Code), which has static analysis and linting.
+*   You run code in the **Browser** (Chrome/Firefox).
+*   When an error occurs, it appears in the Browser's Console, not immediately in your text editor.
+
+**2. The "Black Box" Problem:**
+*   The browser often runs "minified" or "bundled" code (to save bandwidth).
+*   An error on line 1 of `bundle.js` is useless to the developer.
+*   *Solution:* We rely on **Source Maps**, which tell the browser how to map the running code back to your original files.
+
+## Debugging Strategies
+
+**1. "Printf" Debugging (`console.log`)**
+*   The oldest method. You print variables to the browser console to inspect the state.
+*   *Pros:* Fast, simple.
+*   *Cons:* Clutters code, requires cleanup, doesn't pause execution.
+
+**2. The `debugger;` Keyword**
+*   Placing the statement `debugger;` in your code forces the browser to **pause execution** (breakpoint) at that line.
+*   You can then step through code line-by-line.
+
+**3. Browser DevTools (The Sources Tab)**
+*   Modern browsers (Chrome/Firefox) have built-in debuggers that rival desktop IDEs.
+*   You can set breakpoints, watch variables, and inspect the Call Stack directly in the browser.
 
 # Modern Frontend Frameworks
 
