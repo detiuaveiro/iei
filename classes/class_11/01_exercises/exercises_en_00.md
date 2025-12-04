@@ -101,18 +101,6 @@ import polars as pl
 df_csv = pd.read_csv('../data/titanic.csv')
 print("--- Loaded from CSV ---")
 print(df_csv.head(3))
-
-# 2. Load JSON (JavaScript Object Notation)
-# Common when dealing with Web APIs
-df_json = pd.read_json('../data/titanic.json')
-print("\n--- Loaded from JSON ---")
-print(df_json.head(3))
-
-# 3. Load Excel (.xlsx)
-# Common in business environments
-df_excel = pd.read_excel('../data/titanic.xlsx')
-print("\n--- Loaded from Excel ---")
-print(df_excel.head(3))
 ```
 
 
