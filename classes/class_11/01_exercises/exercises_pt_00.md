@@ -63,7 +63,7 @@ USER ${NB_UID}
 
 ### 3. O Ficheiro Docker Compose
 
-Crie `docker-compose.yml` dentro de `titanic_lab`:
+Crie `docker-compose.yml` dentro de `ex11`:
 
 ```yaml
 services:
@@ -241,7 +241,7 @@ Iremos criar um site simples onde um utilizador pode carregar o `titanic.csv` e 
 
 ### 1. Estrutura
 
-Crie a pasta `web_app` dentro de `titanic_lab`. Dentro dela, crie `backend` e `frontend`.
+Crie a pasta `web_app` dentro de `ex11`. Dentro dela, crie `backend` e `frontend`.
 
 ### 2. Backend (FastAPI + Polars)
 
