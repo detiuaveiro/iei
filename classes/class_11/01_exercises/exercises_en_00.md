@@ -54,7 +54,7 @@ FROM quay.io/jupyter/minimal-notebook:latest
 USER root
 
 # Install Python libraries for Data Science and Web
-RUN pip install numpy pandas polars matplotlib
+RUN pip install numpy pandas polars matplotlib \
 seaborn openpyxl fastapi uvicorn python-multipart
 
 # Switch back to the standard user
