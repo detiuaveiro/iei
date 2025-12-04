@@ -1,9 +1,9 @@
 ---
-title: Web programming
+title: Data Loading, Manipulation, and Visualization
 subtitle: Introdução Engenharia Informática
 author: Mário Antunes
 institute: Universidade de Aveiro
-date: November 24, 2025
+date: December 01, 2025
 colorlinks: true
 highlight-style: tango
 geometry: a4paper,margin=2cm
@@ -15,24 +15,24 @@ header-includes:
  - \usepackage{etoolbox}
  - \AtBeginEnvironment{longtable}{\normalsize}
  - \AtBeginEnvironment{cslreferences}{\tiny}
- - \AtBeginEnvironment{Shaded}{\normalsize}
- - \AtBeginEnvironment{verbatim}{\normalsize}
+ - \AtBeginEnvironment{Shaded}{\scriptsize}
+ - \AtBeginEnvironment{verbatim}{\scriptsize}
  - \setmonofont[Contextuals={Alternate}]{FiraCodeNerdFontMono-Retina}
 ---
 
-# Exercises
+# Exercícios
 
-## Objective
+## Objetivo
 
-In this laboratory, you will explore the famous **Titanic dataset**. Your goal is to analyze passenger data to understand who survived the disaster. You will simulate a real-world scenario where data comes in different formats (CSV, JSON, Excel), clean that data, visualize it, and build a web application to process it.
+Neste laboratório, irá explorar o famoso **conjunto de dados do Titanic**. O seu objetivo é analisar os dados dos passageiros para perceber quem sobreviveu ao desastre. Irá simular um cenário do mundo real onde os dados chegam em diferentes formatos (CSV, JSON, Excel), limpar esses dados, visualizá-los e construir uma aplicação web para os processar.
 
-## Part 0: Environment Setup
+## Parte 0: Configuração do Ambiente
 
-We will use **Docker** to create a consistent coding environment.
+Iremos utilizar o **Docker** para criar um ambiente de programação consistente.
 
-### 1. Create Project Structure
+### 1. Criar Estrutura do Projeto
 
-Run these commands in your terminal:
+Execute estes comandos no seu terminal:
 
 ```bash
 mkdir ex11
@@ -42,9 +42,9 @@ mkdir data
 mkdir output
 ```
 
-### 2. The Dockerfile
+### 2. O Dockerfile
 
-Create a file named `Dockerfile` inside `ex11` folder:
+Crie um ficheiro chamado `Dockerfile` dentro da pasta `ex11`:
 
 ```dockerfile
 # Use a lightweight Jupyter notebook image
@@ -61,9 +61,9 @@ seaborn openpyxl fastapi uvicorn python-multipart
 USER ${NB_UID}
 ```
 
-### 3. The Docker Compose File
+### 3. O Ficheiro Docker Compose
 
-Create `docker-compose.yml` inside `titanic_lab`:
+Crie `docker-compose.yml` dentro de `titanic_lab`:
 
 ```yaml
 services:
@@ -79,18 +79,18 @@ services:
       - JUPYTER_TOKEN=titanic
 ```
 
-### 4. Launch and Generate Data
+### 4. Lançar e Gerar Dados
 
-Run `docker compose up --build` in your terminal.
-Open `http://localhost:8888` (password: `titanic`).
+Execute `docker compose up --build` no seu terminal.
+Abra `http://localhost:8888` (palavra-passe: `titanic`).
 
-Create a new notebook and  download the titatic dataset from elearning.
-Place it in the data folder previously created.
+Crie um novo *notebook* e descarregue o conjunto de dados do titanic do elearning.
+Coloque-o na pasta data criada anteriormente.
 
-## Part 1: Data Loading
+## Parte 1: Carregamento de Dados
 
-In the real world, you might receive passenger lists in Excel from HR, or JSON from a web API.
-Let's learn to load all of them.
+No mundo real, pode receber listas de passageiros em Excel dos RH, ou JSON de uma API web.
+Vamos aprender a carregar todos eles.
 
 ```python
 import pandas as pd
@@ -115,16 +115,15 @@ print("\n--- Loaded from Excel ---")
 print(df_excel.head(3))
 ```
 
+## Parte 2: Pré-processamento de Dados
 
-## Part 2: Data Pre-processing
+O conjunto de dados do Titanic é conhecido por ter valores de `Age` (Idade) em falta e ocasionalmente dados desorganizados.
+Iremos simular dados "sujos" e corrigi-los.
 
-The Titanic dataset is notorious for having missing `Age` values and occasionally messy data.
-We will simulate "dirty" data and fix it.
+### Passo 1: Identificar Problemas
 
-### Step 1: Identify Issues
-
-We created the dataset with a missing value (`None`) in the Age column for passenger 6.
-Let's also verify if there are outliers.
+Criámos o conjunto de dados com um valor em falta (`None`) na coluna Age para o passageiro 6.
+Vamos também verificar se existem *outliers*.
 
 ```python
 # Check for null values
@@ -136,9 +135,9 @@ print("\nStatistics:")
 print(df_csv.describe())
 ```
 
-### Step 2: Inject an Outlier
+### Passo 2: Injetar um Outlier
 
-Let's manually add an error to simulate a data entry mistake (e.g., someone typing age 200 instead of 20).
+Vamos adicionar manualmente um erro para simular um erro de introdução de dados (e.g., alguém escrever idade 200 em vez de 20).
 
 ```python
 df_dirty = df_csv.copy()
@@ -155,10 +154,10 @@ plt.title("Age Distribution (With Outlier)")
 plt.show()
 ```
 
-### Step 3: Fix the Data
+### Passo 3: Corrigir os Dados
 
-1.  **Missing Values:** Fill missing `Age` with the median age of passengers.
-2.  **Outliers:** Filter out unrealistic ages (e.g., \> 100).
+1.  **Valores em Falta:** Preencher `Age` em falta com a mediana das idades dos passageiros.
+2.  **Outliers:** Filtrar idades irrealistas (e.g., \> 100).
 
 ```python
 # 1. Fill missing Age with Median
@@ -172,10 +171,10 @@ print("Cleaned Max Age:", df_clean['Age'].max())
 print("Missing Ages:", df_clean['Age'].isnull().sum())
 ```
 
-## Part 3: Data Visualization
+## Parte 3: Visualização de Dados
 
-We will now generate plots to explicitly verify the Survivability Rate.
-Instead of just counting survivors, we want to see the percentage of people who survived in different groups.
+Vamos agora gerar gráficos para verificar explicitamente a Taxa de Sobrevivência.
+Em vez de apenas contar os sobreviventes, queremos ver a percentagem de pessoas que sobreviveram em diferentes grupos.
 
 ```python
 # Calculate Global Survival Rate
@@ -202,14 +201,15 @@ axes[1].set_ylim(0, 1)
 plt.tight_layout()
 plt.show()
 ```
-**Analysis:**
 
-* **Left Plot:** Verifies if richer passengers (1st Class) had a higher chance of survival compared to 3rd Class.
-* **Right Plot:** Verifies the "Women and children first" protocol by comparing Male vs Female survival rates.
+**Análise:**
 
-## Part 4: Exporting Results
+  * **Gráfico da Esquerda:** Verifica se os passageiros mais ricos (1ª Classe) tiveram uma maior probabilidade de sobrevivência em comparação com a 3ª Classe.
+  * **Gráfico da Direita:** Verifica o protocolo "Mulheres e crianças primeiro" comparando as taxas de sobrevivência Masculinas vs Femininas.
 
-We will save the Survival Rate by Class analysis to the shared volume, as this is the most critical insight for our report.
+## Parte 4: Exportar Resultados
+
+Iremos guardar a análise da Taxa de Sobrevivência por Classe no volume partilhado, pois esta é a perceção mais crítica para o nosso relatório.
 
 ```python
 save_path = '../output/survival_rate_analysis.png'
@@ -235,17 +235,17 @@ plt.savefig(save_path, dpi=300)
 print(f"Survival analysis saved to {save_path}")
 ```
 
-## Part 5: Web Application
+## Parte 5: Aplicação Web
 
-We will create a simple website where a user can upload the `titanic.csv` and get a generated plot of **Survival Rate by Class**.
+Iremos criar um site simples onde um utilizador pode carregar o `titanic.csv` e obter um gráfico gerado da **Taxa de Sobrevivência por Classe**.
 
-### 1. Structure
+### 1. Estrutura
 
-Create the folder `web_app` inside `ex11`. Inside it, create `backend` and `frontend`.
+Crie a pasta `web_app` dentro de `titanic_lab`. Dentro dela, crie `backend` e `frontend`.
 
 ### 2. Backend (FastAPI + Polars)
 
-Create `web_app/backend/main.py`. This API reads the CSV, calculates survival rates using **Polars**, and draws a plot.
+Crie `web_app/backend/main.py`. Esta API lê o CSV, calcula as taxas de sobrevivência usando **Polars**, e desenha um gráfico.
 
 ```python
 from fastapi import FastAPI, UploadFile, File
@@ -302,10 +302,10 @@ async def analyze_titanic(file: UploadFile = File(...)):
     """)
 ```
 
-Create `web_app/backend/Dockerfile`:
+Crie `web_app/backend/Dockerfile`:
 
 ```dockerfile
-FROM python:3.12-trixie
+FROM python:3.9-slim
 RUN pip install fastapi uvicorn python-multipart polars matplotlib
 COPY main.py .
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
@@ -313,7 +313,7 @@ CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 
 ### 3. Frontend (HTML)
 
-Create `web_app/frontend/index.html`:
+Crie `web_app/frontend/index.html`:
 
 ```html
 <!DOCTYPE html>
@@ -344,9 +344,9 @@ Create `web_app/frontend/index.html`:
 </html>
 ```
 
-### 4. Nginx Config
+### 4. Configuração Nginx
 
-Create `web_app/nginx.conf`:
+Crie `web_app/nginx.conf`:
 
 ```nginx
 events {}
@@ -364,38 +364,37 @@ http {
 }
 ```
 
-### 5. Run the App
+### 5. Executar a Aplicação
 
-Create `compose.yml` in the root (`web_app`) folder:
+Crie `docker-compose-web.yml` na pasta raiz:
 
 ```yaml
 services:
   backend:
-    build: ./backend
+    build: ./web_app/backend
   frontend:
     image: nginx:alpine
     ports:
       - "8080:80"
     volumes:
-      - ./frontend:/usr/share/nginx/html
-      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./web_app/frontend:/usr/share/nginx/html
+      - ./web_app/nginx.conf:/etc/nginx/nginx.conf
     depends_on:
       - backend
 ```
 
-Run: `docker compose up --build`
-Go to `http://localhost:8080` and upload your generated `titanic.csv`.
+Execute: `docker compose -f docker-compose-web.yml up --build`
+Vá a `http://localhost:8080` e carregue o seu `titanic.csv` gerado.
 
+## Parte 6: Desafio Opcional
 
-## Part 6: Optional Challenge
+**Objetivo:** Filtrar por Género.
 
-**Objective:** Filter by Gender.
+1.  **Modificar Frontend:** Adicione um menu *dropdown* ao `index.html` para selecionar "All" (Todos), "Male" (Masculino), ou "Female" (Feminino).
+2.  **Modificar Backend:** Aceite este novo campo de formulário. Use o filtro do Polars para subconjunto dos dados antes de calcular a taxa média de sobrevivência.
 
-1.  **Modify Frontend:** Add a dropdown menu to `index.html` to select "All", "Male", or "Female".
-2.  **Modify Backend:** Accept this new form field. Use Polars `filter` to subset the data before calculating the mean survival rate.
-
-  ```python
-  # Example Polars Filter
-  if gender != "All":
-      df = df.filter(pl.col("Sex") == gender.lower())
-  ```
+```python
+# Example Polars Filter
+if gender != "All":
+    df = df.filter(pl.col("Sex") == gender.lower())
+```

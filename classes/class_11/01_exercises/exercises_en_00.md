@@ -1,9 +1,9 @@
 ---
-title: Web programming
+title: Data Loading, Manipulation, and Visualization
 subtitle: Introdução Engenharia Informática
 author: Mário Antunes
 institute: Universidade de Aveiro
-date: November 24, 2025
+date: December 01, 2025
 colorlinks: true
 highlight-style: tango
 geometry: a4paper,margin=2cm
@@ -15,8 +15,8 @@ header-includes:
  - \usepackage{etoolbox}
  - \AtBeginEnvironment{longtable}{\normalsize}
  - \AtBeginEnvironment{cslreferences}{\tiny}
- - \AtBeginEnvironment{Shaded}{\normalsize}
- - \AtBeginEnvironment{verbatim}{\normalsize}
+ - \AtBeginEnvironment{Shaded}{\scriptsize}
+ - \AtBeginEnvironment{verbatim}{\scriptsize}
  - \setmonofont[Contextuals={Alternate}]{FiraCodeNerdFontMono-Retina}
 ---
 
@@ -241,7 +241,7 @@ We will create a simple website where a user can upload the `titanic.csv` and ge
 
 ### 1. Structure
 
-Create the folder `web_app` inside `ex11`. Inside it, create `backend` and `frontend`.
+Create the folder `web_app` inside `titanic_lab`. Inside it, create `backend` and `frontend`.
 
 ### 2. Backend (FastAPI + Polars)
 
@@ -305,7 +305,7 @@ async def analyze_titanic(file: UploadFile = File(...)):
 Create `web_app/backend/Dockerfile`:
 
 ```dockerfile
-FROM python:3.12-trixie
+FROM python:3.9-slim
 RUN pip install fastapi uvicorn python-multipart polars matplotlib
 COPY main.py .
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
@@ -366,24 +366,24 @@ http {
 
 ### 5. Run the App
 
-Create `compose.yml` in the root (`web_app`) folder:
+Create `docker-compose-web.yml` in the root folder:
 
 ```yaml
 services:
   backend:
-    build: ./backend
+    build: ./web_app/backend
   frontend:
     image: nginx:alpine
     ports:
       - "8080:80"
     volumes:
-      - ./frontend:/usr/share/nginx/html
-      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./web_app/frontend:/usr/share/nginx/html
+      - ./web_app/nginx.conf:/etc/nginx/nginx.conf
     depends_on:
       - backend
 ```
 
-Run: `docker compose up --build`
+Run: `docker compose -f docker-compose-web.yml up --build`
 Go to `http://localhost:8080` and upload your generated `titanic.csv`.
 
 

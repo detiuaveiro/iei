@@ -22,7 +22,7 @@ header-includes:
 
 # Projects
 
-Form groups of two or three students (exceptionally, projects can be done individually) and select **one** of the following projects. All projects will be hosted on **GitHub**, using [GitHub Classroom](https://classroom.github.com/classrooms/14801727-iei). Check [here](#github-classroom-access) for details.
+Form groups of two or three students (exceptionally, projects can be done individually) and select **one** of the following projects. All projects will be hosted on **GitHub**, using [GitHub Classroom](https://classroom.github.com/a/G2JP9M2D). Check [here](#github-classroom-access) for details.
 
 The repository must contain all relevant scripts, configuration files, and a `README.md` with instructions on how to deploy the project.
 It should also contain a project report in `PDF` format.
@@ -52,17 +52,20 @@ Further instructions may be added.
 * **Description:** Build a web dashboard that visualizes geographical data. You must create a **Python** script that uses an API to get Weather or traffic data or (using **Pandas** or **Polars**) that processes a dataset (e.g., a CSV of weather stations or traffic incidents with Lat/Lon coordinates) and exports it to JSON. Then, deploy a **Web Server** container (Nginx or Apache) hosting an HTML page. This page must use the **Leaflet** JavaScript library to read that JSON data and display markers on an interactive map.
 * **Core Topics:** Web Programming (HTML/JS/Leaflet), Data Formatting (CSV to JSON), Docker, Web Servers.
 
-### 4. The Universal CSV Plotter
+### 4. The CSV Upload & Plot Service
 
-* **Description:** Create a generic data visualization tool encapsulated in a Docker container. The container should run a **Python** script that accepts a CSV file (via webpage) and generates a plot based on arguments or a simple config file. For example, the script should be able to read `data.csv`, and using **Matplotlib** or **Seaborn**, generate a bar chart or scatter plot for two specific columns (e.g., "Date" and "Value"). The output image must be sent back into the page and allows download.
-* **Core Topics:** Python Data Analysis (Pandas/Polars), Visualization libraries, CLI arguments, Docker Volumes.
+* **Description:** Create a data analysis web service composed of two Docker containers.
+    1.  **Backend (Python/FastAPI):** Create an API that accepts a CSV file upload via a `POST` request. The backend must use **Pandas** to parse the uploaded file, identify numeric columns, and return a JSON list of available plotting links (e.g., `http://localhost:8000/plot/temperature`). When a link is visited, the backend generates and returns a **Matplotlib/Seaborn** image (PNG).
+    2.  **Frontend (Nginx):** Create a webpage with an HTML form to upload the file. using JavaScript (`fetch`), send the file to the backend. When the backend responds, dynamically generate a list of clickable links on the page. Clicking a link should open/display the generated plot.
+* **Core Topics:** API File Handling (Uploads), Python Data Analysis, Dynamic DOM manipulation, Docker Networking.
 
-### 5. Interactive Portfolio
+### 5. Full-Stack Dynamic Portfolio
 
-* **Description:** Build and deploy a personal portfolio website using a lightweight web server container (like Nginx). Unlike Project 1, you must write the code yourself. The site must include:
-    1. **HTML/CSS:** A responsive layout (Flexbox/Grid) for your bio and skills.
-    2. **JavaScript:** An interactive component, such as a "Contact Me" form that validates input (e.g., ensures email format is correct) before showing a success alert, or a theme toggler (Dark/Light mode).
-* **Core Topics:** Web Programming (HTML5, CSS3, JavaScript), Web Servers, Docker.
+* **Description:** Build a personal portfolio site that separates content from presentation, simulating a real-world CMS architecture.
+    1.  **Backend (Python/FastAPI):** Create a simple API that serves your profile data as JSON. It must have an endpoint (e.g., `/api/profile`) that returns a dictionary containing your Name, Bio, and a list of Skills/Projects.
+    2.  **Frontend (Nginx):** Deploy an HTML shell that is initially empty of content. Use **JavaScript** to `fetch` the data from your backend on page load and populate the DOM elements (Projects list, Bio text).
+    3.  **Interactivity:** The frontend must still include the "Dark/Light" mode toggle (saved in `localStorage`) and a Client-side validation for a "Contact Me" form.
+* **Core Topics:** Asynchronous JavaScript (`fetch`/`await`), JSON Data Exchange, Separation of Concerns, Docker Composition.
 
 ### 6. Server Resource Report
 
