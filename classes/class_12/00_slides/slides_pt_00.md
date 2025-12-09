@@ -1,9 +1,9 @@
 ---
-title: Web programming
+title: Latex & Markdown
 subtitle: Introdução Engenharia Informática
 author: Mário Antunes
 institute: Universidade de Aveiro
-date: November 24, 2025
+date: December 8, 2025
 colorlinks: true
 highlight-style: tango
 toc: true
@@ -21,512 +21,412 @@ header-includes:
  - \setmonofont[Contextuals={Alternate}]{FiraCodeNerdFontMono-Retina}
 ---
 
-# JavaScript
+# LaTeX & Markdown
 
-## JavaScript: Visão Geral Detalhada {.allowframebreaks}
+## Paradigmas de Geração de Documentos i
 
-O JavaScript (JS) é frequentemente mal compreendido como um "brinquedo de scripting", mas é uma linguagem sofisticada e de alto nível.
+**1. WYSIWYG (What You See Is What You Get - O Que Vês É O Que Obténs)**
 
-**1. Tipagem Dinâmica e Tipagem Fraca**
+  * **Exemplos:** Microsoft Word, Google Docs, LibreOffice Writer.
+  * **Conceito:** A interface de edição é um espelho da saída final de impressão.
+  * **Mecanismo:** Manipulação direta. A formatação (negrito, tamanho, tipo de letra) é aplicada diretamente aos caracteres de texto.
+  * **Prós:** Baixa barreira de entrada; feedback visual imediato.
+  * **Contras:** "O Que Vês É Tudo O Que Tens" ("What You See Is All You've Got").
+      * O conteúdo está fortemente acoplado à apresentação.
+      * Mover um "Cabeçalho" genérico para um "Título de Capítulo" requer reformatação manual.
+      * Documentos complexos (teses, livros) quebram frequentemente a formatação quando movidos entre computadores ou versões.
 
-* As variáveis não estão vinculadas a um *tipo de dados* específico.
-* *Porque é que isto importa:* Pode atribuir um Número a uma variável e, mais tarde, atribuir uma String à mesma variável. Isto oferece flexibilidade, mas aumenta o risco de erros em tempo de execução (ex: tentar multiplicar uma string).
+## Paradigmas de Geração de Documentos ii
 
-```javascript
-let x = 42;
-x = "olá";
-console.log(x)
+**2. WYSIWYM (What You See Is What You Mean - O Que Vês É O Que Queres Dizer)**
+
+  * **Exemplos:** LaTeX, Markdown, HTML, AsciiDoc.
+  * **Conceito:** Você edita a **estrutura semântica** (significado), um compilador lida com a **apresentação visual**.
+  * **Mecanismo:** Separação de responsabilidades.
+      * *Fonte:* Texto simples (`.tex`, `.md`) contendo conteúdo e tags lógicas (ex: `\section`, `# Heading`).
+      * *Motor:* Um compilador (ex: `pdflatex`, `pandoc`) aplica um modelo de estilo específico para gerar a saída (PDF, HTML, EPUB).
+  * **Prós:** Consistência, automação, tipografia superior.
+
+## O Valor dos Documentos Compilados {.allowframebreaks}
+
+Porquê aprender uma sintaxe complexa quando o Word existe?
+
+### A. Utilização de Repositórios (Git)
+
+  * **Texto vs. Binário:** Ficheiros Word (`.docx`) são binários XML comprimidos. Sistemas de controlo de versões (Git) tratam-nos como "blobs". Não é possível fazer diferenças (diff) significativas entre eles.
+  * **Rastreamento Linha-a-Linha:** Em LaTeX/Markdown, pode rastrear alterações até ao carácter específico e ver o histórico de commits.
+  * **Branching:** Ideal para experimentar uma nova estrutura de capítulos sem quebrar o documento principal.
+
+### B. Colaboração
+
+  * **Sem Problemas de "Ficheiro Bloqueado":** Ao contrário de abrir um `.docx` numa unidade de rede, várias pessoas podem editar ficheiros de texto diferentes num projeto simultaneamente.
+  * **Merging:** O Git permite fundir (merge) diferentes ficheiros de texto automaticamente.
+  * **Modularidade:** Documentos grandes são divididos usando `\input{chapter1.tex}`, mantendo os ficheiros pequenos e geríveis.
+
+### C. Migração & Modelos
+
+  * **Abstração:** No WYSIWYM, etiqueta o texto como "Title" ou "Abstract". Não escolhe o tamanho da letra ou margens manualmente.
+  * **Portabilidade de Conteúdo:**
+      * *Cenário:* Escreve uma tese. Mais tarde, quer publicar um capítulo como um artigo de conferência.
+      * *Ação:* Altera `\documentclass{thesis}` para `\documentclass{ieee-conf}`.
+      * *Resultado:* Todo o documento é reformatado (fontes, colunas, citações) instantaneamente. Nenhuma reformatação manual necessária.
+
+# LaTeX
+
+## Aprofundamento: LaTeX i
+
+LaTeX é o padrão da indústria para comunicação científica e técnica. É praticamente Turing-completo.
+
+### Estrutura do Documento
+
+Um ficheiro LaTeX (`.tex`) tem duas partes distintas:
+
+1.  **O Preâmbulo:** Tudo *antes* de `\begin{document}`.
+      * Define a "Classe" (estilo).
+      * Carrega "Pacotes" (plugins para funcionalidades extra como imagens, cores, links).
+      * Define parâmetros globais (margens, metadados).
+2.  **O Corpo:** O ambiente de conteúdo dentro de `\begin{document} ... \end{document}`.
+
+## Aprofundamento: LaTeX ii
+
+### Entidades Chave
+
+  * **Classes:**
+      * `article`: Artigos científicos, relatórios curtos.
+      * `report`: Documentos mais longos com capítulos (teses).
+      * `book`: Livros com suporte para matéria pré/pós-textual.
+      * `beamer`: Para criar slides de apresentação.
+  * **Ambientes (Environments):**
+      * Blocos de lógica definidos por `\begin{name} ... \end{name}`.
+      * *Exemplos:* `itemize` (listas), `equation` (matemática), `tabular` (tabelas), `center`.
+  * **Flutuantes (Figuras & Tabelas):**
+      * O LaTeX decide onde colocar as imagens (`\begin{figure}`) para um fluxo de leitura ideal.
+
+## Aprofundamento: LaTeX iii
+
+### Utilização & Compilação
+
+  * **CLI:** `pdflatex main.tex` (Passagem única).
+  * **A Regra das 3 Passagens:** Frequentemente requer executar 3 vezes para sincronizar referências (Passagem 1: Recolher etiquetas; Passagem 2: Atribuir números; Passagem 3: Corrigir esquema).
+  * **Automação:** `latexmk -pdf -pvc main.tex` (Vigia alterações de ficheiros, lida com referências cruzadas automaticamente).
+  * **Cloud:** **Overleaf**. Um editor baseado no navegador que gere a instalação do compilador por si.
+
+# Markdown
+
+## Aprofundamento: Markdown i
+
+Markdown é uma linguagem de marcação leve desenhada para legibilidade.
+
+### Filosofia & Sintaxe
+
+O objetivo é que o ficheiro fonte original seja legível como texto simples sem parecer código de computador.
+
+  * **Cabeçalhos:** `#` para H1, `##` para H2 (traduz-se para `<h1>`, `<h2>`).
+  * **Listas:** `-` ou `*` para pontos; `1.` para numeradas.
+  * **Formatação:** `**Bold**` (`<b>`), `*Italic*` (`<i>`), `` `Code` ``.
+  * **Links:** `[Text](URL)`.
+  * **Imagens:** `![Alt Text](URL)`.
+
+## Aprofundamento: Markdown ii
+
+### Sabores & Extensões
+
+O Markdown evoluiu para vários "Sabores" (Flavors):
+
+  * **CommonMark:** A especificação padronizada.
+  * **GFM (GitHub Flavored Markdown):** Adiciona tabelas, listas de tarefas (`- [ ]`), e rasurado.
+  * **Pandoc Markdown:** A versão mais poderosa. Adiciona citações (`@author`), notas de rodapé (`[^1]`), blocos de metadados e suporte matemático.
+
+## Aprofundamento: Markdown iii
+
+### Utilização (Pandoc)
+
+**Pandoc** é o "Conversor Universal". Lê Markdown e produz quase tudo.
+
+  * **Lógica:** Markdown $\rightarrow$ Abstract Syntax Tree (AST) $\rightarrow$ Formato de Saída.
+  * **Comandos:**
+      * `pandoc input.md -o output.pdf` (Usa motor LaTeX).
+      * `pandoc input.md -o output.docx` (Gera Word).
+      * `pandoc input.md -t beamer -o slides.pdf` (Gera slides LaTeX).
+
+# ToC
+
+## Índice (ToC) i
+
+### LaTeX ToC
+
+O LaTeX gera um Índice (ToC) automaticamente ao analisar as suas tags de Secção (`\section`, `\subsection`).
+
+  * **O Comando:** Simplesmente coloque `\tableofcontents` onde deseja a lista.
+  * **Mecanismo de Compilação:**
+    1.  *Execução 1:* O LaTeX escreve todos os títulos de secção e números de página num ficheiro temporário `.toc`.
+    2.  *Execução 2:* O LaTeX lê o ficheiro `.toc` e renderiza a lista no documento.
+
+## Índice (ToC) ii
+
+  * **Exemplo:**
+    ```latex
+    \begin{document}
+      \maketitle
+      \tableofcontents  % Auto-generates here
+      \newpage
+      \section{Introduction}
+    \end{document}
+    ```
+
+## Índice (ToC) iii
+
+### Markdown ToC
+
+O Markdown padrão não tem uma tag estrita de ToC, mas as ferramentas lidam com isso de forma diferente:
+
+1.  **Pandoc:** Use a flag `--toc` na linha de comando. Analisa cabeçalhos (`#`, `##`) para construí-lo.
+2.  **Editores (VS Code/Typora):** Muitos suportam a macro `[TOC]`.
+3.  **Manual:** Escreve-o como uma lista de links: `- [Introduction](#introduction)`.
+
+# Figuras
+
+## Figuras (LaTeX) i
+
+### O Pacote `graphicx`
+
+O LaTeX trata imagens como "flutuantes" (floats)—decide automaticamente a melhor posição (topo da página, fundo, etc.) para evitar quebras de página estranhas.
+
+  * **Pré-requisito:** Deve adicionar `\usepackage{graphicx}` ao seu preâmbulo.
+  * **Ambiente:** `\begin{figure}[placement]`.
+      * *Opções de posicionamento:* `h` (aqui), `t` (topo), `b` (fundo), `!` (ignorar restrições).
+
+## Figuras (LaTeX) ii
+
+  * **Comandos Chave:**
+      * `\includegraphics[options]{filename}`: A inserção real da imagem.
+      * `\caption{...}`: Adiciona a descrição e numeração (ex: "Figura 1: ...").
+      * `\label{...}`: Cria uma âncora para referenciá-la mais tarde (ex: "Ver Figura \\ref{...}").
+
+## Figuras (LaTeX) iii
+
+**Código LaTeX:**
+
+```latex
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.5\textwidth]{results.png}
+    \caption{Experimental Results}
+    \label{fig:results}
+\end{figure}
 ```
 
-**2. Orientação a Objetos baseada em Protótipos**
+## Figuras (Markdown) i
 
-  * *Como funciona:* Ao contrário das linguagens baseadas em Classes (Java/C++), onde os objetos são instanciados a partir de "plantas" (classes), os objetos JS herdam diretamente de outros objetos (protótipos).
-  * *Implicação:* A eficiência de memória envolve clonar estruturas existentes em vez de definir hierarquias rígidas.
+### Imagens em Linha
 
-```javascript
-let person  = {
-  eats: true,
-  hasLegs: 2,
-  walks(){ console.log('I can walk')}
-}
-//definir outro objeto
-let man = {
-  hasBreast: false,
-  hasBeard : true,
-}
-//definir o protótipo de man para o objeto person
-man.__proto__ = person;
-//definir um terceiro objeto
-let samuel = {
-   age: 23
-}
-//definir o protótipo de samuel para man
-samuel.__proto__ = man;
-//aceder ao método walk a partir de samuel
-console.log(samuel.walks())
-//aceder a hasBeard a partir de samuel
-console.log(samuel.hasBeard)
+A sintaxe Markdown é concisa (`![]()`) mas tipicamente coloca as imagens **em linha** (exatamente onde as escreve) em vez de as fazer flutuar. O Markdown padrão não tem redimensionamento nativo, mas extensões lidam com isso.
+
+**1. Sintaxe Padrão:**
+`![Alt Text for Accessibility](path/to/image.png)`
+
+**2. Com Redimensionamento (Recurso ao HTML):**
+Visto que o Markdown suporta HTML puro, este é o método mais compatível para redimensionamento.
+`<img src="image.png" width="300" />`
+
+## Figuras (Markdown) ii
+
+**3. Com Redimensionamento (Extensão Pandoc):**
+Se usar Pandoc (padrão para escrita académica), pode usar atributos.
+`![Results](image.png){ width=50% }`
+
+**4. Adicionar Legendas:**
+No Pandoc, o "Texto Alt" (texto dentro de `[]`) torna-se automaticamente a Legenda da Figura abaixo da imagem ao converter para PDF/LaTeX.
+
+# Tabelas
+
+## Tabelas i
+
+### Tabelas LaTeX (`tabular`)
+
+As tabelas LaTeX são precisas mas verbosas. Usam delimitadores específicos.
+
+  * **Ambiente:** `\begin{tabular}{cols}`
+  * **Especificação de Colunas:** `{l c r}` define 3 colunas (Alinhada à esquerda, Centrada, Alinhada à direita).
+  * **Separadores:** `&` separa células; `\\` termina uma linha.
+  * **Linhas:** `\hline` desenha linhas horizontais; `|` na especificação da coluna desenha linhas verticais.
+
+## Tabelas ii
+
+**Código LaTeX:**
+
+```latex
+\begin{table}[h]
+  \centering
+  \begin{tabular}{|l|c|r|}
+    \hline
+    \textbf{Item} & \textbf{Qty} & \textbf{Price} \\
+    \hline
+    Apples & 5 & \$1.00 \\
+    Oranges & 10 & \$2.50 \\
+    \hline
+  \end{tabular}
+  \caption{Grocery List}
+\end{table}
 ```
 
-**3. Execução Single-Threaded**
+## Tabelas iii
 
-  * *A Restrição:* O JS tem uma **única Call Stack** (Pilha de Chamadas). Só consegue fazer *uma coisa de cada vez*.
-  * *O Risco:* Se executar um ciclo matemático pesado (ex: calcular Pi até mil milhões de dígitos), o separador do browser congela totalmente (bloqueio da UI) porque a thread está ocupada.
+### Tabelas Markdown
 
-# Paradigmas de Programação
+O Markdown usa pipes estilo "Arte ASCII".
+É mais simples e fácil de ler em código bruto, mas menos flexível (sem células fundidas ou alinhamento complexo).
 
-## Programação Sequencial (Procedimental) {.allowframebreaks}
+**Código Markdown:**
 
-Este é o modelo utilizado em C básico, Fortran ou scripts simples de Python.
-
-**A Lógica:**
-
-1.  O programa inicia.
-2.  A Linha 1 executa.
-3.  A Linha 2 executa.
-4.  **A Linha 3 pede entrada de dados (`scanf`, `input()`).**
-5.  O programa **PARA** (bloqueia) e espera pelo utilizador. Nada mais acontece até o utilizador carregar no Enter.
-
-**Porque é que isto falha na UI:**
-Numa interface web, não podemos **"parar"** o motor de renderização para esperar por um clique do rato. Se o fizéssemos, os botões não animariam e os gifs não seriam reproduzidos.
-![Sequential Programming](figures/sequence.jpg)
-
-## Programação Orientada a Eventos {.allowframebreaks}
-
-As interfaces modernas (Web, Windows, macOS) utilizam uma arquitetura **Orientada a Eventos** (Event-Driven).
-
-**A Lógica:**
-
-1.  O programa inicia (Inicialização).
-2.  Define "Handlers" (funções à espera de gatilhos específicos).
-3.  Entra no **Event Loop** (Ciclo de Eventos).
-4.  O programa fica num **Estado de Escuta** (Listening State).
-
-**O "Princípio de Hollywood":**
-
-  * *Não nos ligue, nós ligamos-lhe.*
-  * O código não pergunta "O utilizador clicou?". Em vez disso, o browser interrompe o código dizendo "Acabou de ocorrer um clique, execute a Função de Clique."
-![Event-Driven Programming](figures/event_loop.jpg){ width=65% }
-
-## A Cadeia de Eventos {.allowframebreaks}
-
-Como é que uma ação física se torna execução de código?
-
-1.  **Nível de Hardware:** O utilizador move o rato. O hardware do rato envia um sinal elétrico (interrupção) ao CPU.
-2.  **Nível do SO:** O Sistema Operativo (Windows/Linux) interpreta este sinal como uma mudança de coordenadas e pinta o cursor a mover-se.
-3.  **Nível do Browser:** A janela do browser vê que o cursor está sobre um botão HTML específico e que o botão do rato foi pressionado.
-4.  **O Evento:** O browser cria um Objeto JavaScript `Event` contendo detalhes (coordenadas X/Y, qual o botão, timestamps).
-5.  **O Listener:** O browser verifica: *Este elemento HTML tem um listener anexado?*
-6.  **Execução:** Se sim, a função JS registada é empurrada para a pilha de execução (stack).
-
-# JavaScript na Página Web
-
-## O Document Object Model (DOM)
-
-**O Conceito:**
-Quando escreve um ficheiro HTML, é apenas uma string de texto. O browser analisa (faz o parse) desta string para uma estrutura em memória chamada DOM.
-
-  * **HTML:** `<div id="app"></div>` (Texto no disco rígido)
-  * **DOM:** `HTMLDivElement` (Objeto na RAM)
-
-**Porque é que o JS usa o DOM:**
-O JavaScript não pode editar o ficheiro de texto no servidor. Ele edita o **Objeto na RAM**. O motor de renderização do browser vigia constantemente o DOM; quando o JS atualiza o objeto DOM, o browser "repinta" o ecrã.
-
-## Estratégias de Execução e Carregamento {.allowframebreaks}
-
-O HTML é analisado sequencialmente (de cima para baixo). Quando o parser vê uma tag `<script>`, pausa a análise do HTML para descarregar e executar o script. Isto cria problemas:
-
-**1. O Truque "Bottom of Body"**
-
-  * *Técnica:* Colocar o `<script>` logo antes de `</body>`.
-  * *Raciocínio:* Garante que todos os elementos HTML existem no DOM antes que o script tente encontrá-los.
-
-**2. O Atributo `defer` (Padrão Moderno)**
-
-```html
-<script src="app.js" defer></script>
+```markdown
+| Item    | Qty | Price |
+|:--------|:---:|------:|  <-- Alignment (Left,
+| Apples  | 5   | $1.00 |  Center, Right)
+| Oranges | 10  | $2.50 |
 ```
 
-  * *Comportamento:* O script é descarregado em segundo plano (paralelo) enquanto o HTML é analisado.
-  * *Execução:* O browser garante que o script só correrá **depois** de o HTML estar totalmente analisado, mas **antes** do evento `DOMContentLoaded`.
-  * *Benefício:* Tempos de carregamento de página mais rápidos e acesso seguro ao DOM.
+# Bibliografia
 
-## O Event Loop (Detalhe Técnico) {.allowframebreaks}
+## Gestão de Bibliografia i
 
-Como é que o JS single-threaded lida com tarefas assíncronas (como obter dados) sem congelar?
+### LaTeX (BibTeX / BibLaTeX)
 
-1.  **Call Stack:** Executa código síncrono (LIFO - Last In, First Out).
-2.  **Web APIs:** Quando chama `setTimeout` ou `fetch`, o "trabalho" é delegado às threads C++ do Browser (não à thread JS).
-3.  **Callback Queue (Fila):** Quando a Web API termina, coloca a sua função de callback numa Fila.
-4.  **O Loop:** O Event Loop verifica: *"A Stack está vazia?"*
-      * Se **NÃO**: Espera.
-      * Se **SIM**: Move o primeiro item da Fila para a Stack.
+As citações são armazenadas num ficheiro de base de dados de texto simples separado (`.bib`).
 
-*É por isto que `setTimeout(fn, 0)` não corre imediatamente — espera que a stack fique limpa.*
+**1. A Base de Dados (`refs.bib`):**
 
-# Exemplos de JS
-
-## 1\. Manipulação de Eventos do Rato {.allowframebreaks}
-
-Usamos `addEventListener`. Esta é a fase de registo da programação Orientada a Eventos.
-
-```javascript
-const box = document.querySelector('#box');
-// O objeto 'event' é passado automaticamente pelo browser
-function handleMove(event) {
-    // Atualizar texto com coordenadas do rato
-    box.textContent = `X: ${event.clientX}, Y: ${event.clientY}`;
-    // Estilo dinâmico baseado em lógica
-    if (event.clientX > 500) {
-        box.style.backgroundColor = 'red';
-    } else {
-        box.style.backgroundColor = 'blue';
-    }
-}
-// Subscrever o evento 'mousemove'
-box.addEventListener('mousemove', handleMove);
-```
-
-## 2\. Conteúdo Dinâmico (Biblioteca de Fotos) {.allowframebreaks}
-
-Podemos criar a interface programaticamente. É assim que o React/Vue funcionam "debaixo do capô" (Abordagem Imperativa).
-
-```javascript
-const urls = ['img1.jpg', 'img2.jpg'];
-const container = document.getElementById('gallery');
-
-urls.forEach(url => {
-    // 1. Create Element: Cria um objeto órfão em memória
-    const img = document.createElement('img');
-    // 2. Configure Object: Define propriedades
-    img.src = url;
-    img.className = 'thumbnail';
-    // 3. Attach Event: Torna-o interativo imediatamente
-    img.addEventListener('click', () => {
-        console.log("Clicou em " + url);
-    });
-    // 4. Mount: Insere na árvore DOM viva.
-    container.appendChild(img);
-});
-```
-
-## 3\. Dados Assíncronos (Fetch API) {.allowframebreaks}
-
-Obter dados de uma API leva tempo (latência). Usamos **Promises** (`async/await`) para evitar bloqueios.
-
-```javascript
-async function getData() {
-    try {
-        // 'await' cede a thread até que a Promise seja resolvida.
-        // A UI permanece responsiva durante esta pausa.
-        const response = await fetch('[https://api.data.gov/users](https://api.data.gov/users)');
-        // O parsing do JSON também é assíncrono (gere streams)
-        const data = await response.json();
-        console.log(data); // Corre apenas após a rede terminar
-    } catch (error) {
-        // Lida com falhas de rede (404, 500, Offline)
-        console.error("Fetch falhou:", error);
-    }
-}
-```
-
-## 4\. Comunicação em Tempo Real (WebSockets) {.allowframebreaks}
-
-**HTTP vs. WebSockets:**
-
-  * **HTTP:** Cliente pede, Servidor responde, Ligação fecha. (Stateless).
-  * **WebSocket:** Cliente realiza um "Handshake", a Ligação atualiza para socket TCP, a Ligação mantém-se aberta.
-
-<!-- end list -->
-
-```javascript
-const socket = new WebSocket('ws://localhost:8080');
-// Evento: Ligação Estabelecida
-socket.onopen = () => {
-    console.log("Ligado ao Servidor de Chat");
-    socket.send("Utilizador entrou");
-};
-// Evento: Servidor enviou dados para nós
-socket.onmessage = (event) => {
-    // Isto dispara sempre que o servidor envia dados. Sem polling!
-    const message = JSON.parse(event.data);
-    displayMessage(message);
-};
-```
-
-# Depuração (Debugging) no Browser
-
-## O Desafio das Linguagens Interpretadas {.allowframebreaks}
-
-Ao contrário de C, C++ ou Rust, o JavaScript é uma linguagem **Interpretada** (ou compilada JIT).
-
-**Linguagens Compiladas (C/C++):**
-
-  * O compilador analisa todo o código **antes** da execução.
-  * Erros de sintaxe e incompatibilidade de tipos são apanhados em **Tempo de Compilação**.
-  * *Resultado:* Não pode executar o programa até que estes erros sejam corrigidos.
-
-**Linguagens Interpretadas (JavaScript):**
-
-  * O browser lê e executa o código linha-a-linha (ou bloco-a-bloco) em **Tempo de Execução (Runtime)**.
-  * *Resultado:* A aplicação pode carregar perfeitamente e correr durante minutos.
-  * **O Crash:** O erro ocorre apenas quando o fluxo de execução atinge a linha específica com bug (ex: quando um utilizador clica num botão específico).
-
-**Consequência:**
-"Funciona na minha máquina" é comum. Pode não encontrar o erro porque não ativou o caminho de execução específico que contém o bug.
-
-## A Lacuna de Ambiente: Editor vs. Browser {.allowframebreaks}
-
-A depuração de Aplicações Web introduz uma desconexão entre onde **escreve** o código e onde **executa** o código.
-
-**1. A Mudança de Contexto (Context Switch):**
-
-  * Escreve código num **IDE** (VS Code), que tem análise estática e linting.
-  * Executa código no **Browser** (Chrome/Firefox).
-  * Quando ocorre um erro, ele aparece na Consola do Browser, não imediatamente no seu editor de texto.
-
-**2. O Problema da "Caixa Negra":**
-
-  * O browser executa frequentemente código "minificado" ou "agrupado" (bundled) (para poupar largura de banda).
-  * Um erro na linha 1 do `bundle.js` é inútil para o programador.
-  * *Solução:* Confiamos em **Source Maps**, que dizem ao browser como mapear o código em execução de volta aos seus ficheiros originais.
-
-## Estratégias de Depuração
-
-**1. Depuração "Printf" (`console.log`)**
-
-  * O método mais antigo. Imprime variáveis na consola do browser para inspecionar o estado.
-  * *Prós:* Rápido, simples.
-  * *Contras:* Atravanca o código, requer limpeza, não pausa a execução.
-
-**2. A palavra-chave `debugger;`**
-
-  * Colocar a instrução `debugger;` no seu código força o browser a **pausar a execução** (breakpoint) nessa linha.
-  * Pode então percorrer o código linha-a-linha.
-
-**3. Browser DevTools (O separador Sources)**
-
-  * Browsers modernos (Chrome/Firefox) têm debuggers integrados que rivalizam com IDEs de desktop.
-  * Pode definir breakpoints, vigiar variáveis e inspecionar a Call Stack diretamente no browser.
-
-# Frameworks Frontend Modernas
-
-## O Problema "Estado vs. Vista" {.allowframebreaks}
-
-Em apps complexas (ex: Facebook, Spotify), manter a UI (Vista) sincronizada com os dados (Estado) usando Vanilla JS é propenso a erros.
-
-**As Frameworks resolvem isto através de:**
-
-1.  **Programação Declarativa:** Define *o que* a UI deve parecer para um determinado estado, e não *como* atualizá-la.
-2.  **Componentização:** Dividir a UI em pedaços reutilizáveis e isolados.
-
-## React: A Biblioteca {.allowframebreaks}
-
-Desenvolvido pelo Facebook (Meta). O React é tecnicamente uma **Biblioteca**, não uma Framework, focada apenas na camada de Vista (View).
-
-**Conceitos Chave:**
-
-1.  **Virtual DOM:** O React mantém uma cópia leve do DOM em memória. Quando o estado muda, calcula a "diferença" (diff) e atualiza apenas as partes alteradas do DOM real.
-2.  **JSX (JavaScript XML):** Extensão de sintaxe que permite escrever HTML dentro de JS.
-3.  **Fluxo de Dados Unidirecional:** Os dados fluem para baixo (Pai -\> Filho).
-
-## Exemplo React {.allowframebreaks}
-
-Note a natureza **Declarativa**. Não chamamos `appendChild`. Retornamos a estrutura que queremos.
-
-```javascript
-import React, { useState } from 'react';
-function ImageGallery() {
-  // State Hook: Quando 'images' muda, a UI auto-atualiza-se
-  const [images, setImages] = useState([
-    { id: 1, url: 'img1.jpg' }
-  ]);
-  return (
-    <div id="gallery">
-      {/* Ciclo dentro de JSX */}
-      {images.map(img => (
-        <img key={img.id} src={img.url}
-        className="thumbnail" />
-      ))}
-    </div>
-  );
+```bibtex
+@article{einstein1905,
+    author = "Albert Einstein",
+    title = "On the Electrodynamics of Moving Bodies",
+    year = "1905"
 }
 ```
 
-## Angular: A Framework {.allowframebreaks}
+## Gestão de Bibliografia ii
 
-Desenvolvido pela Google. O Angular é uma **Framework** completa. Inclui routing, clientes HTTP e gestão de formulários "out of the box".
+**2. O Documento:**
 
-**Conceitos Chave:**
+```latex
+As stated by \cite{einstein1905}, relativity is
+complex.
 
-1.  **TypeScript:** Obrigatório. Adiciona tipagem estática (Interfaces, Classes) ao JS para segurança.
-2.  **Injeção de Dependência (DI):** Sistema integrado para gerir serviços e estado.
-3.  **Ligação de Dados Bidirecional (Two-Way Data Binding):** Alterações na UI atualizam o Estado; Alterações no Estado atualizam a UI (automaticamente).
-4.  **Real DOM:** O Angular opera diretamente no DOM mas usa um mecanismo sofisticado de Deteção de Mudanças (Zones).
-
-## Exemplo Angular {.allowframebreaks}
-
-O Angular separa a Lógica (Typescript) da Vista (Template HTML).
-
-**Lógica do Componente (`gallery.component.ts`)**
-
-```typescript
-import { Component } from '@angular/core';
-@Component({
-  selector: 'app-gallery',
-  templateUrl: './gallery.component.html'
-})
-export class GalleryComponent {
-  // Array Tipado
-  images: Array<{url: string}> = [{ url: 'img1.jpg' }];
-}
+\bibliographystyle{plain}
+\bibliography{refs}
 ```
 
-**Template (`gallery.component.html`)**
+## Gestão de Bibliografia iii
 
-```html
-<div id="gallery">
-  <img *ngFor="let img of images"
-       [src]="img.url"
-       class="thumbnail">
-</div>
+### Markdown (Pandoc Citeproc)
+
+O Pandoc pode ler ficheiros BibTeX e processar citações em Markdown.
+
+**A Sintaxe:**
+
+```markdown
+As stated by [@einstein1905], relativity is complex.
 ```
 
-## Comparação Resumida {.allowframebreaks}
+**O Comando:**
+`pandoc doc.md --bibliography=refs.bib --citeproc -o doc.pdf`
 
-| Característica | **Vanilla JS** | **React** | **Angular** |
-| :--- | :--- | :--- | :--- |
-| **Paradigma** | Imperativo | Declarativo | Declarativo |
-| **Linguagem** | JavaScript | JS + JSX | TypeScript |
-| **DOM** | Acesso Direto | Virtual DOM | Real DOM + Zones |
-| **Escala** | Scripts pequenos | Apps Médias/Grandes | Apps Empresariais |
-| **Curva de Aprendizagem** | Baixa | Média | Alta |
+## Geração de Biografia i
 
-# Backends
+Em artigos académicos (especialmente IEEE), "Biografias" são blocos formatados no final de um artigo contendo a foto do autor e uma pequena biografia.
 
-## Node.js & NPM {.allowframebreaks}
+### LaTeX (Classe IEEEtran)
 
-**Node.js** não é uma linguagem; é um **Ambiente de Execução (Runtime)**. Pega no Motor V8 do Chrome e adiciona bindings C++ para Sistema de Ficheiros (FS) e Redes, permitindo que o JS corra em servidores.
+A classe `IEEEtran` fornece um ambiente específico para isto. Lida com o envolvimento do texto à volta da foto automaticamente e estiliza o nome em letras maiúsculas a negrito.
 
-**NPM (Node Package Manager):**
+## Geração de Biografia ii
 
-  * Gere dependências (bibliotecas).
-  * **`package.json`**: O manifesto do projeto. Lista quais as bibliotecas necessárias (`dependencies`) e como correr o projeto (`scripts`).
+**Código LaTeX:**
 
-## Servidor Express Simples {.allowframebreaks}
+```latex
+% Requires \documentclass{IEEEtran}
 
-Express é a framework padrão para Node. Simplifica o routing.
-
-```javascript
-// Importar biblioteca express
-const express = require('express');
-const cors = require('cors'); // Middleware para Segurança
-const app = express();
-// Ativar CORS: Permite que o nosso JS baseado no browser (de uma origem diferente)
-// vá buscar dados a este servidor. Sem isto, o browser bloqueia.
-app.use(cors());
-// Definir uma Rota (Endpoint)
-app.get('/api/hello', (req, res) => {
-    // Enviar resposta JSON
-    res.json({
-        msg: "Olá Mundo",
-        serverTime: Date.now()
-    });
-});
-app.listen(3000, () => console.log("A correr na porta 3000"));
+\begin{IEEEbiography}[{\includegraphics[width=1in,clip,keepaspectratio]{photo.jpg}}]{John Doe}
+received the B.S. degree in aerospace engineering...
+He is currently a Professor at X University.
+His research interests include LaTeX and Typography.
+\end{IEEEbiography}
 ```
 
-## Python para Serviços Web {.allowframebreaks}
+## Geração de Biografia iii
 
-Enquanto o Node.js partilha uma linguagem com o frontend, o **Python** é dominante em Ciência de Dados e IA.
+### Markdown
 
-**Características FastAPI:**
+O Markdown não tem uma tag semântica nativa de "Biografia".
+Cria-a manualmente usando Cabeçalhos e Imagens, ou HTML se estiver a renderizar para a web.
 
-1.  **Assíncrono:** Usa `async def` do Python (padrão ASGI), tornando-o muito mais rápido que Flask/Django.
-2.  **Dicas de Tipo (Type Hints):** Valida dados automaticamente.
-3.  **Swagger UI:** Gera um website de documentação (`/docs`) para a sua API automaticamente.
+**Código Markdown:**
 
-## Exemplo FastAPI {.allowframebreaks}
+```markdown
+## Author Biography
 
-```python
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+![John Doe](photo.jpg){ width=100px align=left }
 
-app = FastAPI()
-
-# Configuração CORS
-# Permitir explicitamente o contentor/origem do frontend
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"], # Em prod, substituir * pelo domínio específico
-    allow_methods=["*"],
-)
-
-@app.get("/api/items")
-async def read_items():
-    # Dicionário Python é convertido automaticamente para JSON
-    return [
-        {"name": "Item 1", "price": 10.5},
-        {"name": "Item 2", "price": 20.0}
-    ]
+**John Doe** received the B.S. degree in
+aerospace engineering...
+He is currently a Professor at X University.
 ```
 
-## A Arquitetura {.allowframebreaks}
+# Equações Matemáticas
 
-Temos duas aplicações separadas:
+## Equações Matemáticas i
 
-1.  **Frontend:** HTML/JS estático servido pelo Nginx (ou uma app React/Angular compilada).
-2.  **Backend:** API Python/Node a processar dados.
+Uma das razões principais para usar WYSIWYM é a renderização superior de matemática.
 
-Precisamos de as correr juntas e garantir que conseguem comunicar.
+### Matemática LaTeX
 
-## Configuração do Docker Compose {.allowframebreaks}
+O LaTeX tem dois modos:
 
-`docker-compose.yml` orquestra aplicações multi-contentor.
+1.  **Modo em Linha:** Para matemática dentro de uma frase. Rodeado por `$`.
+      * *Sintaxe:* `Let $x$ be a variable.`
+2.  **Modo de Exibição:** Para equações centradas e independentes.
+      * *Sintaxe:* `\[ E = mc^2 \]` ou `\begin{equation} ... \end{equation}`.
 
-```yaml
-services:
-  # --- O BACKEND ---
-  backend-api:
-    build: ./backend_folder       # Construir imagem a partir do Dockerfile
-    container_name: py_api
-    ports:
-      - "8000:8000"               # Expor porta 8000 para o host
-    volumes:
-      - ./backend_folder:/app     # Hot-reload de alterações de código
+## Equações Matemáticas ii
 
-  # --- O FRONTEND ---
-  frontend-web:
-    image: nginx:alpine           # Usar Nginx pré-construído
-    container_name: my_website
-    ports:
-      - "8080:80"                 # Browser acede a localhost:8080
-    volumes:
-      # Injetar o nosso HTML/JS (ou build React) no Nginx
-      - ./frontend_folder:/usr/share/nginx/html
-    depends_on:
-      - backend-api               # Esperar que a API inicie
-```
+**Comandos Comuns:**
 
-**Conceito Crítico de Redes:**
+  * **Frações:** `\frac{numerator}{denominator}`
+  * **Grego:** `\alpha`, `\beta`, `\Omega`
+  * **Somatório/Integrais:** `\sum_{i=0}^{n}`, `\int_{0}^{\infty}`
+  * **Sub/Sobrescritos:** `x_i`, `x^2`
 
-  * **Browser para Backend:** Quando o seu JavaScript corre no *browser*, está a correr na *Máquina do Utilizador*. Portanto, o URL do `fetch` JS deve apontar para `http://localhost:8000` (a porta exposta pelo Docker para a máquina anfitriã), não para o nome interno do contentor.
+## Equações Matemáticas iii
+
+### Matemática Markdown
+
+A maioria dos motores Markdown (GitHub, Pandoc, Obsidian, Jupyter) usa **MathJax** ou **KaTeX** para renderizar sintaxe LaTeX dentro do Markdown.
+
+  * **Sintaxe:** Geralmente usa exatamente os mesmos delimitadores `$` que o LaTeX.
+      * Em linha: `$E=mc^2$`
+      * Bloco: `$$E=mc^2$$`
+
+**Exemplo de Comparação (Fórmula Quadrática):**
+Tanto LaTeX como Markdown usam:
+`x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}`
+
+# Recursos Adicionais
 
 ## Recursos Adicionais {.allowframebreaks}
 
-**JavaScript & A Web**
+### LaTeX
 
-  * [MDN Web Docs (Mozilla)](https://developer.mozilla.org/en-US/) - A bíblia do desenvolvimento web.
-  * [JavaScript.info](https://javascript.info/) - Mergulho profundo na linguagem moderna.
-  * [What the heck is the event loop anyway?](https://www.youtube.com/watch?v=8aGhZQkoFbQ) (Philip Roberts) - Visualização essencial do runtime de JS.
+  * **Overleaf Learn:** [https://www.overleaf.com/learn](https://www.overleaf.com/learn) (A melhor documentação para iniciantes).
+  * **CTAN (Comprehensive TeX Archive Network):** [https://ctan.org/](https://ctan.org/) (O repositório central para todos os pacotes LaTeX).
+  * **Detexify:** [https://detexify.kirelabs.org/classify.html](https://detexify.kirelabs.org/classify.html) (Desenhe um símbolo para encontrar o seu comando LaTeX).
 
-**Frameworks**
+### Markdown & Pandoc
 
-  * [React Documentation](https://react.dev/) - Documentação oficial (reescrita recentemente).
-  * [Angular University](https://angular-university.io/) - Tutoriais abrangentes para Angular.
+  * **Markdown Guide:** [https://www.markdownguide.org/](https://www.markdownguide.org/) (Tutorial abrangente sobre sintaxe e sabores).
+  * **Pandoc Documentation:** [https://pandoc.org/](https://pandoc.org/) (O manual para o conversor universal).
+  * **GitHub Flavored Markdown Spec:** [https://github.github.com/gfm/](https://github.github.com/gfm/)
 
-**Backend & DevOps**
+### Ferramentas
 
-  * [Node.js Best Practices](https://github.com/goldbergyoni/nodebestpractices) - Padrões de arquitetura.
-  * [FastAPI User Guide](https://fastapi.tiangolo.com/) - Documentação excelente com exemplos interativos.
-  * [Docker Curriculum](https://docker-curriculum.com/) - Um guia prático para iniciantes.
+  * **Editores:** VS Code (com LaTeX Workshop & Markdown All in One).
+  * **Gestão de Referências:** Jabref (Funciona diretamente com BibTeX).

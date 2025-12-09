@@ -2,64 +2,70 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Dynamic Profile</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
-    <link rel="stylesheet" href="style.css">
-    <script src="app.js" defer></script>
+    <title>Markdown to PDF Converter</title>
+    <style>
+        body { font-family: sans-serif; display:
+        flex; justify-content: center; align-items: center;
+        height: 100vh; background: #f0f0f0; }
+        .card { background: white; padding: 2rem;
+        border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        text-align: center; }
+        button { background: #007bff; color: white; border: none;
+        padding: 10px 20px; border-radius: 5px; cursor: pointer;
+        margin-top: 10px;}
+        button:hover { background: #0056b3; }
+    </style>
 </head>
 <body>
-    <header>
-        <h1>User Profile</h1>
-        <nav>
-            <button id="loginBtn">Login</button>
-            <button id="logoutBtn" style="display:none;">Logout</button>
-        </nav>
-    </header>
+    <div class="card">
+        <h1>MD to PDF Converter</h1>
+        <p>Select a Markdown file to convert.</p>
+        <input type="file" id="fileInput" accept=".md">
+        <br><br>
+        <button onclick="uploadAndConvert()">Convert & Download</button>
+        <p id="status"></p>
+    </div>
 
-    <main id="app">
-        <dialog id="loginDialog">
-            <form id="loginForm">
-                <h2>Welcome Back</h2>
-                <input type="text" id="username" placeholder="Username" required>
-                <input type="password" id="password" placeholder="Password" required>
-                <button type="submit">Sign In</button>
-                <button type="button" id="cancelLogin">Cancel</button>
-            </form>
-        </dialog>
+    <script>
+        async function uploadAndConvert() {
+            const fileInput = document.getElementById('fileInput');
+            const status = document.getElementById('status');
 
-        <div id="contentArea" class="hidden">
-            <section class="card profile-card">
-                <img src="https://ui-avatars.com/api/?name=User&background=88C0D0&color=fff" alt="Profile" id="avatar">
-                <h2 id="welcomeMsg">Hello, User</h2>
-                <p>Full Stack Student</p>
-            </section>
+            if(fileInput.files.length === 0) {
+                alert("Please select a file!");
+                return;
+            }
 
-            <section class="card gallery-card">
-                <h3>Photo Gallery</h3>
-                <div id="galleryGrid" class="grid"></div>
-            </section>
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+            status.innerText = "Converting... Please wait.";
 
-            <section class="card map-card">
-                <h3>Live Location Tracker (WebSocket)</h3>
-                <div id="map"></div>
-            </section>
+            try {
+                // Send file to Backend (FastAPI)
+                const response = await fetch('http://localhost:8000/convert', {
+                    method: 'POST',
+                    body: formData
+                });
 
-            <div id="chatWidget">
-                <div id="chatHeader">Support Chat</div>
-                <div id="chatMessages"></div>
-                <input type="text" id="chatInput" placeholder="Type a message...">
-            </div>
-        </div>
+                if (!response.ok) throw new Error("Conversion failed");
 
-        <div id="guestMessage">
-            <p>Please log in to view the dashboard.</p>
-        </div>
-    </main>
+                // Create a blob from the response (the PDF)
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
 
-    <footer>
-        <p>&copy; 2025 Web Engineering</p>
-    </footer>
+                // Force download
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = "converted_document.pdf";
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                status.innerText = "Done!";
+            } catch (error) {
+                console.error(error);
+                status.innerText = "Error converting file.";
+            }
+        }
+    </script>
 </body>
 </html>
