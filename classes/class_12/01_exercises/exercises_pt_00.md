@@ -37,7 +37,7 @@ Primeiro, precisamos de instalar as ferramentas de "Compilação".
 sudo apt update
 sudo apt install wget texlive-luatex texlive-latex-recommended \
 texlive-latex-extra texlive-fonts-recommended texlive-fonts-extra \
-fonts-lmodern fonts-noto fonts-noto-cjk fonts-noto-emoji pandoc -y
+fonts-lmodern fonts-noto fonts-noto-cjk fonts-noto-color-emoji pandoc -y
 ```
 
 3.  Crie uma pasta chamada `ex12` para colocar os exercícios.
@@ -396,10 +396,11 @@ services:
 FROM python:3.12-trixie
 
 # Install system dependencies (Pandoc and LaTeX)
-# Note: We install latex-recommended to keep the image size manageable
 RUN apt update && apt install -y \
-    pandoc \
-    texlive-latex-recommended \
+    texlive-luatex texlive-latex-recommended \
+    texlive-latex-extra texlive-fonts-recommended \
+    texlive-fonts-extra fonts-lmodern fonts-noto \
+    fonts-noto-cjk fonts-noto-color-emoji pandoc \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -453,7 +454,8 @@ async def convert_md_to_pdf(file: UploadFile = File(...)):
     # pandoc input.md -o output.pdf
     try:
         subprocess.run(
-            ["pandoc", input_filename, "-o", output_filename],
+            ["pandoc", "--pdf-engine=lualatex",
+            input_filename, "-o", output_filename],
             check=True
         )
     except subprocess.CalledProcessError:

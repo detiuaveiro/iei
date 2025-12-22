@@ -1,8 +1,9 @@
-import subprocess
 import os
-from fastapi import FastAPI, UploadFile, File
-from fastapi.responses import FileResponse
+import subprocess
+
+from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
 app = FastAPI()
 
@@ -13,6 +14,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.post("/convert")
 async def convert_md_to_pdf(file: UploadFile = File(...)):
@@ -27,12 +29,13 @@ async def convert_md_to_pdf(file: UploadFile = File(...)):
     # pandoc input.md -o output.pdf
     try:
         subprocess.run(
-            ["pandoc", input_filename, "-o", output_filename],
-            check=True
+            ["pandoc", "--pdf-engine=lualatex", input_filename, "-o", output_filename],
+            check=True,
         )
     except subprocess.CalledProcessError:
         return {"error": "Conversion failed"}
 
     # 3. Return the generated PDF
-    return FileResponse(output_filename, filename="converted.pdf", media_type='application/pdf')
-    
+    return FileResponse(
+        output_filename, filename="converted.pdf", media_type="application/pdf"
+    )

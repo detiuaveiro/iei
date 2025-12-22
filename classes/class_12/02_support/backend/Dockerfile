@@ -1,10 +1,11 @@
 FROM python:3.12-trixie
 
 # Install system dependencies (Pandoc and LaTeX)
-# Note: We install latex-recommended to keep the image size manageable
 RUN apt update && apt install -y \
-    pandoc \
-    texlive-latex-recommended \
+    texlive-luatex texlive-latex-recommended \
+    texlive-latex-extra texlive-fonts-recommended \
+    texlive-fonts-extra fonts-lmodern fonts-noto \
+    fonts-noto-cjk fonts-noto-color-emoji pandoc\
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
