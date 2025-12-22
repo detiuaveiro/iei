@@ -32,7 +32,6 @@ Primeiro, precisamos de instalar as ferramentas de "Compilação".
 1.  Abra o seu **Terminal**.
 2.  Copie e cole o seguinte comando (vai precisar da sua palavra-passe):
 
-
 ```bash
 sudo apt update
 sudo apt install wget texlive-luatex texlive-latex-recommended \

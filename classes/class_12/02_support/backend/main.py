@@ -1,13 +1,13 @@
 import os
 import subprocess
+import tempfile
+import uuid
 
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
 
 app = FastAPI()
 
-# Allow the frontend to talk to this backend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -18,24 +18,59 @@ app.add_middleware(
 
 @app.post("/convert")
 async def convert_md_to_pdf(file: UploadFile = File(...)):
-    # 1. Save the uploaded markdown file
-    input_filename = "input.md"
-    output_filename = "output.pdf"
+    # 1. Generate a unique ID for this request
+    unique_id = str(uuid.uuid4())
 
-    with open(input_filename, "wb") as f:
-        f.write(await file.read())
+    # Get the system's temporary directory
+    temp_dir = tempfile.gettempdir()
 
-    # 2. Run Pandoc command inside the container
-    # pandoc input.md -o output.pdf
+    # Create unique file paths using the UUID
+    input_filename = f"{unique_id}.md"
+    output_filename = f"{unique_id}.pdf"
+
+    input_path = os.path.join(temp_dir, input_filename)
+    output_path = os.path.join(temp_dir, output_filename)
+
     try:
-        subprocess.run(
-            ["pandoc", "--pdf-engine=lualatex", input_filename, "-o", output_filename],
-            check=True,
-        )
-    except subprocess.CalledProcessError:
-        return {"error": "Conversion failed"}
+        # 2. Save uploaded file
+        with open(input_path, "wb") as f:
+            f.write(await file.read())
 
-    # 3. Return the generated PDF
-    return FileResponse(
-        output_filename, filename="converted.pdf", media_type="application/pdf"
-    )
+        # 3. Run Pandoc
+        subprocess.run(
+            ["pandoc", "--pdf-engine=lualatex", input_path, "-o", output_path],
+            check=True,
+            capture_output=True,
+        )
+
+        # 4. Read the generated PDF into memory
+        with open(output_path, "rb") as f:
+            pdf_content = f.read()
+
+        # 5. CLEANUP: Delete files immediately
+        if os.path.exists(input_path):
+            os.remove(input_path)
+        if os.path.exists(output_path):
+            os.remove(output_path)
+
+        # 6. Return the raw bytes
+        # We set "Content-Disposition" so the browser treats it as a file download
+        return Response(
+            content=pdf_content,
+            media_type="application/pdf",
+            headers={"Content-Disposition": "attachment; filename=converted.pdf"},
+        )
+
+    except subprocess.CalledProcessError as e:
+        # Cleanup input if it exists
+        if os.path.exists(input_path):
+            os.remove(input_path)
+        return {"error": "Conversion failed", "details": e.stderr.decode()}
+
+    except Exception as e:
+        # Cleanup anything left behind
+        if os.path.exists(input_path):
+            os.remove(input_path)
+        if os.path.exists(output_path):
+            os.remove(output_path)
+        return {"error": str(e)}

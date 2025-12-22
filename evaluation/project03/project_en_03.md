@@ -3,7 +3,7 @@ title: Final Project
 subtitle: Introdução à Engenharia Informática
 author: Mário Antunes
 institute: Universidade de Aveiro
-date: December 12, 2025
+date: December 22, 2025
 colorlinks: true
 highlight-style: tango
 geometry: a4paper,margin=2cm
