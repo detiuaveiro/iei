@@ -35,7 +35,9 @@ Primeiro, precisamos de instalar as ferramentas de "Compilação".
 
 ```bash
 sudo apt update
-sudo apt install wget texlive-latex-recommended pandoc -y
+sudo apt install wget texlive-luatex texlive-latex-recommended \
+texlive-latex-extra texlive-fonts-recommended texlive-fonts-extra \
+fonts-lmodern fonts-noto fonts-noto-cjk fonts-noto-emoji pandoc -y
 ```
 
 3.  Crie uma pasta chamada `ex12` para colocar os exercícios.

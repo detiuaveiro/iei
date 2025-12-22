@@ -35,7 +35,9 @@ First, we need to install the "Compiler" tools.
 
 ```bash
 sudo apt update
-sudo apt install wget texlive-latex-recommended pandoc -y
+sudo apt install wget texlive-luatex texlive-latex-recommended \
+texlive-latex-extra texlive-fonts-recommended texlive-fonts-extra \
+fonts-lmodern fonts-noto fonts-noto-cjk fonts-noto-emoji pandoc -y
 ```
 
 3.  Create a folder named `ex12` to place the exercises.
@@ -46,7 +48,8 @@ wget -O profile.png "https://placehold.co/400x400/png"
 wget -O graph.png "https://placehold.co/600x400/png"
 ```
 
-> **Note:** `texlive-full` is the complete version of the texlive tool, but it is large (several GBs). It contains every package you might need so you don't encounter missing errors later. In case of error consider installing it.
+> **Note:** `texlive-full` is the complete version of the texlive tool, but it is large (several GBs). 
+It contains every package you might need so you don't encounter missing errors later. In case of error consider installing it.
 
 ## Step 1: Write a CV
 
