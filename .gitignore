@@ -225,3 +225,47 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# ==========================================
+# Compilação de Documentos (Makefile, Pandoc, LaTeX)
+# ==========================================
+build.log
+*.aux
+*.out
+*.toc
+*.nav
+*.snm
+*.vrb
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bbl
+*.blg
+
+# ==========================================
+# Folhas de Cálculo e Ficheiros Temporários (LibreOffice / Calc)
+# ==========================================
+.~lock.*#
+*.~lock.*#
+*.tmp
+
+# ==========================================
+# Sistema Operativo e Diagramas (macOS / Windows / draw.io)
+# ==========================================
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+**/.DS_Store
+Thumbs.db
+~*.drawio
+*.drawio.bkp
+
+# ==========================================
+# Dados Pessoais de Estudantes e Pautas (RGPD)
+# ==========================================
+alunos*.ods
+alunos*.csv
+alunos*.xlsx
+*notas*
+*pauta*
