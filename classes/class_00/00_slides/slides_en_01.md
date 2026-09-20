@@ -1,19 +1,38 @@
 ---
-title: Setup
-Subtitle: Introdução Engenharia Informática
-author: Mário Antunes
+title: 47138 - Introduction to Computer Engineering
+subtitle: Workspace Setup
 institute: Universidade de Aveiro
-date: September 15, 2025
+date: September 14, 2026
 colorlinks: true
 highlight-style: tango
 mainfont: NotoSans
+fontsize: 9pt
+titlegraphic: "../../../resources/ua_logo2.png"
+titlegraphicoptions: "width=6.5cm"
 mainfontfallback:
   - "NotoColorEmoji:mode=harf"
+  - "DejaVu Sans:"
 header-includes:
- - \usetheme[sectionpage=none,numbering=fraction,progressbar=frametitle]{metropolis}
+ - \usetheme[sectionpage=none,numbering=fraction,progressbar=none]{metropolis}
+ - \definecolor{uagreen}{HTML}{92D400}
+ - \setbeamercolor{title separator}{fg=uagreen}
+ - \setbeamersize{text margin left=1.5em, text margin right=1.5em}
+ - |
+    \setbeamertemplate{title graphic}{
+      \begin{tikzpicture}[remember picture,overlay]
+        \node[anchor=north west, xshift=0cm, yshift=-0cm] at (current page.north west) {
+          \inserttitlegraphic
+        };
+        \node[anchor=south east, xshift=-0.2cm, yshift=0.6cm, opacity=0.08] at (current page.south east) {
+          \includegraphics[width=4.8cm]{../../../resources/_deti_black.png}
+        };
+      \end{tikzpicture}
+    }
  - \usepackage{longtable,booktabs}
  - \usepackage{etoolbox}
  - \AtBeginEnvironment{longtable}{\tiny}
+ - \usepackage{caption}
+ - \captionsetup[longtable]{labelformat=empty,skip=0pt}
  - \AtBeginEnvironment{cslreferences}{\tiny}
  - \AtBeginEnvironment{Shaded}{\tiny}
  - \AtBeginEnvironment{verbatim}{\tiny}
@@ -22,166 +41,178 @@ header-includes:
 
 # Setting Up Your Digital Workspace
 
-**Goal for Today:** Ensure everyone has a consistent and powerful work environment. This helps us learn faster and avoids the classic "but it works on my machine\!" problem.
+**Session Goal:** Ensure that everyone has a development environment ready for lab classes.
+
+### Session Agenda:
+1. **Core concepts:** Operating systems and filesystems
+2. **The Linux choice:** Why standardize on a Unix/Linux-based environment?
+3. **Three setup paths:**
+   - Option 1: Native installation (*dual-boot*)
+   - Option 2: Pre-configured Virtual Machine (VirtualBox / UTM)
+   - Option 3: Windows Subsystem for Linux (WSL 2)
+4. **Comparison and next steps**
 
 # What is an Operating System (OS)?
 
-Think of an OS as the **manager** of your computer's resources. 🧑‍💼
+The Operating System is the **central manager** of all computer hardware and software resources:
 
-  * It's the software that runs everything else.
-  * It manages the **CPU** (the brain), **memory** (the workspace), and **storage** (the filing cabinet).
-  * It provides a **user interface** (UI) for you to interact with the machine.
+- **Resource management:** CPU (processing), RAM (active memory), and storage (persistent data).
+- **Interface:** Provides graphical user interfaces (GUI) and command-line interfaces (CLI).
 
-We'll be focusing on two main families:
+### Major Operating System families:
+- **Windows:** The most common desktop OS for personal computers.
+- **Linux:** An open-source, Unix-based OS family. Dominates web servers, cloud computing (AWS, GCP, Azure), supercomputers, and software development.
+- **macOS:** Based on Unix (Darwin/BSD). Shares command-line architecture (POSIX) with Linux.
 
-  * **🪟 Windows:** The most common desktop OS.
-  * **🐧 Linux:** A powerful, open-source OS family, dominant in servers, cloud computing, and scientific research.
+# Filesystems
 
-# What is a Filesystem?
+A filesystem is the **library catalog** of your computer. It defines how the OS organizes, stores, and finds your files. 🗂️
 
-A filesystem is the **library catalog** for your computer. It's how the OS organizes, stores, and finds your files. 🗂️
+\vspace{2em}
 
-## **Windows (NTFS)**
+**Understanding the path structure is crucial for locating your files and running programs from the command line\!**
 
-  * Uses **drive letters** (e.g., `C:`, `D:`).
-  * Path separator is a **backslash (`\`)**.
-  * Example: `C:\Users\YourName\Documents\MyFile.txt`
+## Filesystem - Windows (NTFS)
 
-## **Linux (ext4, Btrfs, etc.)**
+  - Uses independent **drive letters** (`C:`, `D:`).
+  - Path separator: **backslash (`\`)**
+    — E.g.: `C:\Users\Name\document.txt`.
+  - File names are **case-insensitive**: `file.txt` and `File.txt` refer to the same file.
 
-  * Has a single, unified **root directory (`/`)**.
-  * Everything, including devices, is treated like a file.
-  * Path separator is a **forward slash (`/`)**.
-  * Example: `/home/yourname/documents/myfile.txt`
+## Filesystem - Linux (ext4, Btrfs, etc.)
 
-> **Key takeaway:** Understanding the path structure is crucial for finding your files and running programs from the command line\!
+  - **Single, unified tree hierarchy** rooted at `/` (no drive letters).
+  - Everything, including hardware devices, is treated as a file.
+  - Path separator: **forward slash (`/`)**
+    — E.g.: `/home/name/document.txt`.
+  - File names are **case-sensitive**: `file.txt` $\neq$ `File.txt`.
 
-# Why a Standard Environment? (The "Linux" Choice)
+# Why a Standardized Environment? (The Linux Choice)
 
-We are standardizing on a **Linux-based command-line environment** because:
+In this course, we standardize work on a **Linux-based** command-line environment because:
 
-  * **Industry Standard:** It's the backbone of the web, cloud computing (AWS, Google Cloud), and scientific computing.
-  * **Powerful Tooling:** Offers unparalleled tools for programming, automation, and data manipulation.
-  * **Transparency:** Helps you understand what the computer is *actually* doing.
+- **Industry Standard:** It is the backbone of the Web, cloud computing (AWS, GCP, Azure), and scientific computing.
+- **Unrivaled Tooling:** Powerful ecosystem of terminal utilities, scripting (Bash), programming, and automation.
+- **Transparency and Control:** Allows deep understanding of what processes, networks, and the operating system are actually doing without hidden layers.
 
-Now, let's explore your options for getting this environment set up\!
+# Three Paths to the Linux Environment 🗺️
 
-# Your Three Paths to Linux 🗺️
+1. **Native Linux Installation (Dual-Boot or Dedicated)** 🐧
+   - Linux is installed directly on the computer hardware.
+   - *Best for:* Maximum performance and full immersion in the Linux ecosystem.
 
-1.  **Native Linux Installation:**
+2. **Virtual Machine (Pre-configured VM)** 🖥️
+   - A complete Linux computer runs inside a window on your host OS.
+   - *Best for:* Safety, isolation, and simple restoration.
 
-      * **What:** Linux is the main OS on your computer.
-      * **Best for:** Maximum performance and full immersion.
-
-2.  **Virtual Machine (VM):**
-
-      * **What:** A complete Linux computer running inside a window on your current OS.
-      * **Best for:** Safe, isolated, and easy to reset.
-
-3.  **Windows Subsystem for Linux (WSL):**
-
-      * **What:** A compatibility layer to run a real Linux environment directly inside Windows.
-      * **Best for:** Tight integration between Windows and Linux tools.
+3. **Windows Subsystem for Linux (WSL 2)** 🪟+🐧
+   - Direct integration of a native Linux kernel inside Windows.
+   - *Best for:* Windows users who want a fast, integrated Linux terminal.
 
 # Option 1: Native Linux Installation 🐧
 
-This means you install a Linux distribution (like Ubuntu or Fedora) directly on your computer's hardware, either replacing or alongside Windows ("dual-booting").
+Installing a Linux distribution directly on the hardware (alongside Windows in *dual-boot* or on a dedicated drive).
 
-## **Pros & Cons**
+- **Pros:**
+  - **✅ Maximum performance:** Direct access to CPU, GPU, and memory with zero virtualization overhead.
+  - **✅ Total immersion:** Excellent for learning and adapting to the Linux environment.
+- **Cons:**
+  - **❌ Complex setup:** Requires disk partitioning and BIOS/UEFI configuration (risk of data loss).
+  - **❌ Hardware compatibility:** Some hardware may not be fully supported or may require extra setup.
 
-  * **✅ Pro:** **Best Performance.** No overhead; Linux has direct access to all hardware (CPU, GPU).
-  * **✅ Pro:** **Full Immersion.** Forces you to learn and adapt to the Linux environment.
-  * **❌ Con:** **Complex Setup.** Can be tricky, with risks of data loss if not done carefully (backup is essential\!).
-  * **❌ Con:** **Hardware Compatibility.** Some specific hardware (Wi-Fi cards, webcams) might require extra configuration.
+**Target audience:** Adventurous or experienced students, or those with a secondary computer available for testing.
 
-## **Who is this for?**
+# Option 1: Precautions and Installation Steps
 
-Students who are adventurous, comfortable with computer hardware, or have a spare machine to experiment with.
+### Essential precautions before starting:
+- **Backup:** Back up all your important personal files.
+- **BitLocker (Windows 11):** Save your 48-digit recovery key beforehand (available in your Microsoft account).
 
-## **Setup Steps**
-
-1.  **Choose a distribution:** We recommend **Ubuntu 22.04 LTS** for its great support.
-2.  **Create a bootable USB drive:** Use tools like [Rufus](https://rufus.ie/) or [BalenaEtcher](https://www.balena.io/etcher/).
-3.  **Partition your hard drive:** This is the most critical step if you plan to dual-boot. **BACK UP YOUR DATA FIRST\!**
-4.  **Boot from the USB drive** and follow the installer instructions.
+### Recommended steps:
+1. **Distribution:** We recommend **Ubuntu 26.04 LTS** (stable, long-term support).
+2. **Bootable USB drive:** Create one using tools like [Rufus](https://rufus.ie/) or [BalenaEtcher](https://www.balena.io/etcher/).
+3. **Boot:** Restart, enter the boot menu (F12 / F2 / Del), and follow the installer instructions.
 
 # Option 2: Virtual Machine (VM) 🖥️
 
-A VM uses a **hypervisor** (like VirtualBox or VMWare) to emulate a full computer system inside your existing OS. We provide a pre-configured image to make this easy\!
+A hypervisor (such as VirtualBox) emulates a complete computer in software, running a ready-made Linux image.
 
-## **How it Works: Networking**
+- **Pros:**
+  - **✅ Complete safety (*sandbox*):** Any issue remains confined to the VM, without endangering the host OS.
+  - **✅ Instant recovery:** Supports snapshots (restore points).
+- **Cons:**
+  - **❌ Resource consumption:** Requires a machine with 8 GB+ RAM and multi-core CPU, as it runs two operating systems at once.
+  - **❌ Graphics performance:** Less visual fluidity compared to a native install.
 
-Your VM needs network access to download software (`apt install`) or use `git`.
+**Target audience:** Default recommended option for most students due to the balance of safety and simplicity.
 
-  * The hypervisor creates a virtual network adapter for your VM.
-  * It usually uses **NAT (Network Address Translation)**, which acts like a router, allowing the VM to share your host computer's internet connection securely.
+# Option 2: Installation and Recommendations
 
-## **Pros & Cons**
+### Setup steps:
+1. **Install VirtualBox:** Download the latest version of [VirtualBox](https://www.virtualbox.org/) and its Extension Pack.
+2. **Download Linux Image:** Download a Linux .iso image, e.g., [Ubuntu 26.04 LTS](https://ubuntu.com/download/desktop).
+3. **Create new VM:** In VirtualBox, select `Machine > New` and follow the prompts.
+4. **Start:** Once created, select the VM and click **Start**.
 
-  * **✅ Pro:** **Safe & Isolated.** The VM is a sandbox. If you break it, it doesn't affect your main OS. You can easily delete it or reset it from a snapshot.
-  * **✅ Pro:** **Easy Setup.** Just install VirtualBox and import the provided course image.
-  * **❌ Con:** **Resource Heavy.** Requires significant RAM (8GB+ recommended for your whole system) and CPU power, as you are running two operating systems at once.
-  * **❌ Con:** **Slower Performance.** Slower than a native install due to the overhead of virtualization.
+**⚠️ Note for Mac users (Apple Silicon - M1/M2/M3/M4):** On Apple Silicon Macs, using **UTM** (with an Ubuntu ARM64 image) or native Unix tools via **Homebrew** is recommended.
 
-## **Who is this for?**
+# Option 3: Windows Subsystem for Linux (WSL 2) 🪟+🐧
 
-Almost everyone\! It's the safest, most recommended, and most consistent option for this course.
+WSL allows you to run a genuine Linux kernel and environment directly inside Windows, without the overhead of a full VM. It provides powerful integration between both systems.
 
-## **Setup Steps**
+# Option 3: Windows Subsystem for Linux (WSL 2) 🪟+🐧
 
-1.  **Install VirtualBox:** Download and install the latest version of [VirtualBox](https://www.virtualbox.org/) and its "Extension Pack".
-2.  **Download the Course VM Image:** Get the `.ova` file from the course website.
-3.  **Import the Appliance:** In VirtualBox, go to `File > Import Appliance` and select the `.ova` file you downloaded. Follow the on-screen prompts.
-4.  **Start your VM:** Select the imported machine and click "Start". That's it\!
+### Notable features:
+- **Networking:** WSL automatically shares the network connection of your Windows host.
+- **Filesystem Integration:** Your Windows drives (like `C:`) are automatically mounted inside Linux at `/mnt/`. For instance, your folder `C:\Users\YourName` is accessible at `/mnt/c/Users/YourName`.
 
-# Option 3: Windows Subsystem for Linux (WSL) 🪟+🐧
+**⚠️ Important:** For best performance, always keep your project files inside the Linux filesystem (`/home/yourname/`), rather than on mounted Windows drives (`/mnt/c/`).
 
-WSL lets you run a genuine Linux kernel and environment directly on Windows, without the overhead of a full VM. It provides powerful integration between the two systems.
+# Option 3: Windows Subsystem for Linux (WSL 2) 🪟+🐧
 
-## **How it Works: Filesystem & Networking**
+- **Pros:**
+  - **✅ Excellent Performance:** Near-native speed for compilation and terminal tools.
+  - **✅ Great integration:** Easily invoke Linux tools from Windows and vice-versa. For example, use VS Code on Windows to edit files directly inside WSL.
+- **Cons:**
+  - **❌ CLI-focused:** Primarily designed for command line (graphical applications require WSLg).
+  - **❌ Potential Complexity:** Advanced networking or hardware access may be more complex than in a VM or native install.
 
-  * **Networking:** WSL automatically shares the network connection of your Windows host. It just works\!
-  * **Filesystem Integration:** Your Windows drives (like `C:`) are automatically mounted inside Linux under `/mnt/`. For example, your `C:\Users\YourName` folder is accessible at `/mnt/c/Users/YourName`.
+**Target audience:** Windows users who want a fast, integrated command-line environment.
 
-> **⚠️ Important:** For best performance, always work with your files inside the Linux filesystem (`/home/yourname/`), not on the mounted Windows drives (`/mnt/c/`).
+# Option 3: WSL 2 Installation
 
-## **Pros & Cons**
+1. **Enable WSL:** Open **PowerShell** or **Windows Terminal** as **Administrator**.
+2. **Run installation command:**
+   ```powershell
+   wsl --install
+   ```
+   *This enables required Windows features, downloads the latest Linux kernel, and installs Ubuntu by default.*
+3. **Restart:** Reboot your computer when prompted.
+4. **Set credentials:** In the launched Ubuntu terminal window, set your username and password (*remember this password!*).
+5. **Access Linux terminal:** You can launch your Linux terminal from the Start Menu (search for "Ubuntu").
 
-  * **✅ Pro:** **Excellent Performance.** Near-native speed for command-line tools.
-  * **✅ Pro:** **Great Integration.** Easily call Linux tools from Windows and vice-versa. You can use VS Code on Windows to edit files directly inside WSL.
-  * **❌ Con:** **"Headless" by Default.** WSL is primarily a command-line tool. Running Linux GUI apps requires extra setup (WSLg).
-  * **❌ Con:** **Potential for Complexity.** Some advanced networking or hardware access can be more complex than in a VM or native install.
+# Comparative Summary of Options
 
-## **Who is this for?**
+The ideal choice depends on your operating system, computer capabilities, and personal experience:
 
-Windows users who want a fast, integrated command-line environment and are comfortable working primarily in a terminal.
-
-## **Setup Steps**
-
-1.  **Enable WSL:** Open PowerShell **as an Administrator** and run this single command:
-    ```powershell
-    wsl --install
-    ```
-    This command will enable the required Windows features, download the latest Linux kernel, and install **Ubuntu** as the default distribution.
-2.  **Reboot** your computer when prompted.
-3.  **Create a User Account:** After rebooting, a terminal window will open to complete the Ubuntu installation. You will be asked to create a username and password. **Remember this password\!**
-4.  **You're Ready\!** You can launch your Linux terminal from the Start Menu (search for "Ubuntu").
-
-# Summary & Next Steps ✅
-
-You have three great options. Your choice depends on your comfort level and computer.
-
-| Feature | Native Install | Virtual Machine (VM) | WSL |
+| Feature | Native Install | Virtual Machine (VM) | WSL 2 (Windows) |
 | :--- | :---: | :---: | :---: |
 | **Performance** | ⭐⭐⭐ | ⭐⭐ | ⭐⭐⭐ |
-| **Safety/Isolation** | ⭐ | ⭐⭐⭐ | ⭐⭐ |
-| **Ease of Setup** | ⭐ | ⭐⭐⭐ | ⭐⭐ |
-| **Recommended For**| Experts/Hobbyists | **Everyone (Default)** | Windows Users |
+| **Isolation & Safety** | ⭐ | ⭐⭐⭐ | ⭐⭐ |
+| **Ease of Setup** | ⭐ | ⭐⭐⭐ | ⭐⭐⭐ |
+| **Host OS Integration** | N/A | ⭐ | ⭐⭐⭐ |
+| **Recommended for** | Enthusiasts / Experienced | **Everyone (Safe default)** | Windows Users |
 
-## **Your Task Now:**
+*macOS users: Can work directly in the native Unix terminal (with Homebrew) or use a VM via UTM.*
 
-1.  **Choose one** of the three methods.
-2.  Follow the setup instructions to get it running.
-3.  Open a terminal and be ready for our next session\!
+# Next Steps
 
-**Having trouble? Don't worry\!** Ask your professors, teaching assistants, or classmates for help. Getting your environment set up is the first important step. Good luck\! 🎉
+1. **Choose and set up** one of the three options (Native, VM, or WSL 2) on your laptop.
+2. **Test the Linux terminal:** Open the command line and verify that you have a working shell (`bash`).
+3. **Confirm basic tools:** Verify that commands such as `whoami`, `uname -a`, and `pwd` respond properly.
+
+### Questions or roadblocks?
+- Seek guidance from professors during office hours and lab classes.
+- Do not hesitate to ask classmates and teaching assistants.
+
+**Having your workspace ready is the first major step toward success in this course. Happy coding! 🎉**

@@ -29,8 +29,9 @@ RUN ARCH=$(dpkg --print-architecture) \
     && rm /tmp/pandoc.tar.gz
 
 # 3. Download and install FiraCode Nerd Font
+ARG NERD_FONTS_VERSION=v3.5.1
 RUN mkdir -p /usr/share/fonts/truetype/firacode \
-    && curl -fLo /tmp/FiraCode.zip https://github.com/ryanoasis/nerd-fonts/releases/latest/download/FiraCode.zip \
+    && curl -fLo /tmp/FiraCode.zip "https://github.com/ryanoasis/nerd-fonts/releases/download/${NERD_FONTS_VERSION}/FiraCode.zip" \
     && unzip -q /tmp/FiraCode.zip -d /usr/share/fonts/truetype/firacode \
     && rm /tmp/FiraCode.zip \
     && fc-cache -fv

@@ -1,41 +1,61 @@
 ---
-title: Introdução Engenharia Informática
-author: Mário Antunes
+title: 47138 - Introdução à Engenharia Informática
+subtitle: Apresentação da unidade curricular
 institute: Universidade de Aveiro
-date: September 15, 2025
+date: September 14, 2026
 colorlinks: true
 highlight-style: tango
 mainfont: NotoSans
+fontsize: 9pt
+titlegraphic: "../../../resources/ua_logo2.png"
+titlegraphicoptions: "width=6.5cm"
 mainfontfallback:
   - "NotoColorEmoji:mode=harf"
+  - "DejaVu Sans:"
 header-includes:
- - \usetheme[sectionpage=none,numbering=fraction,progressbar=frametitle]{metropolis}
+ - \usetheme[sectionpage=none,numbering=fraction,progressbar=none]{metropolis}
+ - \definecolor{uagreen}{HTML}{92D400}
+ - \setbeamercolor{title separator}{fg=uagreen}
+ - \setbeamersize{text margin left=1.5em, text margin right=1.5em}
+ - |
+    \setbeamertemplate{title graphic}{
+      \begin{tikzpicture}[remember picture,overlay]
+        \node[anchor=north west, xshift=0cm, yshift=-0cm] at (current page.north west) {
+          \inserttitlegraphic
+        };
+        \node[anchor=south east, xshift=-0.2cm, yshift=0.6cm, opacity=0.08] at (current page.south east) {
+          \includegraphics[width=4.8cm]{../../../resources/_deti_black.png}
+        };
+      \end{tikzpicture}
+    }
  - \usepackage{longtable,booktabs}
  - \usepackage{etoolbox}
  - \AtBeginEnvironment{longtable}{\tiny}
+ - \usepackage{caption}
+ - \captionsetup[longtable]{labelformat=empty,skip=0pt}
  - \AtBeginEnvironment{cslreferences}{\tiny}
  - \AtBeginEnvironment{Shaded}{\tiny}
  - \AtBeginEnvironment{verbatim}{\tiny}
  - \setmonofont[Contextuals={Alternate}]{FiraCodeNerdFontMono-Retina}
 ---
 
-# Professores
+# Docente Responsável
 
 ::: columns
 
 :::: column
-- **Nome:** Mário Antunes
-- **E-Mail:** [mario.antunes@ua.pt](mailto:mario.antunes@ua.pt)
-- **Gabinete:** 19.2.15 (IT1)
+- **Nome:** Luis Moutinho
+- **E-Mail:** [lems@ua.pt](mailto:lems@ua.pt)
+- **Gabinete:** 04.3.21 (DETI)
 ::::
 
 :::: column
-![](figures/mantunes.jpg)
+![](figures/lmoutinho.png)
 ::::
 
 :::
 
-# Professors
+# Docentes
 
 ::: columns
 
@@ -51,48 +71,109 @@ header-includes:
 
 :::
 
-# Introdução à Unidade Curricular
+# Objetivos da Unidade Curricular
 
-Vamos abordar os seguintes tópicos:
+Após frequência da unidade curricular, cada estudante deverá ser capaz de:
 
-* C1. Introdução à Linha de Comandos
-* C2. Virtualização e Contentores
-* C3. Versionamento de Código e Colaboração
-* C4. Comunicação em Redes IP
-* C5. Servidores Web e Tecnologia
-* C6. Manipulação de Dados Semiestruturados
-* C7. Compilação de Documentos (Latex e Markdown)
-* C8. RGPD, Propriedade Intelectual, Ética e Profissionalismo em TI
+- O1. Compreender como administrar **sistemas operativos Linux** e Windows através de **linha de comandos**.
+- O2. Distinguir o uso de **máquinas virtuais e containers** para executar software em **ambientes isolados e organizados**.
+- O3. Compreender a necessidade das **ferramentas de versionamento de código e trabalho colaborativo**.
+- O4. Compreender os **conceitos básicos de redes** e configurar uma rede local.
 
-# Avaliação
+# Objetivos da Unidade Curricular
 
-- 50% Teórica + 50% Prática
-- Discreta: 25% Projeto 1 + 25% Projeto 2 + 50% Exame
-- Época Final: 50% Exame Final + 50% Projeto
+- O5. Adquirir as capacidades necessárias para **desenvolver páginas web básicas** e utilizar tecnologias web para desenvolver **aplicações web simples**.
+- O6. Manipular dados em formatos comuns e utilizar **ferramentas para análise de dados**.
+- O7. Perceber os princípios do **RGPD, propriedade intelectual e licenciamento de software** do ponto de vista ético e profissional.
 
 # Calendarização
 
-| Date TP1/2 | Date TP3   | Date TP4   | Topic | Description                        |
-|-----------:|-----------:|-----------:|:-----:|:-----------------------------------|
-| 15-09-2025 | 17-09-2025 | 18-09-2025 |    C0 | Setup                              |
-| 22-09-2025 | 24-09-2025 | 25-09-2025 |    C1 | Linux terminal                     |
-| 29-09-2025 | 01-10-2025 | 02-10-2025 |    C1 | Windows terminal                   |
-| 06-10-2025 | 08-10-2025 | 09-10-2025 |    C2 | Virtualization                     |
-| 13-10-2025 | 15-10-2025 | 16-10-2025 |    C2 | Containers                         |
-| 20-10-2025 | 22-10-2025 | 23-10-2025 |    C2 | Application containers             |
-| 27-10-2025 | 29-10-2025 | 30-10-2025 |    C3 | Git & Github                       |
-| 03-11-2025 | 05-11-2025 | 06-11-2025 |    C4 | Network configuration              |
-| 10-11-2025 | 12-11-2025 | 13-11-2025 |    C4 | Network programing                 |
-| 17-11-2025 | 19-11-2025 | 20-11-2025 |    C5 | WebPage & deployment               |
-| 24-11-2025 | 26-11-2025 | 27-11-2025 |    C5 | Web programming                    |
-| 15-12-2025 | 03-12-2025 | 04-12-2025 |    C6 | Data visualization                 |
-| 22-12-2025 | 10-12-2025 | 11-12-2025 |    C7 | Latex & Markdown                   |
-| ---------- | 17-12-2025 | 18-12-2025 |    C8 | GDPR, AI Act, Intelectual property |
+: \ {#tbl:cal}
+
+| Aula | TP1/2 |  TP3  |  TP4  | Tópico |            Descrição             |     Projeto      |
+|:----:|:-----:|:-----:|:-----:|:------:|:---------------------------------|:----------------:|
+|  1   | 14/09 | 16/09 | 17/09 |   C0   | Preparação de ambiente           |                  |
+|  2   | 21/09 | 23/09 | 24/09 |   C1   | Terminal Linux                   |                  |
+|  3   | 28/09 | 30/09 | 01/10 |   C1   | Terminal Windows (ou IA)         |                  |
+|  4   | 12/10 | 07/10 | 08/10 |   C2   | Virtualização                    |                  |
+|  5   | 19/10 | 14/10 | 15/10 |   C2   | Contentores                      |                  |
+|  6   | 26/10 | 21/10 | 22/10 |   C2   | Contentores de aplicação         |                  |
+|  7   | 02/11 | 28/10 | 29/10 |   C3   | Git e GitHub                     | **P1** (Início)  |
+|  8   | 09/11 | 04/11 | 05/11 |   C4   | Configuração de redes            |      **P1**      |
+|  9   | 16/11 | 11/11 | 12/11 |   C4   | Programação de redes             |      **P1**      |
+|  10  | 23/11 | 18/11 | 19/11 |   C5   | Páginas Web e publicação         | **P1** (Entrega) |
+|  11  | 30/11 | 25/11 | 26/11 |   C5   | Programação Web                  | **P2** (Início)  |
+|  12  | 07/12 | 02/12 | 03/12 |   C6   | Visualização de dados            |      **P2**      |
+|  13  | 14/12 | 09/12 | 10/12 |   C7   | LaTeX e Markdown                 |      **P2**      |
+|  14  | 21/12 | 16/12 | 17/12 |   C8   | RGPD, IA Act e Prop. Intelectual | **P2** (Entrega) |
+
+# Avaliação
+
+Nota Final = 50% Componente Teórica-Prática + 50% Componente Prática
+
+- **Nota mínima para cada componente de 8.0 valores** (aprovação à unidade curricular requer nota final $\ge$ 9.5 valores)
+
+Tipos de avaliação:
+
+- **Discreta (*regime por omissão / default*)**: 25% Projeto 1 + 25% Projeto 2 + 50% Exame TP
+- **Final**: 50% Projeto Final + 50% Exame TP
+  - Para optar por avaliação final, informar o docente responsável por e-mail até ao **final da 2.ª semana de aulas**.
+
+- Exame TP realizado na época normal de exames (via Moodle)
+- Projeto final com início na última aula e entrega 3 semanas depois
+
+# Regime de Assiduidade e Faltas
+
+De acordo com o Regulamento de Estudos da Universidade de Aveiro (1.º ano):
+
+- **Presença obrigatória (Aulas Teórico-Práticas)**:
+  - O controlo de assiduidade é obrigatório para estudantes do 1.º ano.
+  - Limite máximo de **faltas injustificadas: 30%** das aulas lecionadas.
+  - Ultrapassar este limite implica **reprovação por faltas** e perda de acesso à época normal.
+
+- **Estatutos especiais**:
+  - Estudantes com estatuto de **Trabalhador-Estudante** (e outros legalmente equiparados) estão dispensados do cumprimento do limite de assiduidade mínima.
+
+- **Justificação de faltas**:
+  - Devem ser submetidas via PACO no prazo legal (até 5 dias úteis).
+  - Faltas justificadas a momentos de avaliação conferem direito a momento de substituição.
+
+# Orientação Tutorial (OT)
+
+- **Horário**: Segunda-feira, **12h00 – 13h00**
+- **Local**: Sala **4.2.15** (DETI)
+
+- **Objetivos e Apoio**:
+  - Acompanhamento no desenvolvimento dos **Projetos 1 e 2**;
+  - Esclarecimento de dúvidas sobre matérias, ferramentas e linha de comandos;
+  - Apoio ao estudo e consolidação de competências.
+
+- **Funcionamento**:
+  - Sessão semanal aberta a estudantes de todas as turmas;
+  - Frequência facultativa (sem marcação de faltas), mas recomendada.
+
+# Política de Uso de Inteligência Artificial
+
+1. **Provas e Exames**
+   - **Não utilização de IA**: É estritamente proibido o recurso a ferramentas de inteligência artificial em todas as provas e exames.
+   - **Fraude académica**: O uso não autorizado de IA constitui fraude académica e incorre nos respetivos processos disciplinares.
+
+# Política de Uso de Inteligência Artificial
+
+2. **Projetos Práticos (Uso Condicionado)**
+   - **Proibida a resolução integral**: A IA não pode ser utilizada para resolver o desafio na totalidade.
+   - **Apoio autorizado**:
+     - *Debugging* e resolução de erros;
+     - Geração e execução de testes;
+     - Discussão de arquitetura e tecnologias para a resolução;
+     - Apoio na escrita do relatório (correção de erros, polimento do texto, diagramas e imagens).
+   - **Transparência e espírito crítico**: Se usada na conceção ou código, incluir excertos no relatório fundamentando opções (*aceitei/recusei porque...*).
+
 
 # Bibliografia
 
-- James F. Kurose and Keith W. Ross. 2021. Computer Networking: A Top-Down Approach (8th edition). Pearson.  
-- Python Networking 101: Navigating essentials of networking, socket programming, AsyncIO, network testing, simulations and Ansible, Odette Windows, GiftforGits, 2023 
-- Mailund, Thomas 2019 Introducing Markdown and Pandoc: Using Markup Language and Document Converter  
-- William Shotts 2019 The Linux Command Line, 2nd Edition - A Complete Introduction 
+- James F. Kurose and Keith W. Ross. 2021. Computer Networking: A Top-Down Approach (8th edition). Pearson.
+- Python Networking 101: Navigating essentials of networking, socket programming, AsyncIO, network testing, simulations and Ansible, Odette Windows, GiftforGits, 2023
+- Mailund, Thomas 2019 Introducing Markdown and Pandoc: Using Markup Language and Document Converter
+- William Shotts 2019 The Linux Command Line, 2nd Edition - A Complete Introduction
 - Paul McFedries 2023 HTML, CSS, & JavaScript All-in-One For Dummies
