@@ -170,10 +170,24 @@ De acordo com o Regulamento de Estudos da Universidade de Aveiro (1.º ano):
    - **Transparência e espírito crítico**: Se usada na conceção ou código, incluir excertos no relatório fundamentando opções (*aceitei/recusei porque...*).
 
 
-# Bibliografia
+# Bibliografia: Livros de Referência
 
-- James F. Kurose and Keith W. Ross. 2021. Computer Networking: A Top-Down Approach (8th edition). Pearson.
-- Python Networking 101: Navigating essentials of networking, socket programming, AsyncIO, network testing, simulations and Ansible, Odette Windows, GiftforGits, 2023
-- Mailund, Thomas 2019 Introducing Markdown and Pandoc: Using Markup Language and Document Converter
-- William Shotts 2019 The Linux Command Line, 2nd Edition - A Complete Introduction
-- Paul McFedries 2023 HTML, CSS, & JavaScript All-in-One For Dummies
+- **William Shotts** (2019). *The Linux Command Line: A Complete Introduction* (2.ª ed.). No Starch Press.
+- **Scott Chacon & Ben Straub** (2014). *Pro Git* (2.ª ed.). Apress / Acesso Aberto.
+- **James F. Kurose & Keith W. Ross** (2021). *Computer Networking: A Top-Down Approach* (8.ª ed.). Pearson.
+- **Odette Windows** (2023). *Python Networking 101*. GiftforGits.
+- **Paul McFedries** (2023). *HTML, CSS, & JavaScript All-in-One For Dummies*. Wiley.
+- **Wes McKinney** (2022). *Python for Data Analysis* (3.ª ed.). O'Reilly Media.
+- **Thomas Mailund** (2019). *Introducing Markdown and Pandoc*. Apress.
+- **Leslie Lamport** (1994). *LaTeX: A Document Preparation System* (2.ª ed.). Addison-Wesley.
+
+# Bibliografia: Manuais Técnicos e Documentação Oficial
+
+- **Sistemas & Shell**: *GNU Bash Reference Manual* & *Linux Kernel Man-Pages*
+- **Virtualização & Contentores**: *Docker Docs*, *Docker Curriculum*, *VirtualBox Manual*, *QEMU Docs*
+- **Redes & Sockets**: *Wireshark User's Guide*, *Nmap Book*, *FastAPI Docs*, *Python Socket/AsyncIO*
+- **Desenvolvimento Web**: *MDN Web Docs (HTML/CSS/JS)*, *JavaScript.info*, *Nginx Documentation*
+- **Formatos & Análise de Dados**: *Pandas User Guide*, *Polars*, *Matplotlib*, *Project Jupyter*
+- **Documentação Técnica**: *Pandoc User's Guide*, *Overleaf Learn*, *The Markdown Guide*
+- **Ética & Legislação**: *Regulamento Geral sobre a Proteção de Dados (RGPD)*, *EU AI Act*, *FRA Handbook*
+

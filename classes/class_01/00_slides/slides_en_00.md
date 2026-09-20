@@ -1,19 +1,38 @@
 ---
-title: Linux terminal
-subtitle: Introdução Engenharia Informática
-author: Mário Antunes
+title: 47138 - Introduction to Computer Engineering
+subtitle: Linux Terminal
 institute: Universidade de Aveiro
-date: September 22, 2025
+date: September 21, 2026
 colorlinks: true
 highlight-style: tango
 mainfont: NotoSans
+fontsize: 9pt
+titlegraphic: "../../../resources/ua_logo2.png"
+titlegraphicoptions: "width=6.5cm"
 mainfontfallback:
   - "NotoColorEmoji:mode=harf"
+  - "DejaVu Sans:"
 header-includes:
- - \usetheme[sectionpage=none,numbering=fraction,progressbar=frametitle]{metropolis}
+ - \usetheme[sectionpage=none,numbering=fraction,progressbar=none]{metropolis}
+ - \definecolor{uagreen}{HTML}{92D400}
+ - \setbeamercolor{title separator}{fg=uagreen}
+ - \setbeamersize{text margin left=1.5em, text margin right=1.5em}
+ - |
+    \setbeamertemplate{title graphic}{
+      \begin{tikzpicture}[remember picture,overlay]
+        \node[anchor=north west, xshift=0cm, yshift=-0cm] at (current page.north west) {
+          \inserttitlegraphic
+        };
+        \node[anchor=south east, xshift=-0.2cm, yshift=0.6cm, opacity=0.08] at (current page.south east) {
+          \includegraphics[width=4.8cm]{../../../resources/_deti_black.png}
+        };
+      \end{tikzpicture}
+    }
  - \usepackage{longtable,booktabs}
  - \usepackage{etoolbox}
  - \AtBeginEnvironment{longtable}{\tiny}
+ - \usepackage{caption}
+ - \captionsetup[longtable]{labelformat=empty,skip=0pt}
  - \AtBeginEnvironment{cslreferences}{\tiny}
  - \AtBeginEnvironment{Shaded}{\tiny}
  - \AtBeginEnvironment{verbatim}{\tiny}
@@ -32,7 +51,7 @@ The **Terminal** is your direct, text-based connection to the operating system.
       * **Efficiency:** Uses minimal system resources.
       * **Industry Standard:** Essential for developers and system administrators.
 
-**Analogy:** A GUI is a restaurant menu. The CLI is speaking directly to the chef.
+**Analogy:** A GUI is the restaurant menu: you can only pick what is already listed. The CLI is stepping into the kitchen and crafting your own custom recipe.
 
 -----
 
@@ -40,80 +59,142 @@ The **Terminal** is your direct, text-based connection to the operating system.
 
 The **shell** is the program that interprets your commands. The terminal is the window; the shell is the brain inside.
 
-  * There are many shells, each with different features:
-      * `sh` (Bourne Shell): The original, classic shell.
-      * `zsh` (Z Shell): A popular modern shell with extensive customization.
-      * `fish` (Friendly Interactive Shell): Focuses on being user-friendly out of the box.
-      * **`bash` (Bourne Again SHell):** The most common shell on Linux. It's the de facto standard we will learn today.
+  * Several shells exist across Unix/Linux environments:
+      * `sh` (Bourne Shell): The classic historical shell.
+      * `zsh` (Z Shell): Modern default in macOS, highly customizable.
+      * `fish`: Focused on out-of-the-box user-friendliness.
+      * **`bash` (Bourne Again SHell):** The *de facto* standard across Linux distributions and the core focus today.
 
 -----
 
-## The Linux Filesystem (Part 1: Core Directories)
+## Shell Survival & Productivity ⚡
 
-The filesystem is a tree starting from the **root (`/`)**.
+Four essential shortcuts that save time and prevent frustration:
 
-  * `/`: The **root directory**. Everything begins here.
-  * `/home`: Your personal files are here (e.g., `/home/student`).
-  * `/bin`: Essential user **binaries** (programs like `ls`).
+  * **`<Tab>` Key (Auto-completion):**
+      * Start typing and press `<Tab>`: auto-completes command names or paths.
+      * Double `<Tab>`: lists all matching options.
+  * **`↑` and `↓` Arrows (Command History):**
+      * Browse and reuse previously typed commands without retyping.
+      * The `history` command prints recent command entries.
+  * **`Ctrl + C` (Cancel / Terminate):**
+      * Instantly kills a hanging command or infinite loop.
+  * **`clear` or `Ctrl + L`:**
+      * Clears the terminal screen without ending the session.
+
+-----
+
+## Getting Help in the Terminal 💡
+
+Never try to memorize every command and flag — learn how to look up help:
+
+  * **`--help` Flag:**
+      * Built-in concise summary of usage syntax and options.
+      ```bash
+      $ ls --help
+      $ grep --help
+      ```
+  * **System Manual (`man`):**
+      * Full official manual pages for commands and utilities.
+      ```bash
+      $ man ls
+      ```
+      * Use `↑` and `↓` arrows to scroll; press `/` to search text; press `q` to exit.
+
+-----
+
+## The Linux Filesystem (Part 1)
+
+The filesystem is a single unified hierarchical tree rooted at **`/`**.
+
+  * `/`: The **root directory**. Everything starts here.
+  * `/home`: Personal folders for regular users (e.g., `/home/student`).
+  * `/bin`: Essential user **binaries** (programs like `ls`, `cp`, `bash`).
   * `/etc`: System-wide **configuration** files.
-  * `/var`: **Variable** data, like system logs (`/var/log`).
-  * `/tmp`: For **temporary** files.
+  * `/var`: **Variable** runtime data, such as system logs (`/var/log`).
+  * `/tmp`: Directory for **temporary** files (cleared on reboot).
 
 -----
 
-## The Linux Filesystem (Part 2: Software & Admin)
+## The Linux Filesystem (Part 2)
 
-More important locations you'll encounter.
+Other key locations you will encounter regularly:
 
-  * `/opt`: **Optional** software. Used by third-party programs you install manually (e.g., Google Chrome).
-  * `/usr/local`: A place for software you compile or install for all users that isn't part of the standard OS distribution. You'll often find `/usr/local/bin`.
-  * `/root`: The home directory for the **superuser** (root user). Do not confuse this with the `/` root directory\!
+  * `/opt`: Optional third-party software installed standalone.
+  * `/usr`: User utilities and secondary software (`/usr/bin`, `/usr/lib`).
+  * `/usr/local`: Locally compiled/installed software by the administrator.
+  * `/root`: Home directory of the **superuser** (*root*). Do not confuse with `/`!
+
+-----
+
+## Paths: Absolute vs. Relative 🧭
+
+Understanding file paths is critical to moving around and running tools:
+
+  * **Absolute Path:**
+      * Always starts from the root directory `/`. Unambiguous regardless of current directory.
+      ```bash
+      $ cd /var/log
+      $ ls /etc/os-release
+      ```
+  * **Relative Path:**
+      * Evaluated relative to the current working directory.
+      ```bash
+      $ cd Documents/Work
+      $ ls ./report.txt
+      ```
+  * **`~` Shortcut (Home):**
+      * Expands to your personal home directory (e.g., `~/IEI` equals `/home/student/IEI`).
 
 -----
 
 ## Hidden Files & Directories
 
-In your home directory (`~`), many configuration files are "hidden" by starting with a dot (`.`). They control how your programs and shell behave.
+Files starting with a period (`.`) are treated as hidden.
 
-  * **Examples:**
-      * `~/.bashrc`: Bash shell configuration script. This is a crucial file.
-      * `~/.config`: A common directory for application settings.
-      * `~/.themes` or `~/.local/share/themes`: For desktop themes.
-      * `~/.gitconfig`: Your Git configuration.
+  * Commonly used to store user-level configurations and histories:
+      * `~/.bashrc`: Startup script and settings for the Bash shell.
+      * `~/.bash_history`: Recorded history of executed commands.
+      * `~/.gitconfig`: Global configuration for Git.
+      * `~/.config`: Standard folder for modern application settings.
+  * Standard `ls` hides these files by default.
 
 -----
 
 ## Basic Navigation: `pwd` and `cd`
 
-Two fundamental commands for moving around.
+Fundamental commands to navigate the directory tree:
 
-  * `pwd`: **P**rint **W**orking **D**irectory. Shows your current location.
+  * `pwd`: **P**rint **W**orking **D**irectory. Outputs the full absolute path of your current location.
     ```bash
     $ pwd
     /home/student
     ```
-  * `cd`: **C**hange **D**irectory. Moves you to an absolute or relative path.
+  * `cd`: **C**hange **D**irectory. Changes the current working directory.
     ```bash
-    $ cd /var/log      # Move to an absolute path
-    $ cd Documents     # Move to a subdirectory
+    $ cd /var/log          # Absolute path
+    $ cd Documents         # Relative path into subdirectory
     ```
 
 -----
 
-## Special Navigation Shortcuts with `cd`
+## Navigation Shortcuts with `cd`
 
-`cd` has several useful shortcuts for faster navigation.
+Handy shortcuts for rapid directory hopping:
 
-  * Move up one level:
+  * **Go up one level (`..`):**
     ```bash
     $ cd ..
     ```
-  * Go directly to your home directory from anywhere:
+  * **Current directory (`.`):**
     ```bash
-    $ cd ~
+    $ cd .
     ```
-    (Or just `cd` with no arguments)
-  * Go back to the last directory you were in:
+  * **Go straight to your home directory (`~`):**
+    ```bash
+    $ cd ~                 # or simply: cd
+    ```
+  * **Going back to the previous directory (last visited):**
     ```bash
     $ cd -
     ```
@@ -122,393 +203,354 @@ Two fundamental commands for moving around.
 
 ## Listing Directory Contents: `ls`
 
-The `ls` command **lists** the contents of a directory. It's your eyes in the terminal.
+The `ls` command lists files and folders:
 
-  * Use **flags** to change its behavior. The most common is `-l` for a **l**ong list format.
+  * **Basic listing:**
+    ```bash
+    $ ls
+    Documents  Downloads  Music  Scripts
+    ```
+  * **Long listing format (`-l`):** Shows permissions, owner, size, and date.
     ```bash
     $ ls -l
-    -rw-r--r-- 1 student student 4096 Sep 19 2025 my_doc.txt
-    drwxr-xr-x 2 student student 4096 Sep 17 2025 Scripts
+    -rw-r--r-- 1 student student 4096 Sep 21 09:30 doc.txt
+    drwxr-xr-x 2 student student 4096 Sep 21 09:30 Scripts
     ```
-    This shows permissions, owner, size, and modification date.
-
------
-
-## Seeing Everything with `ls -a`
-
-How do we see those hidden configuration files?
-
-  * The `-a` flag tells `ls` to show **a**ll files.
+  * **Show hidden files (`-a`):**
     ```bash
     $ ls -a
-    .  ..  .bashrc  .profile  Documents  Downloads
+    .  ..  .bashrc  .profile  Documents
     ```
-  * You can combine flags. `ls -la` is a very common command to get a **l**ong list of **a**ll files.
+  * **Combine flags (`-la` or `-lah`):**
+    `-h` prints file sizes in human-readable units (K, M, G).
 
 -----
 
 ## Creating Directories: `mkdir`
 
-Use the `mkdir` command to **m**a**k**e a new **dir**ectory.
+Use `mkdir` (**m**a**k**e a **dir**ectory) to create folders:
 
   * **Create a single directory:**
     ```bash
     $ mkdir my_project
     ```
-  * **Create a nested structure:** The `-p` (**p**arents) flag creates the entire directory path, even if the parent directories don't exist yet.
+  * **Create nested directory trees (`-p` / parents):**
+    Creates all required missing parent directories along the path automatically.
     ```bash
-    $ mkdir -p Documents/Work/2025/Reports
+    $ mkdir -p Documents/Work/2026/Reports
     ```
 
 -----
 
 ## Creating & Editing Files: `touch` & `nano`
 
-Once you have directories, you need files to put in them.
-
-  * **`touch`:** The fastest way to create a new, empty file.
+  * **`touch`:** Quickly creates an empty file or updates its timestamp:
     ```bash
-    $ touch my_notes.txt
+    $ touch notes.txt
     ```
-  * **`nano`:** A simple, friendly terminal-based text editor.
+  * **`nano`:** Simple, user-friendly terminal text editor:
     ```bash
-    $ nano my_notes.txt
+    $ nano notes.txt
     ```
-      * Type your text directly into the window.
-      * Press `Ctrl+X` to exit.
-      * Press `Y` to confirm you want to save, then `Enter`.
+      * Type and edit text directly.
+      * `Ctrl + O` and press `Enter`: Save file changes.
+      * `Ctrl + X`: Exit editor (prompts to save if modifications exist).
 
 -----
 
-## Getting System Information
+## Copying & Moving: `cp` and `mv` 📂
 
-The terminal is excellent for quickly checking system status.
-
-  * `whoami`: Shows your current username.
-  * `date`: Shows the current date and time.
-  * `uname -a`: Shows kernel and system info.
-  * `top`: Shows running processes in real-time (like Task Manager). Press `q` to quit.
-
------
-
-## Users: Standard vs. Superuser
-
-Linux is a multi-user system.
-
-  * **Standard User** (`student`): Your day-to-day account with limited privileges.
-  * **Superuser** (`root`): The administrator. Has complete power over the system.
-
-To run one command with root privileges, use `sudo` (**S**uper**u**ser **do**).
-
-```bash
-# This needs admin rights, so we use sudo
-$ sudo apt update
-```
+  * **`cp` (Copy):** Copies files or whole directories to a destination.
+    ```bash
+    $ cp notes.txt notes_backup.txt       # Copy file
+    $ cp notes.txt ~/Documents/           # Copy into directory
+    $ cp -r folder/ folder_copy/          # Copy directory recursively (-r)
+    ```
+  * **`mv` (Move):** Moves or renames files and directories.
+    ```bash
+    $ mv notes.txt important_notes.txt    # Rename file
+    $ mv important_notes.txt ~/IEI/       # Move file to another directory
+    ```
 
 -----
 
-## Managing Users
+## Deleting & Viewing: `rm` and `cat` 🗑️
 
-As an administrator, you can manage user accounts from the command line.
-
-  * `sudo useradd new_user`: Creates a new user.
-  * `sudo passwd new_user`: Sets the password for the new user.
-  * `sudo userdel new_user`: Deletes a user.
-
------
-
-## Understanding File Permissions
-
-The `ls -l` command shows permissions as a 10-character string like `-rwxr-xr--`.
-
-  * **It's read in groups:** Type | Owner | Group | Others
-  * `r`: Permission to **read** the file.
-  * `w`: Permission to **write** (modify) the file.
-  * `x`: Permission to **execute** the file (run as a program).
+  * **`rm` (Remove):** Deletes files or folders.
+    ```bash
+    $ rm notes_backup.txt                 # Remove file
+    $ rm -r old_folder/                   # Remove directory recursively (-r)
+    ```
+    ⚠️ **Warning:** The command line **has no Trash/Recycle Bin**. Items deleted with `rm` are gone permanently!
+  * **`cat` (Concatenate):** Prints the entire contents of a file to stdout:
+    ```bash
+    $ cat /etc/os-release
+    ```
 
 -----
 
-## Managing Permissions with `chmod`
+## Viewing Large Files: `head`, `tail` and `less` 📄
 
-Use the `chmod` (**ch**ange **mod**e) command to change permissions.
+For large files where `cat` floods the screen, use specialized readers:
 
-  * You can add (`+`) or remove (`-`) permissions for the **u**ser, **g**roup, or **o**thers.
-
-**Example:** Make a script executable for yourself.
-
-```bash
-# Give the user (u) the execute (x) permission
-$ chmod u+x my_script.sh
-```
-
------
-
-## What is a Package Manager? 📦
-
-A package manager is a tool that automates the process of installing, updating, and removing software.
-
-  * It handles **dependencies** automatically, so you don't have to install required libraries manually.
-  * It keeps a database of installed software, making it easy to manage.
-  * For Debian and Ubuntu-based systems, the primary package manager is **APT** (Advanced Package Tool).
-
-**Analogy:** Think of `apt` as an App Store for your terminal.
+  * **`head` and `tail`:** View the beginning or end of a file.
+    ```bash
+    $ head -n 5 /var/log/syslog           # First 5 lines
+    $ tail -n 5 /var/log/syslog           # Last 5 lines
+    ```
+  * **`less` (Interactive Pager):**
+    ```bash
+    $ less /var/log/syslog
+    ```
+      * `↑` / `↓` or `Space`: Scroll text.
+      * `/keyword`: Search for text.
+      * `q`: Exit reader.
 
 -----
 
-## Updating Package Lists (`apt update`)
+## Output Redirection: `>` and `>>`
 
-Before you install or search for anything, you should synchronize your local package list with the central software repositories.
+Redirect standard command text output directly into files:
 
-  * This command **does not** upgrade your software. It just downloads the latest list of what's available.
-  * This is a privileged operation, so it requires `sudo`.
-
-<!-- end list -->
-
-```bash
-# Downloads the latest package information
-$ sudo apt update
-```
-
------
-
-## Searching for Packages (`apt search`)
-
-If you're not sure of the exact name of a program, you can search for it.
-
-  * This command searches the names and descriptions of all available packages.
-  * You don't need `sudo` to search.
-
-**Example:** Search for a program that shows system processes, like `htop`.
-
-```bash
-$ apt search htop
-```
+  * **`>` Operator (Overwrite):**
+    Directs output to a file, **overwriting** any previous content:
+    ```bash
+    $ echo "First line" > notes.txt
+    $ ls -l /var/log > log_list.txt
+    ```
+  * **`>>` Operator (Append):**
+    Appends output to the **end** of the file without erasing existing lines:
+    ```bash
+    $ echo "Second line" >> notes.txt
+    $ echo "Run at $(date)" >> activity.log
+    ```
 
 -----
 
-## Installing Packages (`apt install`)
+## Searching Content & Files: `grep` and `find` 🔎
 
-Once you know the package name, you can install it.
-
-  * `apt` will automatically download and install the program and any dependencies it needs to run.
-  * This requires `sudo`.
-
-**Example:** Install the `htop` utility, an interactive process viewer.
-
-```bash
-$ sudo apt install htop
-```
-
-After installation, you can run the program by simply typing `htop`.
-
------
-
-## Removing Packages (`apt remove` / `apt purge`)
-
-Removing software is just as easy as installing it. You have two main options:
-
-1.  **`apt remove`**: Uninstalls the program but leaves its configuration files behind (useful if you plan to reinstall it later).
-2.  **`apt purge`**: Uninstalls the program **and** deletes all of its configuration files.
-
-**Examples:**
-
-```bash
-# Remove htop but keep its config files
-$ sudo apt remove htop
-
-# Remove htop and all of its config files
-$ sudo apt purge htop
-```
-
------
-
-## Introduction to `cron` & `crontab` 🕒
-
-**`cron`** is a system daemon (a background process) that runs scheduled tasks. These scheduled tasks are known as **"cron jobs."**
-
-  * It's the standard tool for automating repetitive tasks on a schedule.
-  * You manage your personal list of cron jobs using the **`crontab`** command.
-
-**Common Uses:**
-
-  * Running a backup script every night.
-  * Performing system maintenance, like a weekly **ZFS scrub** or a daily **SSD trim**.
-  * Cleaning up temporary files.
-
------
-
-## Understanding `crontab` Syntax
-
-A cron job consists of two parts: the **schedule** and the **command**. The schedule is defined by five fields, often represented by asterisks (`*`).
-
-```
-┌───────────── minute (0 - 59)
-│ ┌───────────── hour (0 - 23)
-│ │ ┌───────────── day of month (1 - 31)
-│ │ │ ┌───────────── month (1 - 12)
-│ │ │ │ ┌───────────── day of week (0 - 6) (Sunday to Saturday)
-│ │ │ │ │
-* * * * * /path/to/command
-```
-
-An asterisk `*` means "every." For example, an asterisk in the "hour" field means "every hour."
-
-For an easy way to generate the correct time string, check out: [crontab.guru](https://crontab.guru/)
-
------
-
-## Managing Your `crontab`
-
-You can edit, view, and remove your cron jobs with the `crontab` command and a flag.
-
-  * `crontab -e`: **Edit** your crontab file. The first time you run this, it will ask you to choose a text editor (like `nano`).
-  * `crontab -l`: **List** your currently scheduled cron jobs.
-  * `crontab -r`: **Remove** your entire crontab file (use with caution\!).
-
------
-
-## `crontab` Examples
-
-Here are some practical examples you might add using `crontab -e`.
-
-**Example 1: Run a backup script every day at 3:30 AM.**
-
-```cron
-# Minute Hour Day(M) Month Day(W) Command
-  30    3     * * * /home/student/scripts/backup.sh
-```
-
-**Example 2: Run a system maintenance command every Sunday at 4:00 AM.**
-This example is for a system command like a ZFS storage pool scrub.
-
-```cron
-# Minute Hour Day(M) Month Day(W) Command
-   0    4     * * 0     /usr/sbin/zpool scrub my-storage-pool
-```
-
-**Example 3: Check disk space every 15 minutes and log the output.**
-The `>>` appends the output to a log file, and `2>&1` ensures that errors are also logged.
-
-```cron
-# Minute Hour Day(M) Month Day(W) Command
-  */15   * * * * /usr/bin/df -h >> /home/student/logs/disk_space.log 2>&1
-```
-
------
-
-## Redirection: Saving Output with `>`
-
-Don't want to see output on the screen? Save it to a file with `>`.
-
-**Warning:** This **overwrites** the file if it already exists.
-
-**Example:** Save a list of your home directory contents to a file.
-
-```bash
-$ ls -l ~ > my_files.txt
-```
-
------
-
-## Redirection: Appending Output with `>>`
-
-To **add** output to the end of a file without deleting its contents, use `>>`.
-
-  * This is great for creating log files.
-
-**Example:** Add a timestamped entry to a log file.
-
-```bash
-$ echo "System rebooted at $(date)" >> system.log
-```
+  * **`grep` (Text Search):** Searches for lines matching a string or pattern.
+    ```bash
+    $ grep "root" /etc/passwd             # Find lines containing 'root'
+    $ grep -i "confidential" report.txt   # Case-insensitive search (-i)
+    $ grep -rn "TODO" ~/IEI/              # Recursive (-r) with line numbers (-n)
+    ```
+  * **`find` (File Search):** Searches the filesystem hierarchy for files.
+    ```bash
+    $ find ~/IEI -name "*.txt"            # Files matching *.txt
+    $ find /var/log -type f -name "*.log" # Regular files only (-type f)
+    ```
 
 -----
 
 ## The Power of the Pipe `|`
 
-The **pipe** is one of the most powerful concepts in the shell. It sends the output of one command to be the input of the next.
+The **Pipe (`|`)** embodies Unix philosophy: *connect one command's output to the next command's input*.
 
-**Think of it as plumbing:** Command A -\> `|` -\> Command B
+$$\text{Command A} \xrightarrow{\quad\text{output}\quad} \mathbf{\huge\mid} \xrightarrow{\quad\text{input}\quad} \text{Command B}$$
 
-**Example:** Find all `.log` files in a directory.
-
-```bash
-# The output of 'ls' is "piped" to 'grep' to be filtered.
-$ ls /var/log | grep .log
-```
-
------
-
-## Your Environment: Variables
-
-The shell uses variables to store information. By convention, they are in `ALL_CAPS`.
-
-  * `$HOME`: Your home directory.
-  * `$USER`: Your username.
-  * `$PATH`: A list of directories where the shell looks for programs.
-
-**Example:** See the contents of the `$PATH` variable.
-
-```bash
-$ echo $PATH
-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-```
-
------
-
-## Customizing Your Shell: `.bashrc`
-
-The `~/.bashrc` file is a script that runs every time you open a new terminal. This is the place to personalize your shell.
-
-You can edit it with a text editor:
-
-```bash
-$ nano ~/.bashrc
-```
-
-**Remember:** Changes won't apply until you open a new terminal or run `source ~/.bashrc`.
-
------
-
-## Customization Example: Aliases
-
-An **alias** is a shortcut or nickname for a longer command. They save you a lot of typing\!
-
-  * Add this line to your `~/.bashrc` file:
+  * **Example 1: Filter directory listing:**
     ```bash
-    alias ll='ls -alF'
+    $ ls /var/log | grep ".log"
     ```
-  * Now, when you type `ll` in a new terminal, bash will run `ls -alF` for you.
+  * **Example 2: Search running processes:**
+    ```bash
+    $ ps aux | grep "bash"
+    ```
+  * **Example 3: Count output lines:**
+    ```bash
+    $ ls -l /etc | wc -l
+    ```
+
+-----
+
+## Users: Standard vs. Superuser
+
+Linux enforces multi-user privileges and isolation:
+
+  * **Standard User** (e.g., `student` or your personal username):
+      * Daily account restricted to the user's home directory.
+  * **Superuser (`root`):**
+      * Full administrative authority over hardware, processes, and files.
+  * **`sudo` (SuperUser DO):**
+      * Temporarily executes administrative commands with root privileges:
+      ```bash
+      $ sudo apt update
+      ```
+
+-----
+
+## Understanding File Permissions 🔐
+
+The `ls -l` command displays permissions across 10 characters (e.g., `-rwxr-xr--`):
+
+  * **1st character:** Type (`-` regular file, `d` directory, `l` symlink).
+  * **Next 9 characters:** 3 permission triplets:
+    * **Owner (*User* - u)**: `rwx`
+    * **Group (*Group* - g)**: `r-x`
+    * **Others (*Others* - o)**: `r--`
+  * **Meaning:**
+    * `r` (*read*): Read file contents or list directory contents.
+    * `w` (*write*): Modify/delete file or add/remove directory entries.
+    * `x` (*execute*): Run file as a program or navigate into directory (`cd`).
+
+-----
+
+## Managing Permissions with `chmod`
+
+Use `chmod` (**ch**ange **mod**e) to adjust access permissions:
+
+  * **Method 1: Symbolic Mode (`u`, `g`, `o`, `a` with `+` and `-`):**
+    ```bash
+    $ chmod u+x script.sh          # Grant execute to owner
+    $ chmod go-w secret.txt        # Revoke write from group and others
+    $ chmod a+r document.txt       # Grant read to everyone (all)
+    ```
+  * **Method 2: Octal / Numeric Mode ($r=4, w=2, x=1$):**
+    * Add values per class: $4 (\text{read}) + 2 (\text{write}) + 1 (\text{exec}) = 7$.
+    ```bash
+    $ chmod 755 script.sh          # u=rwx (7), g=rx (5), o=rx (5)
+    $ chmod 644 text.txt           # u=rw (6), g=r (4), o=r (4)
+    $ chmod 000 secret.txt         # No permissions for anyone (0, 0, 0)
+    ```
+
+-----
+
+## System Information & Processes ⚙️
+
+Commands to quickly inspect system and process status:
+
+  * `whoami`: Current logged-in username.
+  * `date`: Current system date and time.
+  * `uname -a`: Kernel details and processor architecture.
+  * **What is a Process?**
+      * A running program instance. Each process is assigned a unique **PID** (*Process ID*).
+  * `ps aux`: Complete snapshot of active system processes.
+
+-----
+
+## Controlling Processes: Background & `kill`
+
+  * **Background Processes:**
+      * Adding `&` to the end of a command frees up the prompt immediately:
+      ```bash
+      $ sleep 120 &
+      [1] 4521                       # [Job number] and assigned PID
+      ```
+  * **Locate a Process PID:**
+      * Use `pgrep`:
+      ```bash
+      $ pgrep sleep
+      4521
+      ```
+  * **Terminating Processes (`kill`):**
+      * Sends a signal to stop the specified process PID:
+      ```bash
+      $ kill 4521                    # Clean termination (SIGTERM)
+      $ kill -9 4521                 # Forced immediate termination (SIGKILL)
+      ```
+
+-----
+
+## Package Management with APT 📦
+
+**APT** (*Advanced Package Tool*) manages software installation and updates on Debian/Ubuntu systems:
+
+  1. **Update package repositories list (`update`):**
+     ```bash
+     $ sudo apt update
+     ```
+  2. **Search for available packages (`search`):**
+     ```bash
+     $ apt search htop
+     ```
+  3. **Install a package (`install`):**
+     ```bash
+     $ sudo apt install htop
+     ```
+  4. **Remove a package (`remove` / `purge`):**
+     ```bash
+     $ sudo apt remove htop         # Removes package files
+     $ sudo apt purge htop          # Removes package and config files
+     ```
+
+-----
+
+## Essential Session Variables: `$USER`, `$HOME`, and `$PATH`
+
+The shell provides variables containing session context (in UPPERCASE):
+
+  * **`$USER`:** Current logged-in user name (`echo $USER`).
+  * **`$HOME`:** Full path to your personal home directory (essential in *scripts* and *cron*):
+    ```bash
+    $ echo $HOME
+    /home/student
+    ```
+  * **`$PATH`:** Colon-separated list of directories searched for executable programs:
+    ```bash
+    $ echo $PATH
+    /usr/local/bin:/usr/bin:/bin
+    ```
+  * **Why do we need `./` to run our scripts?**
+    * The current directory (`.`) is **not** in `$PATH` for security reasons. We explicitly specify the relative path: `./my_script.sh`.
+
+-----
+
+## Customizing the Shell: `.bashrc` & Aliases
+
+The `~/.bashrc` script executes automatically when launching interactive Bash sessions.
+
+  * **Creating Aliases:**
+    Open `~/.bashrc` with `nano` and append at the end:
+    ```bash
+    alias ll='ls -al'
+    alias c='clear'
+    ```
+  * **Reloading configuration:**
+    Apply changes without opening a new terminal window:
+    ```bash
+    $ source ~/.bashrc
+    ```
+  * Test your new shortcut: `ll`.
 
 -----
 
 ## Introduction to Bash Scripting
 
-A script is simply a text file containing a sequence of commands.
+A Bash script is an executable text file containing command sequences:
 
-1.  The first line **must** be `#!/bin/bash`. This is called a "shebang."
-2.  Add your commands.
-3.  Use `#` for comments to explain your code.
-4.  Make the file executable with `chmod +x`.
+  1. **Shebang (1st line mandatory):** Defines interpreter path:
+     ```bash
+     #!/bin/bash
+     ```
+  2. **Comments:** Lines starting with `#` annotate code.
+  3. **Execution Permissions:** Must grant execution rights:
+     ```bash
+     $ chmod +x my_script.sh
+     ```
+  4. **Run Script:**
+     ```bash
+     $ ./my_script.sh
+     ```
+     *(The `./` explicitly points to the current directory executable).*
 
 -----
 
-## Scripting Example 1: Hello World
+## Script Example 1: Hello World
 
-This script uses a variable and the `echo` command. It's the "Hello, World\!" of scripting.
+Using variables and the `echo` command:
 
 **File: `hello.sh`**
-
 ```bash
 #!/bin/bash
-# A simple hello world script
+# Simple welcome script
 
 NAME="Student"
 echo "Hello, $NAME!"
+echo "Your home directory is: $HOME"
 ```
 
-**To run it:**
-
+**Run it:**
 ```bash
 $ chmod +x hello.sh
 $ ./hello.sh
@@ -516,109 +558,111 @@ $ ./hello.sh
 
 -----
 
-## Scripting Example 2: Using `if`
+## Script Example 2: Conditions with `if`
 
-This script uses an `if` statement to check if a file exists before trying to use it.
+Verify if a folder or file exists before taking action:
 
-**File: `check_file.sh`**
-
+**File: `check_dir.sh`**
 ```bash
 #!/bin/bash
-# Checks for the existence of the system log file.
+TARGET_DIR="$HOME/IEI"
 
-FILENAME="/var/log/syslog"
-
-if [ -f "$FILENAME" ]; then
-  echo "$FILENAME exists."
-  # We could now do something with the file, e.g.
-  # tail -n 5 "$FILENAME"
+# -d checks if directory exists (-f checks regular file)
+if [ -d "$TARGET_DIR" ]; then
+  echo "Directory $TARGET_DIR already exists."
 else
-  echo "Warning: $FILENAME not found."
+  echo "Directory missing. Creating it now..."
+  mkdir -p "$TARGET_DIR"
 fi
 ```
 
 -----
 
-## Scripting Example 3: Looping Over Files
+## Script Example 3: Loops with `for`
 
-A `for` loop lets you perform an action on a list of items, like files.
+Automate tasks across lists or folder collections:
 
-**File: `add_prefix.sh`**
-
+**File: `create_folders.sh`**
 ```bash
 #!/bin/bash
-# Adds "backup_" prefix to all .txt files.
+# Builds modular project directory layout
 
-for file in *.txt
+PROJECT="$HOME/IEI/project"
+
+for folder in data code reports docs
 do
-  # Check if it's a file before moving it
-  if [ -f "$file" ]; then
-    mv -- "$file" "backup_$file"
-    echo "-> backup_$file"
-  fi
+  mkdir -p "$PROJECT/$folder"
+  echo "-> Subdirectory created: $folder"
 done
 
-echo "Batch rename complete."
+echo "Project scaffold ready at $PROJECT!"
 ```
 
 -----
 
-## Scripting Example 4: Complex Script
+## Task Scheduling with `cron` 🕒
 
-This script combines arguments, `if`, variables, and a program (`tar`) to create a useful tool.
+The ***cron*** daemon executes scheduled background tasks (*cron jobs*):
 
-**File: `backup.sh`**
+  * **Primary `crontab` commands:**
+      * `crontab -e`: **Edit** user's cron schedule in editor.
+      * `crontab -l`: **List** current scheduled jobs.
+      * `crontab -r`: **Remove** user's entire cron file (*use with care!*).
 
-```bash
-#!/bin/bash
-# Backs up specified items into a .tar.gz archive.
-
-# Exit if no arguments are provided.
-if [ "$#" -eq 0 ]; then
-  echo "Usage: $0 <file1> <dir1> ..."
-  exit 1
-fi
-
-DEST="$HOME/backups"
-TIME=$(date +%Y-%m-%d_%H%M%S)
-ARCHIVE="$DEST/$TIME-backup.tar.gz"
-
-mkdir -p "$DEST" # Create backup dir if needed
-echo "Creating archive..."
-
-# "$@" holds all command-line arguments.
-tar -czf "$ARCHIVE" "$@"
-
-echo "Backup complete: $ARCHIVE"
+### 5 Time Field Syntax:
 ```
+┌───────────── minute (0 - 59)
+│ ┌───────────── hour (0 - 23)
+│ │ ┌───────────── day of month (1 - 31)
+│ │ │ ┌───────────── month (1 - 12)
+│ │ │ │ ┌───────────── day of week (0 - 6, Sunday = 0)
+│ │ │ │ │
+* * * * * /absolute/path/to/command
+```
+
+-----
+
+## `crontab` Examples
+
+Key best practices for cron jobs:
+
+  * Always specify **absolute paths** for commands and scripts.
+  * An asterisk `*` denotes "every" interval unit.
+
+**Example 1: Run backup daily at 3:30 AM:**
+```cron
+30 3 * * * /home/student/scripts/backup.sh
+```
+
+**Example 2: Run every minute and append log outputs:**
+```cron
+* * * * * /home/student/IEI/log_time.sh >> /home/student/IEI/cron_log.txt 2>&1
+```
+
+*(The `2>&1` redirects error messages to the same output log).*
 
 -----
 
 ## Theory to Practice
 
-You've now seen the core concepts of the Linux command line:
+Key concepts mastered for today's lab session:
 
-  * **Navigating** the filesystem.
-  * **Managing** files, permissions, and users.
-  * **Combining** commands with pipes and redirection.
-  * **Automating** tasks with shell scripts.
+  * **Navigation & Files:** `pwd`, `cd`, `ls`, `mkdir`, `touch`, `cp`, `mv`, `rm`, `cat`.
+  * **Search & Data Flow:** `grep`, `find`, redirections (`>`, `>>`), and pipes (`|`).
+  * **Permissions & Processes:** `chmod` (symbolic/octal), `sudo`, `ps`, `kill`.
+  * **Environment & Automation:** `$PATH`, `.bashrc`, Bash scripts, and `cron`.
 
-Now, let's apply this knowledge in the practical part of the class.
+**Hands on terminal:** Time to tackle the lab exercises! 🚀
 
 -----
 
 ## Support & Further Resources 📚
 
-Bookmark these pages. They are incredibly useful references.
+Bookmark these references for study and future lab exercises:
 
-  * **Linux Terminal Cheat Sheet:**
-
+  * **Linux Command Line Cheat Sheet:**
       * [https://www.geeksforgeeks.org/linux-unix/linux-commands-cheat-sheet/](https://www.geeksforgeeks.org/linux-unix/linux-commands-cheat-sheet/)
-
-  * **Bash Cheat Sheet:**
-
-      * [https://github.com/RehanSaeed/Bash-Cheat-Sheet](https://github.com/RehanSaeed/Bash-Cheat-Sheet)
-
+  * **Visual Cron Expression Generator:**
+      * [https://crontab.guru/](https://crontab.guru/)
   * **Bash Scripting Cheat Sheet:**
-
       * [https://developers.redhat.com/cheat-sheets/bash-shell-cheat-sheet](https://developers.redhat.com/cheat-sheets/bash-shell-cheat-sheet)

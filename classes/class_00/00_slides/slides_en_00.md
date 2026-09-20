@@ -169,10 +169,24 @@ According to the University of Aveiro Assessment Regulations (1st year):
      - Assistance in report writing (error correction, text polishing, diagrams, and images).
    - **Transparency and critical judgment**: If used in design or code, relevant excerpts must be included in the report, justifying design choices (*accepted because...* / *rejected because...*).
 
-# Bibliography
+# Bibliography: Core Textbooks
 
-- James F. Kurose and Keith W. Ross. 2021. Computer Networking: A Top-Down Approach (8th edition). Pearson.
-- Python Networking 101: Navigating essentials of networking, socket programming, AsyncIO, network testing, simulations and Ansible, Odette Windows, GiftforGits, 2023
-- Mailund, Thomas 2019 Introducing Markdown and Pandoc: Using Markup Language and Document Converter
-- William Shotts 2019 The Linux Command Line, 2nd Edition - A Complete Introduction
-- Paul McFedries 2023 HTML, CSS, & JavaScript All-in-One For Dummies
+- **William Shotts** (2019). *The Linux Command Line: A Complete Introduction* (2nd ed.). No Starch Press.
+- **Scott Chacon & Ben Straub** (2014). *Pro Git* (2nd ed.). Apress / Open Access.
+- **James F. Kurose & Keith W. Ross** (2021). *Computer Networking: A Top-Down Approach* (8th ed.). Pearson.
+- **Odette Windows** (2023). *Python Networking 101*. GiftforGits.
+- **Paul McFedries** (2023). *HTML, CSS, & JavaScript All-in-One For Dummies*. Wiley.
+- **Wes McKinney** (2022). *Python for Data Analysis* (3rd ed.). O'Reilly Media.
+- **Thomas Mailund** (2019). *Introducing Markdown and Pandoc*. Apress.
+- **Leslie Lamport** (1994). *LaTeX: A Document Preparation System* (2nd ed.). Addison-Wesley.
+
+# Bibliography: Official Documentation & Standards
+
+- **Systems & Shell**: *GNU Bash Reference Manual* & *Linux Kernel Man-Pages*
+- **Virtualization & Containers**: *Docker Docs*, *Docker Curriculum*, *VirtualBox Manual*, *QEMU Docs*
+- **Networking & Sockets**: *Wireshark User's Guide*, *Nmap Book*, *FastAPI Docs*, *Python Socket/AsyncIO*
+- **Web Development**: *MDN Web Docs (HTML/CSS/JS)*, *JavaScript.info*, *Nginx Documentation*
+- **Data Formats & Wrangling**: *Pandas User Guide*, *Polars*, *Matplotlib*, *Project Jupyter*
+- **Technical Documentation**: *Pandoc User's Guide*, *Overleaf Learn*, *The Markdown Guide*
+- **Ethics & Regulation**: *General Data Protection Regulation (GDPR)*, *EU AI Act*, *FRA Handbook*
+
