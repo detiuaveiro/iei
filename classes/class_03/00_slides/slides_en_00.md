@@ -1,368 +1,402 @@
 ---
-title: Virtualization
-subtitle: Introdução Engenharia Informática
-author: Mário Antunes
+title: 47138 - Introduction to Computer Engineering
+subtitle: "Virtualization: Architecture, Hypervisors & Systems Virtualization"
 institute: Universidade de Aveiro
-date: October 06, 2025
+date: October 12, 2026
 colorlinks: true
 highlight-style: tango
 mainfont: NotoSans
+fontsize: 9pt
+titlegraphic: "../../../resources/ua_logo2.png"
+titlegraphicoptions: "width=6.5cm"
 mainfontfallback:
   - "NotoColorEmoji:mode=harf"
+  - "DejaVu Sans:"
 header-includes:
- - \usetheme[sectionpage=none,numbering=fraction,progressbar=frametitle]{metropolis}
+ - \usetheme[sectionpage=none,numbering=fraction,progressbar=none]{metropolis}
+ - \definecolor{uagreen}{HTML}{92D400}
+ - \setbeamercolor{title separator}{fg=uagreen}
+ - \setbeamersize{text margin left=1.5em, text margin right=1.5em}
+ - |
+    \setbeamertemplate{title graphic}{
+      \begin{tikzpicture}[remember picture,overlay]
+        \node[anchor=north west, xshift=0cm, yshift=-0cm] at (current page.north west) {
+          \inserttitlegraphic
+        };
+        \node[anchor=south east, xshift=-0.2cm, yshift=0.6cm, opacity=0.08] at (current page.south east) {
+          \includegraphics[width=4.8cm]{../../../resources/_deti_black.png}
+        };
+      \end{tikzpicture}
+    }
+ - \usepackage{tikz}
+ - \usetikzlibrary{positioning,arrows.meta,calc}
  - \usepackage{longtable,booktabs}
  - \usepackage{etoolbox}
+ - \BeforeBeginEnvironment{Shaded}{\vspace{1.0em}}
+ - \AfterEndEnvironment{Shaded}{\vspace{0.6em}}
  - \AtBeginEnvironment{longtable}{\tiny}
+ - \usepackage{caption}
+ - \captionsetup[longtable]{labelformat=empty,skip=0pt}
  - \AtBeginEnvironment{cslreferences}{\tiny}
  - \AtBeginEnvironment{Shaded}{\tiny}
  - \AtBeginEnvironment{verbatim}{\tiny}
  - \setmonofont[Contextuals={Alternate}]{FiraCodeNerdFontMono-Retina}
 ---
 
-## Introduction to Virtualization
+## Session Overview
 
-### Running a Computer Inside Your Computer
+This session covers architectural foundations and practical mechanisms of systems virtualization:
 
------
-
-## The Core Idea: What is Virtualization?
-
-**Virtualization** creates a software-based, or "virtual," version of a computer. This Virtual Machine (VM) runs as an application on your physical computer but behaves like a completely separate machine.
-
-  * **Host:** Your physical machine and its Operating System (OS).
-  * **Guest:** The virtual machine and the OS it runs.
-  * **Hypervisor:** The software that creates and manages the VMs.
+  * **Virtualization Fundamentals & Hypervisors:** Hardware abstraction, CPU privilege rings, Type-1 vs. Type-2 hypervisors.
+  * **Emulation vs. Virtualization:** Software translation principles, relative performance, and engineering use cases.
+  * **I/O, Storage & Virtual Networks:** VirtIO framework, virtual disk formats (QCOW2, VDI), and network topologies (NAT, Bridge, Host-Only).
+  * **Practical Virtualization Tools:** Oracle VirtualBox, QEMU/KVM via CLI, Proxmox VE, and comparative matrix.
 
 -----
 
-## The Challenge: Managing Privileged Instructions
+\vspace{5em}
 
-A normal application can't access hardware directly; it must ask the Host OS. But a Guest OS *expects* to have full control. How do we solve this conflict safely?
-
-The hypervisor's main job is to intercept and safely manage the guest's requests for privileged hardware access. The way it does this defines the difference between emulation and virtualization.
-
------
-
-### Emulation: Definition & Use Case
-
-**Definition:** Emulation involves using software to mimic the hardware of a *different* system. The hypervisor acts as a translator, converting instructions from the guest's CPU architecture to the host's CPU architecture.
-
-**Use Case Example:** Running a classic video game designed for an ARM-based console (like the Nintendo Switch) or a PowerPC-based console (like the GameCube) on your x86-based PC. The emulator (e.g., Yuzu or Dolphin) translates the game's code in real-time.
+\begin{center}
+{\LARGE \textbf{Part I: Fundamentals \& Hypervisors}}
+\end{center}
 
 -----
 
-### Emulation: Path of an Instruction
+## Virtualization: Definition
 
-The hypervisor (emulator) must inspect and translate every instruction in software before it can be executed by the host hardware.
+**Virtualization** abstracts physical hardware to instantiate multiple isolated virtual environments (*VMs*) on a single physical computer:
 
------
+  * **Host:** Physical hardware platform (CPU, memory, storage, network interfaces).
+  * **Hypervisor (VMM):** Software layer managing hardware, isolating instances, and scheduling physical resources.
+  * **Virtual Machine (VM):** Isolated abstraction boundary exposing virtual hardware (vCPU, vRAM, vDisk, vNIC).
+  * **Guest:** Operating system and applications executing within a VM.
 
-### Emulation: Advantages & Disadvantages
+\vspace{0.2em}
 
-#### Advantages 👍
-
-  * **Cross-Architecture Compatibility:** Its greatest strength. It allows software designed for one type of CPU (e.g., ARM) to run on a completely different type (e.g., x86).
-
-#### Disadvantages 👎
-
-  * **Very Slow:** The software translation step for every instruction creates significant performance overhead, making it much slower than running native code.
-  * **High Resource Usage:** The translation process itself is computationally expensive and consumes a lot of host CPU cycles.
+\begin{center}
+\includegraphics[width=0.92\linewidth,height=0.50\textheight,keepaspectratio]{virtual_vs_traditional_architecture.png}
+\end{center}
 
 -----
 
-### Full Virtualization: Definition & Use Case
+## The Virtualization Challenge: Privilege Rings
 
-**Definition:** Full Virtualization runs an *unmodified* guest OS on a simulated hardware environment that matches the host's architecture. It relies on **CPU hardware assistance** (Intel VT-x / AMD-V) to run code efficiently. The guest OS is completely unaware that it's being virtualized.
+Modern processor architectures enforce hardware privilege levels (rings) to isolate application code from kernel execution:
 
-**Use Case Example:** A macOS user running a full version of Windows 11 in VirtualBox to use a specific piece of software that is not available on macOS, like a CAD program or a particular PC game.
+  * **Ring 3 (User Space):** Applications execute non-privileged instructions. Privileged operations require invoking system calls (`syscall`) to the kernel.
+  * **Ring 0 (Kernel Space / Supervisor Mode):** The operating system kernel executes privileged instructions (e.g., direct MMU control, interrupt handling, I/O ports).
 
------
+  **How can multiple Guest OSs execute privileged instructions and manage hardware safely?**
 
-### Full Virtualization: Path of an Instruction
-
-Non-privileged instructions run directly on the host CPU at full speed. When the guest attempts a privileged instruction, the CPU hardware automatically **traps** it and transparently hands control over to the hypervisor to handle it safely.
-
------
-
-### Full Virtualization: Advantages & Disadvantages
-
-#### Advantages 👍
-
-  * **High Compatibility:** Can run any standard, off-the-shelf operating system without any changes.
-  * **Good Performance:** Hardware assistance makes it significantly faster than emulation.
-  * **Strong Isolation:** Guests are securely isolated from the host and each other by the hardware.
-
-#### Disadvantages 👎
-
-  * **Trap Overhead:** The "trap-and-emulate" cycle for privileged instructions still introduces some performance overhead, which can be significant for I/O-heavy workloads.
+  * The answer lies in the hypervisor as mediator and arbiter. Hypervisors intercept sensitive instructions and mediate hardware access, delegating direct execution to physical hardware whenever possible.
 
 -----
 
-### Paravirtualization: Definition & Use Case
+## Hypervisor Types: Type-1 and Type-2
 
-**Definition:** In Paravirtualization, the guest OS is *aware* that it's a VM and has been modified with special drivers. Instead of performing actions that would be trapped, it communicates directly with the hypervisor through an efficient API.
-
-**Use Case Example:** This is the foundation of modern cloud computing. A high-performance web server running on an Amazon Web Services (AWS) EC2 instance uses paravirtualized **VirtIO** drivers for its disk and network devices to achieve maximum throughput and low latency.
-
------
-
-### Paravirtualization: Path of an Instruction
-
-The guest OS knows it can't directly access hardware, so its aware driver makes a **"Hypercall"**—a direct and highly efficient function call—to the hypervisor, completely avoiding the trap mechanism.
+\begin{center}
+\includegraphics[width=0.92\linewidth,height=0.75\textheight,keepaspectratio]{hypervisor_types.png}
+\end{center}
 
 -----
 
-### Paravirtualization: Advantages & Disadvantages
+## Type-1 Hypervisors (Bare-Metal)
 
-#### Advantages 👍
+**Type-1 Hypervisors** execute directly on physical hardware without an intermediary general-purpose operating system:
 
-  * **Highest Performance:** By avoiding the trap overhead, it offers the best performance, especially for disk and network-intensive tasks.
-  * **Efficient:** Lower CPU overhead compared to full virtualization because the communication path is optimized.
-
-#### Disadvantages 👎
-
-  * **Requires Guest OS Modification:** Cannot run an unmodified, off-the-shelf OS. The OS must have the specific paravirtualization drivers installed (though most modern OSes now include them).
-
------
-
-### Comparison Summary
-
-| Feature | Emulation | Full Virtualization | Paravirtualization |
-| :--- | :--- | :--- | :--- |
-| **Core Concept** | Mimic different hardware | Isolate an unmodified OS | Cooperate with an aware OS |
-| **Performance** | Very Low | Good | Excellent |
-| **Guest OS<br>Modification** | No | No | **Yes** |
-| **Hardware** | Any guest on any host | Guest and Host must<br>share same architecture | Guest and Host must<br>share same architecture |
-| **Primary<br>Mechanism** | Software Translation | Hardware Trap & Emulate | Hypercalls |
-| **Typical<br>Use Case** | Retro Gaming, Cross-<br>Architecture Dev | Desktop Use, Legacy<br>System Encapsulation | Cloud Computing, Data<br>Centers, High-Perf. Servers |
+  * **Execution Layer:** Operates directly at the hardware privilege layer. The hypervisor acts as the primary kernel and resource arbiter.
+  * **Architecture:** Device drivers and management domains run within a minimal hypervisor microkernel or a dedicated management partition (e.g., Xen Dom0, Linux KVM).
+  * **Key Characteristics:**
+      * Negligible abstraction overhead and sub-millisecond hypervisor latency.
+      * High I/O throughput and maximum hardware resource utilization efficiency.
+      * Independent of desktop operating system lifecycle or failures.
+  * **Production Examples:** VMware ESXi, Proxmox VE / KVM, Microsoft Hyper-V, Xen.
 
 -----
 
-## Use Case 1: Data Centers and Servers
+## Type-2 Hypervisors (Hosted)
 
-Virtualization is the backbone of the modern cloud.
+**Type-2 Hypervisors** execute as standard user-space processes on top of an existing host operating system:
 
-  * **Server Consolidation:** One powerful physical server can replace dozens of older ones by running each as a separate VM, saving power, cooling, and space.
-  * **Snapshots & High Availability:** Instantly save and restore the state of a VM. VMs can even be migrated between physical servers with zero downtime.
-
------
-
-### The Problem: Repetitive VM Setup
-
-Imagine you need to deploy 10 identical web server VMs. The manual process for *each one* would be:
-
-1.  Boot the VM and log in.
-2.  Set a unique hostname.
-3.  Configure the network.
-4.  Create user accounts and set up SSH keys.
-5.  Run security updates (`apt update && apt upgrade`).
-6.  Install necessary software (`nginx`, `ufw`, etc.).
-7.  Configure services.
-
-This is slow, tedious, and prone to human error. It simply doesn't scale for cloud environments.
+  * **Execution Layer:** Relies on the host operating system kernel for physical resource scheduling, memory management, and device drivers.
+  * **Architecture:** Uses kernel-mode drivers to access hardware virtualization extensions, routing I/O requests through host OS subsystems.
+  * **Key Characteristics:**
+      * Double scheduling overhead: guest kernel schedules virtual processes, and host OS schedules hypervisor processes.
+      * Straightforward installation and usage on workstations and personal laptops.
+      * Convenient desktop integration between host and guest (shared clipboard, dynamic window resizing, shared folders).
+  * **Production Examples:** Oracle VirtualBox, VMware Workstation, Parallels Desktop.
 
 -----
 
-### The Solution: Cloud-Init ☁️
+## Hypervisor Comparison: Type-1 vs. Type-2
 
-**Cloud-Init** is the industry-standard tool for automating the **initial setup** of a cloud instance or virtual machine. It is designed to run **only on the very first boot** to provision the system.
-
-  * **How it Works:**
-
-    1.  The cloud platform or hypervisor provides configuration data (called "user data") to the VM as it's being created.
-    2.  Inside the guest OS, a Cloud-Init service starts automatically on the first boot.
-    3.  This service finds the user data and executes the instructions within it to configure the system.
-
-  * **Analogy:** Think of Cloud-Init as an automated setup script that configures your new server for you before you ever log in for the first time.
-
------
-
-### Cloud-Init in Practice: User Data
-
-The configuration for Cloud-Init is typically written in a simple text format called **YAML**. 
-This file, often named `user-data`, contains a set of directives.
-With this single file, a new VM can boot up as a fully configured and ready-to-use web server, with no manual intervention required.
-
-Here's a practical example of a `user-data` file that sets up a basic web server:
+| Architectural Dimension | Type-1 (Bare-Metal) | Type-2 (Hosted) |
+| :--- | :--- | :--- |
+| **Execution Layer** | Directly on physical hardware | On top of Host OS |
+| **Host OS Requirement** | None (hypervisor is the kernel) | Standard desktop/server OS mandatory |
+| **Performance Overhead** | Minimal (< 2% CPU overhead) | Moderate (dual scheduler and I/O stack latency) |
+| **I/O Latency** | Direct / Near-native | Mediated by host OS drivers |
+| **Fault Isolation** | High (independent VMs) | Bound to host OS stability |
+| **Primary Use Cases** | Data Centers, Cloud (AWS, GCP) | Software Development, Testing, Education |
+| **Representative Tools**| Proxmox VE, VMware ESXi, KVM | Oracle VirtualBox, VMware Workstation |
 
 -----
 
-```yaml
-#cloud-config
-# Set the hostname for the server
-hostname: webserver-01
+\vspace{5em}
 
-# Create a new user named 'admin', give them sudo rights, and add an SSH key
-users:
-  - name: admin
-    sudo: ALL=(ALL) NOPASSWD:ALL
-    groups: sudo
-    shell: /bin/bash
-    ssh_authorized_keys:
-      - ssh-rsa AAAA... user@example.com
-
-# Install the nginx web server and firewall packages
-packages:
-  - nginx
-  - ufw
-
-# Run commands after packages are installed to configure and start services
-runcmd:
-  - [ ufw, allow, 'WWW Full' ]
-  - [ systemctl, enable, --now, nginx ]
-```
+\begin{center}
+{\LARGE \textbf{Part II: Emulation vs. Virtualization}}
+\end{center}
 
 -----
 
-## The I/O Challenge & High-Performance Solution
+## Emulation: Definition and Use Cases
 
-A VM has no physical hardware. The hypervisor must provide virtual devices.
+**Emulation** reconstructs hardware behavior and instruction set architecture (ISA) entirely through software:
 
-  * **Emulation (Slow):** The hypervisor can pretend to be a real, common piece of hardware (like an Intel E1000 network card). This is compatible but slow.
-  * **Paravirtualization (Fast):** Modern systems use **VirtIO**. The guest OS has a special `virtio` driver that doesn't emulate real hardware but instead uses a highly efficient, standardized channel to communicate with the hypervisor for disk and network tasks.
-
------
-
-## Virtual Networking: NAT vs. Bridge Mode
-
-  * **NAT Mode (Default):** The VM shares your host's IP address. It's easy to set up and allows the guest to access the internet, but makes it difficult for other devices on your network to connect to the guest.
-  * **Bridge Mode:** The VM gets its own unique IP address on your local network, appearing as a separate physical device. This is ideal for running servers.
+  * **Mechanism:** Software interpreter or Dynamic Binary Translator (JIT). The emulator translates each guest instruction into native host CPU instructions in real time.
+  * **Architectural Independence:** Guest ISA can differ completely from host ISA (e.g., executing ARM64, PowerPC, or legacy x86-16 code on an x86-64 host).
+  * **Performance Overhead:** Very high computational penalty (typically 5x to 20x slower than native execution).
+  * **Engineering Use Cases:**
+      * Legacy operating systems and software (e.g., FreeDOS with SoundBlaster emulation in Lab Part 2).
+      * Cross-platform embedded development (e.g., QEMU for ARM or RISC-V).
+      * Mobile ecosystem simulation (e.g., Android Virtual Device / AVD).
 
 -----
 
-## Device Access: USB & PCI Passthrough
+## Emulation vs. Virtualization
 
-You can grant a VM exclusive control over a physical device connected to your host.
-
-  * **USB Passthrough:** Gives a VM direct access to a USB device. This is essential for embedded development, allowing your Debian VM to directly program an **Arduino or ESP32** board.
-  * **PCI Passthrough:** Assigns a physical PCI device, like a powerful **GPU**, directly to a VM. This offers near-native performance for demanding tasks like gaming or machine learning.
-
------
-
-## How PCI Passthrough is Achieved
-
-This advanced feature requires hardware support from the CPU and motherboard chipset, specifically the **IOMMU (Input-Output Memory Management Unit)**.
-
-  * **Intel's IOMMU:** VT-d
-  * **AMD's IOMMU:** AMD-Vi
-
-The IOMMU creates a secure memory sandbox for the device, ensuring it can only access the memory of the VM it's assigned to. This prevents the device from interfering with the host OS or other VMs.
+| Dimension | Software Emulation | Hardware-Assisted Virtualization |
+| :--- | :--- | :--- |
+| **Instruction Set (ISA)** | Can differ (e.g., ARM on x86) | Must match (e.g., x86 on x86) |
+| **Instruction Execution** | Translated instruction by instruction in software | Executed directly on CPU silicon |
+| **CPU Performance** | Very slow (5x to 20x penalty) | Near-native (< 3% overhead) |
+| **I/O Performance** | Very slow (circuits simulated in code) | Accelerated by paravirtualized drivers (VirtIO) |
+| **Flexibility** | Maximum (any hardware can be simulated) | Constrained to host physical CPU architecture |
+| **Practical Example** | FreeDOS / DOOM (Lab Part 2) | Alpine Linux / VirtualBox (Lab Part 3) |
 
 -----
 
-## Introducing: Oracle VirtualBox
+\vspace{5em}
 
-VirtualBox is a **Type-2 (hosted)** hypervisor that runs as a standard application on your existing OS. It is developed by Oracle and is free and open-source.
-
-  * **Who it's for:** Beginners, students, and desktop users who need an easy-to-use, graphical interface for running VMs.
-  * **Key Features:**
-      * Cross-platform (Windows, macOS, Linux).
-      * User-friendly graphical interface.
-      * "Guest Additions" for seamless mouse integration, shared folders, and clipboard.
-      * Easy-to-use snapshot functionality.
+\begin{center}
+{\LARGE \textbf{Part III: I/O, Storage \& Virtual Networks}}
+\end{center}
 
 -----
 
-## Installing VirtualBox
+## I/O Virtualization: Emulated Hardware vs. VirtIO Framework
 
-The process involves installing the main application and a separate Extension Pack for full functionality (like USB 2.0/3.0 support).
+Input/output (I/O) devices (disk and network) represent the primary performance bottleneck in virtualization:
 
-1.  **Download:** Go to the [official VirtualBox downloads page](https://www.virtualbox.org/wiki/Downloads) and download the package for your host OS (Windows, macOS, or Linux). Also download the **Extension Pack**.
-2.  **Install Application:** Run the installer for the main application.
-3.  **macOS Security:** On macOS, you must go to **System Settings \> Privacy & Security** to **Allow** the system extension from Oracle.
-4.  **Install Extension Pack:** Double-click the downloaded `.vbox-extpack` file. VirtualBox will open and guide you through the installation.
-
------
-
-## Using VirtualBox
-
-Creating and running a VM is a straightforward, wizard-driven process.
-
-1.  Click the **"New"** button to start the new VM wizard.
-2.  Assign a name, OS type, and RAM.
-3.  When prompted for a hard disk, you can create a new one or, for your class, choose **"Do not add a virtual hard disk"**.
-4.  Go to the VM's **Settings \> Storage** and click the "Add Hard Disk" icon to attach your provided `.vdi` file.
-5.  Review other settings like **Network** (`NAT` or `Bridged`) and **USB** (to enable passthrough).
-6.  Select the VM and click **"Start"**.
+  * **Emulated Hardware (Compatible, but Slow):**
+      * The hypervisor simulates legacy hardware circuits in software (e.g., Intel E1000 NIC, IDE disk controller).
+      * Allows any guest OS to run without extra drivers, but every I/O read/write must be intercepted and simulated by the hypervisor.
+      * Leads to high latency and CPU overhead under intensive network traffic or disk transfers.
+  * **Paravirtualized I/O with VirtIO (Cooperative and Efficient):**
+      * The guest OS uses specialized (**VirtIO**) drivers that are aware they run inside a virtual machine.
+      * Eliminates hardware simulation: guest and hypervisor exchange data directly through shared memory queues.
+      * Batches requests with minimal overhead, achieving near-native throughput (the industry standard in cloud instances and in QEMU via `-device virtio-net-pci`).
 
 -----
 
-## Introducing: QEMU + KVM
+## Direct Hardware Access: Passthrough & IOMMU
 
-QEMU is a powerful machine emulator, and KVM (Kernel-based Virtual Machine) is the Linux kernel's built-in virtualization module. Together, they provide high-performance, **Type-1 (bare-metal)** virtualization on Linux.
+**Passthrough** grants a virtual machine exclusive and direct control over a physical host peripheral (PCIe or USB):
 
-  * **Who it's for:** System administrators, developers, and power users who need flexibility, performance, and command-line control. It is the engine behind many large-scale cloud platforms.
-  * **Key Features:**
-      * Extremely flexible and scriptable.
-      * Can emulate a huge variety of CPU architectures (ARM, MIPS, etc.).
-      * Near-native performance when used with KVM.
-      * Advanced storage features with the `.qcow2` format (snapshots, thin provisioning).
+  * **Native Performance:** Guest OS drivers interact directly with physical device circuits, bypassing hypervisor translation and overhead.
+  * **The Role of the IOMMU (Hardware Security Isolation):**
+      * Hardware component in CPU and motherboard chipset (Intel **VT-d**, AMD **AMD-Vi**).
+      * **Memory Isolation:** Restricts physical device memory accesses strictly to the RAM assigned to that target VM, preventing devices from touching host or peer VM memory.
+  * **Engineering Use Cases:**
+      * **Dedicated GPU:** Graphics acceleration and AI / Machine Learning model training inside a VM.
+      * **USB Peripherals:** Direct connection of microcontrollers and dev boards (Arduino, ESP32) to virtual machines.
 
 -----
 
-## Installing QEMU + KVM
+## Virtual Storage: Virtual Disk Architectures
 
-On Debian/Ubuntu-based systems, installation is done via the `apt` package manager.
+Virtual machines store persistent data in virtual disk image files that encapsulate guest filesystem blocks:
 
-1.  **Install Packages:** Open a terminal and run the following command. `virt-manager` is a highly recommended graphical tool for managing QEMU/KVM VMs.
+  * **RAW Format:**
+      * Linear sector-by-sector copy of a physical disk.
+      * Maximum sequential read and write performance.
+      * Does not natively support internal snapshots, sparse expansion, or compression.
+  * **QCOW2 Format (QEMU Copy-On-Write 2):**
+      * Advanced format supporting dynamic allocation, compression (zstd/zlib), and multi-level snapshots.
+      * Implements backing files: a base golden image can be shared across multiple VMs via differential write layers.
+  * **VDI (VirtualBox) & VMDK (VMware) Formats:**
+      * Workstation-oriented disk containers supporting dynamic expansion and point-in-time snapshots.
+
+-----
+
+## Storage Provisioning: Fixed vs. Dynamic Allocation
+
+Virtual disk images support two primary storage allocation strategies:
+
+  * **Preallocated Allocation (Fixed / Preallocated):**
+      * The hypervisor immediately reserves the total specified capacity on host storage at creation time (e.g., creates a 20 GB file immediately).
+      * Advantages: Eliminates host filesystem fragmentation and guarantees predictable write latency under heavy loads.
+      * Disadvantage: Consumes uncommitted host storage while the guest filesystem remains sparsely filled.
+  * **Dynamic Allocation (Sparse / Thin Provisioned):**
+      * The virtual disk file starts small with metadata and grows on-demand as new blocks are written by the guest OS.
+      * Advantages: Maximizes storage density and enables storage overcommitment.
+      * Disadvantage: Slight write penalty upon allocating new blocks and risk of host disk exhaustion if overcommitted.
+
+-----
+
+## Virtual Networking: NAT Mode & Port Forwarding
+
+The hypervisor manages network connectivity between virtual machines and external networks:
+
+  * **NAT Mode (Default):**
+      * The virtual machine shares the host computer's network connection.
+      * **Internet Access:** Guest reaches the internet seamlessly without additional network configuration (e.g., package downloads, web browsing).
+      * **Inbound Isolation:** External local network devices cannot initiate connections directly to the VM.
+  * **Port Forwarding:**
+      * Creates an explicit conduit from a specific host port to a service port inside the VM.
+      * **Practical Example:** Mapping host `localhost:8006` $\to$ VM port `8006` enables accessing the Proxmox web portal in the host browser without exposing the VM to the external LAN.
+
+-----
+
+## Virtual Networking: Bridged Mode & Host-Only Mode
+
+Alternative topologies for server deployments and isolated laboratory testbeds:
+
+  * **Bridged Mode:**
+      * The virtual machine behaves as an independent physical device attached directly to the local router.
+      * Obtains its own IP address from the physical LAN DHCP server (e.g., `192.168.1.x`), just like a separate physical computer.
+      * **Ideal for Servers:** Any device on the local network can access services hosted in the VM (as demonstrated with the Alpine web server exercise).
+  * **Host-Only Mode:**
+      * Creates a strictly isolated private network accessible exclusively between host and guest VMs.
+      * No route to external internet or physical LAN; ideal for secure testbeds and controlled development.
+
+-----
+
+\vspace{5em}
+
+\begin{center}
+{\LARGE \textbf{Part IV: Practical Virtualization Tools}}
+\end{center}
+
+-----
+
+## Oracle VirtualBox: Desktop Architecture & Workflow
+
+Oracle VirtualBox provides a production-grade Type-2 virtualization platform tailored for desktop workstations:
+
+  * **Core Components:**
+      * **VirtualBox Graphical Manager:** Intuitive desktop GUI for VM creation, snapshot management, and media configuration.
+      * **VBoxManage CLI:** Scriptable command-line interface providing complete programmatic control of all hypervisor capabilities.
+      * **VirtualBox Guest Additions:** Kernel modules installed inside the guest for graphical acceleration, seamless mouse integration, dynamic display resizing, and bidirectional clipboard sharing.
+  * **Extension Pack:** Additional package supporting USB 2.0/3.0 controllers, webcam passthrough, and RDP encryption.
+
+-----
+
+## QEMU + KVM: Architecture & Kernel Integration
+
+The combination of QEMU + KVM forms the backbone of modern Linux server virtualization and cloud infrastructure:
+
+  * **KVM (Kernel-based Virtual Machine):**
+      * Linux kernel module (`kvm.ko`, `kvm-intel.ko` / `kvm-amd.ko`) exposing the `/dev/kvm` character device.
+      * Turns the Linux kernel into a Type-1 hypervisor, handling CPU scheduling, memory virtualization (EPT/NPT), and hardware execution.
+  * **QEMU (Quick EMUlator):**
+      * User-space process managing device emulation, buses, storage backends, and graphical display pipelines.
+      * When executed with `-enable-kvm`, guest CPU instructions execute directly on physical CPU cores via KVM, achieving near-native performance.
+
+-----
+
+## QEMU/KVM Configuration and Permissions
+
+Setting up the KVM virtualization environment on Debian/Ubuntu-based distributions:
+
+  * **1. Hypervisor Package Installation:**
     ```bash
     $ sudo apt update
-    $ sudo apt install qemu-system-x86 kvm virt-manager libvirt-daemon-system
+    $ sudo apt install qemu-system-x86 kvm bridge-utils
     ```
-2.  **Add User to Groups:** Add your user to the `libvirt` and `kvm` groups to manage VMs without needing `sudo` for every action. You will need to log out and back in for this to take effect.
+  * **2. Execution Permissions:** Add the user to the `kvm` group to enable direct access to `/dev/kvm` without `root` privileges:
     ```bash
-    $ sudo adduser $USER libvirt
-    $ sudo adduser $USER kvm
+    $ sudo usermod -aG kvm $USER
     ```
 
 -----
 
-## Using QEMU + KVM
+## Disk Management with `qemu-img`
 
-While `virt-manager` provides a GUI, using QEMU from the command line demonstrates its power.
+Command-line virtual disk creation and inspection:
 
-1.  **Create a Virtual Disk:** The `.qcow2` format is recommended. This command creates a 20GB disk that only grows as you add data.
+  * **Create Thin-Provisioned QCOW2 Image:**
     ```bash
-    $ qemu-img create -f qcow2 my_debian_disk.qcow2 20G
+    $ qemu-img create -f qcow2 disco_alpine.qcow2 8G
+    ```
+  * **Inspect Disk Format and Allocated Footprint:**
+    ```bash
+    $ qemu-img info disco_alpine.qcow2
     ```
 
 -----
 
-2.  **Launch a VM:** This command starts a VM to install an OS from an ISO file.
-    ```bash
-    $ qemu-system-x86_64 -enable-kvm -m 2048 -hda my_debian_disk.qcow2 \
-    -cdrom debian-13-netinst.iso -boot d
-    ```
-      * `-enable-kvm`: Use KVM for hardware acceleration (critical for performance).
-      * `-m 2048`: Assign 2048 MB of RAM.
-      * `-hda`: Specify the primary hard disk file.
-      * `-cdrom`: Attach an ISO file as a virtual CD-ROM.
-      * `-boot d`: Tell the VM to boot from the CD-ROM drive first.
+## Launching a Virtual Machine in QEMU
+
+Complete command to instantiate a VM integrating KVM acceleration, VirtIO storage, and network:
+
+```bash
+$ qemu-system-x86_64 \
+    -enable-kvm \
+    -m 4096 \
+    -smp 4 \
+    -cpu host \
+    -drive file=disco_alpine.qcow2,if=virtio,format=qcow2 \
+    -netdev user,id=net0,hostfwd=tcp::8080-:80 \
+    -device virtio-net-pci,netdev=net0 \
+    -display gtk
+```
+
+  * `-enable-kvm` & `-cpu host`: Enables native hardware acceleration via the KVM kernel module.
+  * `-m 4096` & `-smp 4`: Allocates 4 GB of RAM and 4 virtual CPU cores.
+  * `-drive if=virtio`: High-performance virtual disk utilizing VirtIO drivers.
+  * `-netdev ... -device virtio-net-pci`: VirtIO network adapter in NAT mode with port forwarding (`8080` host $\to$ `80` VM).
+  * `-display gtk`: Launches a graphical window for guest console interaction.
 
 -----
 
-## Comparison: VirtualBox vs. QEMU/KVM
+## Proxmox Virtual Environment (VE)
 
-| Feature | VirtualBox | QEMU + KVM |
-| :--- | :--- | :--- |
-| **Type** | Type-2 (Hosted) | Type-1 (Bare-Metal, via Linux Kernel) |
-| **Primary Platform** | Cross-Platform (Windows, macOS, Linux) | Linux |
-| **Ease of Use** | **Very High** (Graphical, wizard-driven) | **Medium to Low** (Command-line focused) |
-| **Performance** | Good (Excellent for desktop use) | **Excellent** (Near-native speed) |
-| **Flexibility** | Good (User-friendly options) | **Very High** (Highly configurable and scriptable) |
-| **Best For...** | Students, desktop users, quick setups | Servers, developers, custom solutions, emulation |
+**Proxmox VE** is an open-source enterprise virtualization platform for server infrastructure management:
 
-## Support & Further Resources 📚
+  * **Underlying Architecture:** Built on Debian Linux, integrating KVM for hardware-assisted virtualization and LXC for system containers.
+  * **Management Interface:** Centralized web portal accessible by default on port `8006` (`https://<server-ip>:8006`) with complete REST API support.
+  * **Storage and Networking:** Out-of-the-box support for enterprise storage (ZFS, Ceph, LVM-thin, NFS) and Linux network bridges (`vmbr0`).
+  * **Laboratory Testbeds (Nested Virtualization):** On personal workstations, it can run inside another hypervisor (VirtualBox or QEMU) via **nested virtualization**.
 
-Bookmark these pages for quick reference.
+-----
 
-  * **Virtual Box:**
+## Hypervisor Ecosystem: Comparative Matrix
 
-      * [Manual](https://www.virtualbox.org/manual/)
-      * [Networking](https://www.nakivo.com/blog/virtualbox-network-setting-guide/)
+| Evaluation Dimension | Oracle VirtualBox | QEMU + KVM | Proxmox VE |
+| :--- | :--- | :--- | :--- |
+| **Hypervisor Type** | Type-2 (Hosted) | Type-1 / Hybrid | Type-1 (Bare-Metal) |
+| **Host Operating System** | Windows, macOS, Linux | Linux | Dedicated Debian Base |
+| **Primary Interface** | Desktop GUI | Command-Line Interface (CLI) | Centralized Web Portal |
+| **Performance Overhead**| Moderate | Minimal (Near-native) | Minimal (Production grade) |
+| **Automation Capabilities**| VBoxManage (Good) | CLI Flags / Libvirt (Broad) | REST API / CLI / GUI (Total)|
+| **Storage Formats** | VDI, VMDK | RAW, QCOW2 | ZFS, Ceph, QCOW2, LVM |
+| **Target Audience** | Desktop users, students | Kernel developers, sysadmins | Data centers, server clusters |
 
-  * **QEMU:**
+-----
 
-      * [Manual](https://www.qemu.org/docs/master/)
-      * [Networking](https://wiki.archlinux.org/title/QEMU/Advanced_networking)
+## Authorized Technical References
+
+Official documentation and architectural specifications for systems engineering study:
+
+  * **Kernel-based Virtual Machine (KVM):**
+      * [Linux Kernel Virtualization Documentation](https://docs.kernel.org/virt/kvm/)
+  * **QEMU System Emulation:**
+      * [QEMU System Emulation User Guide](https://www.qemu.org/docs/master/system/index.html)
+  * **Oracle VirtualBox:**
+      * [Oracle VirtualBox User Manual](https://www.virtualbox.org/manual/)
+  * **Proxmox Virtual Environment:**
+      * [Proxmox VE Administration Guide](https://pve.proxmox.com/pve-docs/)
+  * **VirtIO Specification:**
+      * [OASIS VirtIO Standard Specification](https://docs.oasis-open.org/virtio/virtio/v1.2/virtio-v1.2.html)
