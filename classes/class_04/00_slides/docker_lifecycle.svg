@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1760 920" width="1760" height="920">
+  <defs>
+    <style>
+      .box-header { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 26px; font-weight: 700; }
+      .entity-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 26px; font-weight: 700; fill: #0F172A; text-anchor: middle; }
+      .entity-sub { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 16px; font-weight: 500; fill: #475569; text-anchor: middle; }
+      .pill-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 20px; font-weight: 700; fill: #FFFFFF; text-anchor: middle; dominant-baseline: central; }
+    </style>
+
+    <marker id="arrow-dark" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#0F172A"/>
+    </marker>
+    <marker id="arrow-teal" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#0D9488"/>
+    </marker>
+  </defs>
+
+  <rect width="1760" height="920" fill="#FFFFFF"/>
+
+  <!-- ========================================================================= -->
+  <!-- TOP CONTAINER ENGINE BOX (Encloses only Images and Container)             -->
+  <!-- ========================================================================= -->
+  <rect x="730" y="30" width="980" height="390" rx="14" fill="#FFFFFF" stroke="#0F172A" stroke-width="3"/>
+  <text x="765" y="75" class="box-header" fill="#0F172A">Container Engine</text>
+
+  <!-- ========================================================================= -->
+  <!-- BOTTOM CONTAINER ENGINE BOX (Encloses Dockerfile, Images, Container)      -->
+  <!-- ========================================================================= -->
+  <rect x="50" y="480" width="1660" height="400" rx="14" fill="#FFFFFF" stroke="#0284C7" stroke-width="3"/>
+  <text x="85" y="525" class="box-header" fill="#0284C7">Container Engine</text>
+
+  <!-- ========================================================================= -->
+  <!-- REGISTRY / HUB (TOP-LEFT)                                                 -->
+  <!-- ========================================================================= -->
+  <g transform="translate(250, 165)">
+    <!-- Docker Whale + Containers on back -->
+    <g transform="translate(-130, -100)">
+      <!-- Sea water ripples -->
+      <path d="M 15 110 C 50 105, 70 115, 105 110 C 140 105, 160 115, 195 110 C 230 105, 250 115, 275 110" fill="none" stroke="#38BDF8" stroke-width="3.5" stroke-linecap="round"/>
+
+      <!-- Whale Body -->
+      <path d="M 35 102 
+               C 30 75, 55 60, 85 60 
+               L 170 60 
+               C 200 60, 220 78, 230 92 
+               C 240 88, 258 70, 264 56 
+               C 268 74, 258 96, 245 106 
+               C 215 120, 110 120, 45 110 
+               Z" fill="#0EA5E9" stroke="#0284C7" stroke-width="2.5"/>
+      
+      <!-- Whale Eye & Smile -->
+      <circle cx="70" cy="84" r="4.5" fill="#FFFFFF"/>
+      <circle cx="71" cy="84" r="2.2" fill="#0F172A"/>
+      <path d="M 52 92 Q 62 98 76 94" fill="none" stroke="#0369A1" stroke-width="2" stroke-linecap="round"/>
+
+      <!-- Stacked Shipping Containers on Whale -->
+      <!-- Row 1 (4 containers) -->
+      <g fill="#0284C7" stroke="#0C4A6E" stroke-width="1.5">
+        <rect x="70" y="38" width="20" height="20" rx="1.5"/><line x1="80" y1="38" x2="80" y2="58"/>
+        <rect x="93" y="38" width="20" height="20" rx="1.5"/><line x1="103" y1="38" x2="103" y2="58"/>
+        <rect x="116" y="38" width="20" height="20" rx="1.5"/><line x1="126" y1="38" x2="126" y2="58"/>
+        <rect x="139" y="38" width="20" height="20" rx="1.5"/><line x1="149" y1="38" x2="149" y2="58"/>
+      </g>
+      <!-- Row 2 (3 containers) -->
+      <g fill="#38BDF8" stroke="#0C4A6E" stroke-width="1.5">
+        <rect x="82" y="15" width="20" height="20" rx="1.5"/><line x1="92" y1="15" x2="92" y2="35"/>
+        <rect x="105" y="15" width="20" height="20" rx="1.5"/><line x1="115" y1="15" x2="115" y2="35"/>
+        <rect x="128" y="15" width="20" height="20" rx="1.5"/><line x1="138" y1="15" x2="138" y2="35"/>
+      </g>
+      <!-- Top container -->
+      <rect x="116" y="-7" width="20" height="20" rx="1.5" fill="#7DD3FC" stroke="#0C4A6E" stroke-width="1.5"/>
+      <line x1="126" y1="-7" x2="126" y2="13" stroke="#0C4A6E" stroke-width="1.5"/>
+    </g>
+
+    <text x="0" y="65" class="entity-title" fill="#0369A1">Registry / Hub</text>
+    <text x="0" y="95" class="entity-sub">Armazena e partilha imagens estáticas</text>
+  </g>
+
+  <!-- ========================================================================= -->
+  <!-- TOP FLOW: PULL -> IMAGES -> RUN -> CONTAINER                              -->
+  <!-- ========================================================================= -->
+
+  <!-- PULL ARROW (From Registry into Top Box, ending at Images) -->
+  <line x1="390" y1="185" x2="895" y2="185" stroke="#0F172A" stroke-width="3.5"/>
+  <polygon points="890,174 912,185 890,196" fill="#0F172A"/>
+
+  <!-- PULL PILL (Located outside the top box, on the arrow) -->
+  <rect x="530" y="161" width="116" height="48" rx="24" fill="#0A2540"/>
+  <text x="588" y="185" class="pill-text">Pull</text>
+
+  <!-- TOP: IMAGES (ICON + TEXT) -->
+  <g transform="translate(1010, 225)">
+    <!-- Stepped container stack (3 on bottom, 2 middle-right, 1 top-right) -->
+    <g transform="translate(-75, -85)">
+      <!-- Row 1 (bottom 3) -->
+      <g fill="#0284C7" stroke="#0F172A" stroke-width="2">
+        <rect x="0" y="44" width="45" height="38" rx="2"/><line x1="22" y1="44" x2="22" y2="82"/>
+        <rect x="50" y="44" width="45" height="38" rx="2"/><line x1="72" y1="44" x2="72" y2="82"/>
+        <rect x="100" y="44" width="45" height="38" rx="2"/><line x1="122" y1="44" x2="122" y2="82"/>
+      </g>
+      <!-- Row 2 (middle 2, shifted right) -->
+      <g fill="#0284C7" stroke="#0F172A" stroke-width="2">
+        <rect x="50" y="2" width="45" height="38" rx="2"/><line x1="72" y1="2" x2="72" y2="40"/>
+        <rect x="100" y="2" width="45" height="38" rx="2"/><line x1="122" y1="2" x2="122" y2="40"/>
+      </g>
+      <!-- Row 3 (top 1, rightmost) -->
+      <rect x="100" y="-40" width="45" height="38" rx="2" fill="#0284C7" stroke="#0F172A" stroke-width="2"/>
+      <line x1="122" y1="-40" x2="122" y2="-2" stroke="#0F172A" stroke-width="2"/>
+    </g>
+
+    <text x="0" y="45" class="entity-title">Imagens (Images)</text>
+    <text x="0" y="75" class="entity-sub">Molde estático e persistido</text>
+  </g>
+
+  <!-- RUN ARROW (Top: From Images to Container) -->
+  <line x1="1135" y1="185" x2="1385" y2="185" stroke="#0F172A" stroke-width="3.5"/>
+  <polygon points="1380,174 1402,185 1380,196" fill="#0F172A"/>
+
+  <!-- TOP RUN PILL -->
+  <rect x="1200" y="161" width="116" height="48" rx="24" fill="#0A2540"/>
+  <text x="1258" y="185" class="pill-text">Run</text>
+
+  <!-- TOP: CONTAINER (3D PERSPECTIVE) -->
+  <g transform="translate(1485, 225)">
+    <!-- 3D Shipping Container -->
+    <g transform="translate(-75, -85)">
+      <!-- Front face (doors) -->
+      <rect x="0" y="16" width="68" height="78" rx="3" fill="#0284C7" stroke="#0F172A" stroke-width="2.5"/>
+      <line x1="34" y1="16" x2="34" y2="94" stroke="#FFFFFF" stroke-width="2.5"/>
+      <!-- Handles / Hinges -->
+      <circle cx="25" cy="55" r="3.5" fill="#FFFFFF"/>
+      <circle cx="43" cy="55" r="3.5" fill="#FFFFFF"/>
+
+      <!-- Perspective Side Face -->
+      <path d="M 68 16 L 140 -6 L 140 72 L 68 94 Z" fill="#0369A1" stroke="#0F172A" stroke-width="2.5"/>
+      <!-- Corrugated Vertical Bars on Side Face -->
+      <line x1="86" y1="10" x2="86" y2="88" stroke="#0284C7" stroke-width="3"/>
+      <line x1="104" y1="5" x2="104" y2="83" stroke="#0284C7" stroke-width="3"/>
+      <line x1="122" y1="-1" x2="122" y2="77" stroke="#0284C7" stroke-width="3"/>
+
+      <!-- Top Face -->
+      <path d="M 0 16 L 72 -6 L 140 -6 L 68 16 Z" fill="#38BDF8" stroke="#0F172A" stroke-width="2.5"/>
+    </g>
+
+    <text x="0" y="45" class="entity-title">Contentor (Container)</text>
+    <text x="0" y="75" class="entity-sub">Instância viva em execução</text>
+  </g>
+
+  <!-- ========================================================================= -->
+  <!-- BOTTOM FLOW: DOCKERFILE -> BUILD -> IMAGES -> RUN -> CONTAINER             -->
+  <!-- ========================================================================= -->
+
+  <!-- DOCKERFILE ICON & TEXT -->
+  <g transform="translate(250, 680)">
+    <!-- Document Icon with folded corner -->
+    <g transform="translate(-45, -95)">
+      <path d="M 0 0 L 60 0 L 90 30 L 90 120 L 0 120 Z" fill="#FFFFFF" stroke="#334155" stroke-width="3"/>
+      <path d="M 60 0 L 60 30 L 90 30 Z" fill="#CBD5E1" stroke="#334155" stroke-width="2.5"/>
+
+      <!-- Container graphic inside document -->
+      <rect x="18" y="42" width="54" height="38" rx="2" fill="#0284C7" stroke="#0F172A" stroke-width="2"/>
+      <line x1="45" y1="42" x2="45" y2="80" stroke="#FFFFFF" stroke-width="1.5"/>
+      <line x1="31" y1="42" x2="31" y2="80" stroke="#0F172A" stroke-width="1"/>
+      <line x1="59" y1="42" x2="59" y2="80" stroke="#0F172A" stroke-width="1"/>
+
+      <!-- Text lines -->
+      <line x1="18" y1="92" x2="72" y2="92" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+      <line x1="18" y1="104" x2="55" y2="104" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+    </g>
+
+    <text x="0" y="55" class="entity-title" fill="#0369A1">Dockerfile</text>
+    <text x="0" y="85" class="entity-sub">Instruções para montar a imagem</text>
+  </g>
+
+  <!-- BUILD ARROW (From Dockerfile to Images) -->
+  <line x1="390" y1="645" x2="895" y2="645" stroke="#0D9488" stroke-width="3.5"/>
+  <polygon points="890,634 912,645 890,656" fill="#0D9488"/>
+
+  <!-- BUILD PILL -->
+  <rect x="580" y="621" width="116" height="48" rx="24" fill="#0D9488"/>
+  <text x="638" y="645" class="pill-text">Build</text>
+
+  <!-- BOTTOM: IMAGES (ICON + TEXT) -->
+  <g transform="translate(1010, 680)">
+    <!-- Stepped container stack (3 on bottom, 2 middle-right, 1 top-right) -->
+    <g transform="translate(-75, -85)">
+      <!-- Row 1 (bottom 3) -->
+      <g fill="#0284C7" stroke="#0F172A" stroke-width="2">
+        <rect x="0" y="44" width="45" height="38" rx="2"/><line x1="22" y1="44" x2="22" y2="82"/>
+        <rect x="50" y="44" width="45" height="38" rx="2"/><line x1="72" y1="44" x2="72" y2="82"/>
+        <rect x="100" y="44" width="45" height="38" rx="2"/><line x1="122" y1="44" x2="122" y2="82"/>
+      </g>
+      <!-- Row 2 (middle 2, shifted right) -->
+      <g fill="#0284C7" stroke="#0F172A" stroke-width="2">
+        <rect x="50" y="2" width="45" height="38" rx="2"/><line x1="72" y1="2" x2="72" y2="40"/>
+        <rect x="100" y="2" width="45" height="38" rx="2"/><line x1="122" y1="2" x2="122" y2="40"/>
+      </g>
+      <!-- Row 3 (top 1, rightmost) -->
+      <rect x="100" y="-40" width="45" height="38" rx="2" fill="#0284C7" stroke="#0F172A" stroke-width="2"/>
+      <line x1="122" y1="-40" x2="122" y2="-2" stroke="#0F172A" stroke-width="2"/>
+    </g>
+
+    <text x="0" y="55" class="entity-title">Imagens (Images)</text>
+    <text x="0" y="85" class="entity-sub">Molde estático e persistido</text>
+  </g>
+
+  <!-- RUN ARROW (Bottom: From Images to Container) -->
+  <line x1="1135" y1="645" x2="1385" y2="645" stroke="#0D9488" stroke-width="3.5"/>
+  <polygon points="1380,634 1402,645 1380,656" fill="#0D9488"/>
+
+  <!-- BOTTOM RUN PILL -->
+  <rect x="1200" y="621" width="116" height="48" rx="24" fill="#0D9488"/>
+  <text x="1258" y="645" class="pill-text">Run</text>
+
+  <!-- BOTTOM: CONTAINER (3D PERSPECTIVE) -->
+  <g transform="translate(1485, 680)">
+    <!-- 3D Shipping Container -->
+    <g transform="translate(-75, -85)">
+      <!-- Front face (doors) -->
+      <rect x="0" y="16" width="68" height="78" rx="3" fill="#0284C7" stroke="#0F172A" stroke-width="2.5"/>
+      <line x1="34" y1="16" x2="34" y2="94" stroke="#FFFFFF" stroke-width="2.5"/>
+      <!-- Handles / Hinges -->
+      <circle cx="25" cy="55" r="3.5" fill="#FFFFFF"/>
+      <circle cx="43" cy="55" r="3.5" fill="#FFFFFF"/>
+
+      <!-- Perspective Side Face -->
+      <path d="M 68 16 L 140 -6 L 140 72 L 68 94 Z" fill="#0369A1" stroke="#0F172A" stroke-width="2.5"/>
+      <!-- Corrugated Vertical Bars on Side Face -->
+      <line x1="86" y1="10" x2="86" y2="88" stroke="#0284C7" stroke-width="3"/>
+      <line x1="104" y1="5" x2="104" y2="83" stroke="#0284C7" stroke-width="3"/>
+      <line x1="122" y1="-1" x2="122" y2="77" stroke="#0284C7" stroke-width="3"/>
+
+      <!-- Top Face -->
+      <path d="M 0 16 L 72 -6 L 140 -6 L 68 16 Z" fill="#38BDF8" stroke="#0F172A" stroke-width="2.5"/>
+    </g>
+
+    <text x="0" y="55" class="entity-title">Contentor (Container)</text>
+    <text x="0" y="85" class="entity-sub">Instância viva em execução no mesmo sistema</text>
+  </g>
+
+  <!-- ========================================================================= -->
+  <!-- PUSH ARROW (From Bottom Images UP and LEFT to Registry)                   -->
+  <!-- ========================================================================= -->
+  <!-- Starts above bottom Images at (1010, 560), goes UP to y=448, LEFT to x=250, UP to y=285 -->
+  <path d="M 1010 560 L 1010 448 L 250 448 L 250 282" fill="none" stroke="#0D9488" stroke-width="3.5"/>
+  <polygon points="239,285 250,265 261,285" fill="#0D9488"/>
+
+  <!-- PUSH PILL -->
+  <rect x="580" y="424" width="116" height="48" rx="24" fill="#0D9488"/>
+  <text x="638" y="448" class="pill-text">Push</text>
+
+</svg>

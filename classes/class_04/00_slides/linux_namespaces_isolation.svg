@@ -1,0 +1,188 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1860 920" width="1860" height="920" style="background:#ffffff; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <defs>
+    <!-- Connector Gradients -->
+    <linearGradient id="bridgePID" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#2563eb" stop-opacity="0.22"/>
+      <stop offset="50%" stop-color="#0284c7" stop-opacity="0.38"/>
+      <stop offset="100%" stop-color="#059669" stop-opacity="0.22"/>
+    </linearGradient>
+    <linearGradient id="bridgeMNT" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#4f46e5" stop-opacity="0.22"/>
+      <stop offset="50%" stop-color="#7c3aed" stop-opacity="0.38"/>
+      <stop offset="100%" stop-color="#059669" stop-opacity="0.22"/>
+    </linearGradient>
+    <linearGradient id="bridgeNET" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0284c7" stop-opacity="0.22"/>
+      <stop offset="50%" stop-color="#0d9488" stop-opacity="0.38"/>
+      <stop offset="100%" stop-color="#059669" stop-opacity="0.22"/>
+    </linearGradient>
+
+    <filter id="shadowLight" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#0f172a" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+
+  <!-- ==================== BIG OUTER BOX: LINUX MACHINE (HOST) ==================== -->
+  <rect x="25" y="15" width="1810" height="890" rx="20" fill="#f8fafc" stroke="#1e293b" stroke-width="4"/>
+
+  <!-- Host Badge Top-Left -->
+  <rect x="55" y="32" width="460" height="48" rx="12" fill="#1e293b"/>
+  <text x="75" y="64" font-size="20" font-weight="800" fill="#ffffff" letter-spacing="0.5">SISTEMA ANFITRIÃO (LINUX HOST)</text>
+  <rect x="535" y="32" width="180" height="48" rx="12" fill="#e2e8f0"/>
+  <text x="625" y="63" text-anchor="middle" font-size="17" font-weight="800" fill="#334155">VISÃO GLOBAL</text>
+
+  <!-- ==================== INNER NESTED BOX: CONTAINER ==================== -->
+  <rect x="940" y="32" width="870" height="850" rx="18" fill="#ffffff" stroke="#059669" stroke-width="4" filter="url(#shadowLight)"/>
+
+  <!-- Container Badge Top-Left -->
+  <rect x="965" y="48" width="460" height="48" rx="12" fill="#065f46"/>
+  <text x="985" y="80" font-size="20" font-weight="800" fill="#ffffff" letter-spacing="0.5">CONTENTOR (AMBIENTE ISOLADO)</text>
+  
+  <rect x="1530" y="48" width="255" height="48" rx="12" fill="#d1fae5" stroke="#10b981" stroke-width="2.5"/>
+  <text x="1657" y="79" text-anchor="middle" font-size="16" font-weight="800" fill="#065f46">VISTA PRIVADA FILTRADA</text>
+
+
+  <!-- ======================================================================= -->
+  <!-- 1. NAMESPACE PID (PROCESSOS)                                            -->
+  <!-- ======================================================================= -->
+  <g>
+    <!-- Section Header Pill -->
+    <rect x="55" y="105" width="360" height="36" rx="8" fill="#dbeafe"/>
+    <text x="75" y="130" font-size="18" font-weight="800" fill="#1e40af">1. NAMESPACE PID (PROCESSOS)</text>
+
+    <!-- Connector Bridges -->
+    <rect x="550" y="235" width="450" height="54" rx="27" fill="url(#bridgePID)" stroke="#0284c7" stroke-dasharray="6,4" stroke-width="2.5"/>
+    <text x="775" y="269" text-anchor="middle" font-size="16" font-weight="800" fill="#0369a1" letter-spacing="0.3">↔ MESMO PROCESSO (app-web) ↔</text>
+
+    <rect x="550" y="305" width="450" height="54" rx="27" fill="url(#bridgePID)" stroke="#0284c7" stroke-dasharray="6,4" stroke-width="2.5"/>
+    <text x="775" y="339" text-anchor="middle" font-size="16" font-weight="800" fill="#0369a1" letter-spacing="0.3">↔ MESMO PROCESSO (worker) ↔</text>
+
+    <!-- Host Side Tree -->
+    <rect x="75" y="152" width="230" height="38" rx="8" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2.5"/>
+    <text x="95" y="178" font-family="ui-monospace, monospace" font-size="17" font-weight="800" fill="#1e293b">PID : 1</text>
+    <text x="175" y="177" font-size="16" font-weight="600" fill="#475569">systemd</text>
+
+    <path d="M 115 190 L 115 332 M 115 216 L 145 216 M 115 262 L 145 262 M 115 332 L 145 332" fill="none" stroke="#94a3b8" stroke-width="3"/>
+
+    <rect x="145" y="196" width="250" height="38" rx="8" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2.5"/>
+    <text x="165" y="222" font-family="ui-monospace, monospace" font-size="17" font-weight="800" fill="#1e293b">PID : 210</text>
+    <text x="255" y="221" font-size="16" font-weight="600" fill="#475569">sshd</text>
+
+    <rect x="145" y="235" width="430" height="54" rx="12" fill="#1e40af" stroke="#1d4ed8" stroke-width="3"/>
+    <text x="165" y="269" font-family="ui-monospace, monospace" font-size="20" font-weight="800" fill="#ffffff">PID : 3840</text>
+    <text x="300" y="268" font-size="19" font-weight="800" fill="#bfdbfe">app-web</text>
+    <text x="410" y="267" font-size="15" fill="#93c5fd">(no host)</text>
+
+    <rect x="145" y="305" width="430" height="54" rx="12" fill="#1e40af" stroke="#1d4ed8" stroke-width="3"/>
+    <text x="165" y="339" font-family="ui-monospace, monospace" font-size="20" font-weight="800" fill="#ffffff">PID : 3841</text>
+    <text x="300" y="338" font-size="19" font-weight="800" fill="#bfdbfe">worker</text>
+    <text x="400" y="337" font-size="15" fill="#93c5fd">(no host)</text>
+
+    <!-- Container Side Tree -->
+    <rect x="980" y="235" width="460" height="54" rx="12" fill="#059669" stroke="#047857" stroke-width="3"/>
+    <text x="1000" y="269" font-family="ui-monospace, monospace" font-size="20" font-weight="800" fill="#ffffff">PID : 1</text>
+    <text x="1090" y="268" font-size="19" font-weight="800" fill="#d1fae5">app-web</text>
+    <text x="1195" y="267" font-size="15" fill="#a7f3d0">(raiz / init)</text>
+
+    <path d="M 1025 289 L 1025 332 L 1050 332" fill="none" stroke="#10b981" stroke-width="3"/>
+
+    <rect x="1050" y="305" width="390" height="54" rx="12" fill="#059669" stroke="#047857" stroke-width="3"/>
+    <text x="1070" y="339" font-family="ui-monospace, monospace" font-size="20" font-weight="800" fill="#ffffff">PID : 2</text>
+    <text x="1160" y="338" font-size="19" font-weight="800" fill="#d1fae5">worker</text>
+    <text x="1255" y="337" font-size="15" fill="#a7f3d0">(processo filho)</text>
+
+    <!-- Explanatory Card Right -->
+    <rect x="1460" y="235" width="325" height="124" rx="14" fill="#f0fdf4" stroke="#86efac" stroke-width="2.5"/>
+    <text x="1478" y="266" font-size="17" font-weight="800" fill="#065f46">Isolamento (PID):</text>
+    <text x="1478" y="295" font-size="15.5" font-weight="600" fill="#047857">• PIDs do anfitrião invisíveis</text>
+    <text x="1478" y="322" font-size="15.5" font-weight="600" fill="#047857">• App assume o PID 1 raiz</text>
+    <text x="1478" y="347" font-size="15" font-weight="800" fill="#065f46">• Se PID 1 morrer, encerra</text>
+  </g>
+
+  <!-- Divider 1 -->
+  <line x1="55" y1="385" x2="1785" y2="385" stroke="#cbd5e1" stroke-width="2.5" stroke-dasharray="10,6"/>
+
+
+  <!-- ======================================================================= -->
+  <!-- 2. NAMESPACE MOUNT (SISTEMA DE FICHEIROS)                               -->
+  <!-- ======================================================================= -->
+  <g>
+    <!-- Section Header Pill -->
+    <rect x="55" y="408" width="425" height="36" rx="8" fill="#e0e7ff"/>
+    <text x="75" y="433" font-size="18" font-weight="800" fill="#3730a3">2. NAMESPACE MOUNT (FICHEIROS)</text>
+
+    <!-- Connector Bridge -->
+    <rect x="550" y="500" width="450" height="54" rx="27" fill="url(#bridgeMNT)" stroke="#6366f1" stroke-dasharray="6,4" stroke-width="2.5"/>
+    <text x="775" y="534" text-anchor="middle" font-size="16" font-weight="800" fill="#4338ca" letter-spacing="0.3">↔ MAPEAMENTO DE RAIZ (PIVOT_ROOT) ↔</text>
+
+    <!-- Host Side Tree -->
+    <rect x="75" y="448" width="250" height="38" rx="8" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2.5"/>
+    <text x="95" y="474" font-family="ui-monospace, monospace" font-size="17" font-weight="800" fill="#1e293b">/ (Raiz do Host)</text>
+
+    <path d="M 115 486 L 115 527 L 145 527" fill="none" stroke="#94a3b8" stroke-width="3"/>
+
+    <rect x="145" y="500" width="430" height="54" rx="12" fill="#3730a3" stroke="#312e81" stroke-width="3"/>
+    <text x="165" y="534" font-family="ui-monospace, monospace" font-size="17.5" font-weight="800" fill="#ffffff">/var/lib/docker/.../rootfs/</text>
+    <text x="445" y="533" font-size="15" fill="#c7d2fe">(no disco)</text>
+
+    <!-- Container Side Filesystem Tree -->
+    <rect x="980" y="500" width="460" height="54" rx="12" fill="#059669" stroke="#047857" stroke-width="3"/>
+    <text x="1000" y="534" font-family="ui-monospace, monospace" font-size="20" font-weight="800" fill="#ffffff">/ (Raiz Privada do Contentor)</text>
+    <text x="1330" y="533" font-size="15" fill="#a7f3d0">(isolada)</text>
+
+    <path d="M 1025 554 L 1025 586 L 1050 586" fill="none" stroke="#10b981" stroke-width="3"/>
+
+    <rect x="1050" y="565" width="390" height="44" rx="10" fill="#d1fae5" stroke="#10b981" stroke-width="2.5"/>
+    <text x="1070" y="594" font-family="ui-monospace, monospace" font-size="17" font-weight="800" fill="#065f46">/app/  (código e dependências)</text>
+
+    <!-- Explanatory Card Right -->
+    <rect x="1460" y="500" width="325" height="110" rx="14" fill="#f0fdf4" stroke="#86efac" stroke-width="2.5"/>
+    <text x="1478" y="531" font-size="17" font-weight="800" fill="#065f46">Isolamento do Disco:</text>
+    <text x="1478" y="560" font-size="15.5" font-weight="600" fill="#047857">• Só acede a /app e /lib</text>
+    <text x="1478" y="588" font-size="15.5" font-weight="600" fill="#047857">• Ficheiros do Host inacessíveis</text>
+  </g>
+
+  <!-- Divider 2 -->
+  <line x1="55" y1="635" x2="1785" y2="635" stroke="#cbd5e1" stroke-width="2.5" stroke-dasharray="10,6"/>
+
+
+  <!-- ======================================================================= -->
+  <!-- 3. NAMESPACE NETWORK (REDE E PORTAS)                                    -->
+  <!-- ======================================================================= -->
+  <g>
+    <!-- Section Header Pill -->
+    <rect x="55" y="658" width="410" height="36" rx="8" fill="#ccfbf1"/>
+    <text x="75" y="683" font-size="18" font-weight="800" fill="#0f766e">3. NAMESPACE NETWORK (REDE)</text>
+
+    <!-- Connector Bridge -->
+    <rect x="550" y="750" width="450" height="54" rx="27" fill="url(#bridgeNET)" stroke="#0d9488" stroke-dasharray="6,4" stroke-width="2.5"/>
+    <text x="775" y="784" text-anchor="middle" font-size="16" font-weight="800" fill="#0f766e" letter-spacing="0.3">↔ ENCAMINHAMENTO (-p 8080:80) ↔</text>
+
+    <!-- Host Side Network Tree -->
+    <rect x="75" y="698" width="290" height="38" rx="8" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2.5"/>
+    <text x="95" y="724" font-size="16" font-weight="800" fill="#1e293b">Interface eth0: 192.168.1.50</text>
+
+    <path d="M 115 736 L 115 777 L 145 777" fill="none" stroke="#94a3b8" stroke-width="3"/>
+
+    <rect x="145" y="750" width="430" height="54" rx="12" fill="#0f766e" stroke="#115e59" stroke-width="3"/>
+    <text x="165" y="784" font-family="ui-monospace, monospace" font-size="18" font-weight="800" fill="#ffffff">Porto no Host: 8080/TCP</text>
+    <text x="425" y="783" font-size="15" fill="#99f6e4">(público)</text>
+
+    <!-- Container Side Network Tree -->
+    <rect x="980" y="698" width="290" height="38" rx="8" fill="#d1fae5" stroke="#10b981" stroke-width="2.5"/>
+    <text x="997" y="724" font-size="16" font-weight="800" fill="#065f46">Interface veth: 172.17.0.2</text>
+
+    <path d="M 1025 736 L 1025 777 L 1050 777" fill="none" stroke="#10b981" stroke-width="3"/>
+
+    <rect x="1050" y="750" width="390" height="54" rx="12" fill="#059669" stroke="#047857" stroke-width="3"/>
+    <text x="1070" y="784" font-family="ui-monospace, monospace" font-size="18" font-weight="800" fill="#ffffff">Porto no Contentor: 80/TCP</text>
+    <text x="1350" y="783" font-size="15" fill="#a7f3d0">(privado)</text>
+
+    <!-- Explanatory Card Right -->
+    <rect x="1460" y="700" width="325" height="110" rx="14" fill="#f0fdf4" stroke="#86efac" stroke-width="2.5"/>
+    <text x="1478" y="731" font-size="17" font-weight="800" fill="#065f46">Isolamento da Rede:</text>
+    <text x="1478" y="760" font-size="15.5" font-weight="600" fill="#047857">• App escuta no porto 80 padrão</text>
+    <text x="1478" y="788" font-size="15.5" font-weight="600" fill="#047857">• Sem colisões com o anfitrião</text>
+  </g>
+
+</svg>

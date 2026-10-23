@@ -1,15 +1,15 @@
 ---
-title: Virtualização
-subtitle: Introdução Engenharia Informática
-author: Mário Antunes
+title: Contentores
+subtitle: Introdução à Engenharia Informática
 institute: Universidade de Aveiro
-date: October 13, 2025
+date: October 19, 2026
 colorlinks: true
 highlight-style: tango
 geometry: a4paper,margin=2cm
 mainfont: NotoSans
 mainfontfallback:
   - "NotoColorEmoji:mode=harf"
+  - "DejaVu Sans:"
 header-includes:
  - \usepackage{longtable,booktabs}
  - \usepackage{etoolbox}
@@ -20,22 +20,40 @@ header-includes:
  - \setmonofont[Contextuals={Alternate}]{FiraCodeNerdFontMono-Retina}
 ---
 
-# Exercícios
+# Guião Prático de Laboratório
 
-## Laboratório Prático: Trabalhar com Docker Compose
+**Enquadramento & Objetivos:**  
+Na engenharia de software contemporânea, os contentores Docker são a tecnologia padrão para empacotar e gerir **aplicações de backend, APIs web, bases de dados e arquiteturas orientadas a microsserviços**, servindo de alicerce direto para a orquestração em escala na nuvem (como em clusters Kubernetes). Neste laboratório prático de **3 horas**, irá explorar o ciclo de vida de contentores, transformar código em serviços autónomos e orquestrar topologias multi-camada com Docker e Docker Compose:
 
-**Objetivo:** Este laboratório irá guiá-lo através dos fundamentos da criação, gestão e implementação de aplicações usando o Docker (com foco em ficheiros Compose). Irá aplicar os conceitos de imagens, contentores, volumes e redes para construir e executar aplicações de serviço único e multi-serviço.
+* **Parte 1 — Instalação e Configuração do Docker:** Configuração do repositório oficial Docker e permissões de utilizador sem necessidade de `sudo`.
+* **Parte 2 — Exercício 1: Fundamentos da CLI Docker & Construção Manual de Imagens:** Exploração do ciclo de vida de contentores (`run`, `ps`, `logs`, `exec`, `stop`, `rm`), registo local vs. remoto e compilação do primeiro `Dockerfile` com `docker build`.
+* **Parte 3 — Exercício 2: "Hello, World" com Docker Compose:** Estrutura fundamental de um ficheiro `compose.yml` e automação do ciclo de vida de contentores.
+* **Parte 4 — Exercício 3: Construção de Imagens Personalizadas com Compose:** Criação de um `Dockerfile` integrado com Compose para empacotar uma aplicação web estática em NGINX.
+* **Parte 5 — Exercício 4: Desenvolvimento Dinâmico com Volumes:** Utilização de volumes (*bind mounts*) para desenvolvimento ágil com atualização imediata de código no anfitrião.
+* **Parte 6 — Exercício 5: Arquitetura Multi-Serviço com Cache Varnish & NGINX:** Composição de serviços interdependentes, rede privada interna com resolução por DNS e proxy reverso de alto desempenho.
+* **Parte 7 — Exercício 6: Implementação de uma Aplicação de Produção:** Implementação de uma aplicação complexa (ex.: Jellyfin) com variáveis de ambiente (`PUID`, `PGID`, `TZ`), volumes de persistência e mapeamento de portas.
 
-**Pré-requisitos:**
+\vspace{0.5em}
 
-  * Um computador com um navegador web moderno e um editor de texto.
-  * Docker e Docker Compose instalados.
+### Preparação do Diretório de Trabalho
+
+Antes de iniciar os exercícios, crie e aceda à pasta de trabalho dedicada para esta sessão:
+
+```bash
+$ mkdir -p ~/IEI/aula04
+$ cd ~/IEI/aula04
+```
+
+Todos os ficheiros criados durante a aula (ficheiros `compose.yml`, `Dockerfile`, páginas web e configurações) deverão ser organizados em subpastas dentro deste diretório de trabalho.
+
+> **Nota sobre caminhos de ficheiros:**
+> Os comandos deste guião assumem que o terminal está posicionado no diretório de trabalho `~/IEI/aula04`. Cada exercício deve ser desenvolvido na respetiva subpasta (p. ex., `ex1-cli`, `ex2-helloworld`, `ex3-build`, etc.).
 
 -----
 
-## Instalar o Docker no Debian
+## Parte 1: Instalação e Configuração do Docker
 
-Se estiver a usar um anfitrião Linux, siga estes passos no seu terminal para instalar a versão mais recente do Docker. Baseado nestas [instruções](https://docs.docker.com/engine/install/debian/).
+Se estiver a usar um anfitrião Linux (Debian ou Ubuntu), siga estes passos no seu terminal para instalar a versão mais recente do Docker Engine e do plugin Docker Compose, de acordo com as [instruções oficiais](https://docs.docker.com/engine/install/debian/). *(Em Windows ou macOS, instale o [Docker Desktop](https://docs.docker.com/desktop/)).*
 
 1.  **Configurar o repositório `apt` do Docker:**
     ```bash
@@ -75,11 +93,121 @@ Se estiver a usar um anfitrião Linux, siga estes passos no seu terminal para in
 
 -----
 
-## Exercício 1: "Hello, World" com Docker Compose
+## Exercício 1: Fundamentos da CLI Docker e Construção Manual de Imagens
+
+**Objetivo:** Praticar os comandos essenciais da CLI Docker (`run`, `ps`, `logs`, `exec`, `stop`, `rm`, `build`), compreender a distinção entre registo local e remoto (Docker Hub), e criar manualmente a primeira imagem a partir de um `Dockerfile`.
+
+1.  **Explorar o Registo Local e Descarregar Imagens (`docker images` e `docker pull`):**
+    * Crie uma pasta para este exercício e entre nela:
+      ```bash
+      $ mkdir -p ex1-cli && cd ex1-cli
+      ```
+    * Inspecione as imagens presentes no armazenamento local da sua máquina:
+      ```bash
+      $ docker images
+      ```
+      *(Se a instalação for recente, a lista estará vazia).*
+    * Descarregue a imagem oficial da distribuição minimalista **Alpine Linux** diretamente do Docker Hub (registo remoto oficial):
+      ```bash
+      $ docker pull alpine:3.20
+      ```
+    * Volte a listar as imagens locais (`docker images`) e confirme que a imagem `alpine:3.20` está agora em disco (repare no tamanho ultraleve de apenas ~8 MB!).
+
+2.  **Executar um Contentor Interativo e Compreender o Ciclo de Vida (`run -it`, `ps`, `ps -a` e `rm`):**
+    * Crie e inicie um contentor interativo com uma sessão de terminal (`sh`):
+      ```bash
+      $ docker run -it --name meu-terminal alpine:3.20 sh
+      ```
+    * Repare que o indicador de linha de comandos mudou para `/ #`. Está agora a executar comandos no espaço de processos e sistema de ficheiros isolado do contentor! Experimente:
+      ```sh
+      / # cat /etc/os-release   # Inspecionar a distribuição do contentor
+      / # hostname              # Ver o identificador único atribuído ao contentor
+      / # exit                  # Terminar a sessão e sair do contentor
+      ```
+    * De volta ao terminal da máquina anfitriã, verifique quais os contentores em execução:
+      ```bash
+      $ docker ps
+      ```
+      *(O contentor não surge listado porque o seu processo principal `sh` foi concluído).*
+    * Liste **todos** os contentores (incluindo os terminados/parados):
+      ```bash
+      $ docker ps -a
+      ```
+      Constatará que o contentor `meu-terminal` ainda existe em disco no estado `Exited (0)`.
+    * Remova definitivamente o contentor e a sua camada temporária de escrita:
+      ```bash
+      $ docker rm meu-terminal
+      ```
+
+3.  **Serviço em Segundo Plano, Redirecionamento de Portos e Logs (`run -d -p`, `logs` e `exec`):**
+    * Inicie um servidor web NGINX em segundo plano (*detached*, flag `-d`) mapeando o porto 8080 do anfitrião para o porto 80 do contentor (flag `-p`):
+      ```bash
+      $ docker run -d --name meu-servidor -p 8080:80 nginx:alpine
+      ```
+      *(Como a imagem `nginx:alpine` ainda não existia localmente, o Docker fez o `pull` automático antes de iniciar).*
+    * Confirme que o contentor está em execução com o porto mapeado:
+      ```bash
+      $ docker ps
+      ```
+    * Abra o seu navegador web em `http://localhost:8080`. Deverá visualizar a página de boas-vindas *"Welcome to nginx!"*.
+    * Regresse ao terminal e visualize os registos de acesso HTTP gerados pelo navegador:
+      ```bash
+      $ docker logs meu-servidor
+      ```
+    * Abra uma sessão de terminal dentro do contentor que está vivo para alterar a página servida em tempo real:
+      ```bash
+      $ docker exec -it meu-servidor sh
+      / # echo "<h1>Ola do container</h1>" > /usr/share/nginx/html/index.html
+      / # exit
+      ```
+    * Atualize o navegador em `http://localhost:8080` e comprove a alteração em tempo real.
+    * Pare o contentor e remova-o:
+      ```bash
+      $ docker stop meu-servidor
+      $ docker rm meu-servidor
+      ```
+
+4.  **Criar o Primeiro `Dockerfile` "à Mão" e Compilar (`docker build`):**
+    * Dentro da pasta `ex1-cli`, crie um ficheiro `index.html` com uma mensagem personalizada:
+      ```html
+      <!DOCTYPE html>
+      <html>
+      <body>
+          <h1>Minha primeira imagem construida com Dockerfile!</h1>
+      </body>
+      </html>
+      ```
+    * Crie agora o ficheiro de receita declarativa chamado `Dockerfile` (sem extensão):
+      ```dockerfile
+      FROM nginx:alpine
+      COPY index.html /usr/share/nginx/html/index.html
+      ```
+    * Compile a imagem no contexto do diretório atual (`.`):
+      ```bash
+      $ docker build -t meu-site-manual:1.0 .
+      ```
+    * Inspecione o registo local com `docker images`. A sua imagem `meu-site-manual:1.0` surge agora como uma imagem local pronta a distribuir!
+    * Inicie um contentor a partir da sua nova imagem personalizada:
+      ```bash
+      $ docker run -d --name site-manual -p 8080:80 meu-site-manual:1.0
+      ```
+    * Aceda a `http://localhost:8080` no navegador e verifique o resultado.
+    * Conclua limpando o contentor:
+      ```bash
+      $ docker stop site-manual && docker rm site-manual
+      ```
+    * Volte ao diretório raiz da aula para prosseguir para o Docker Compose:
+      ```bash
+      $ cd ~/IEI/aula04
+      ```
+
+-----
+
+## Exercício 2: "Hello, World" com Docker Compose
 
 **Objetivo:** Compreender a estrutura básica de um ficheiro `compose.yml` e executar uma imagem pré-construída.
 
-1.  Crie uma nova pasta para este exercício (p. ex., `ex1-helloworld`).
+1.  Crie uma nova pasta para este exercício (p. ex., `ex2-helloworld`).
 2.  Dentro da pasta, crie um novo ficheiro chamado `compose.yml` com o seguinte conteúdo:
     ```yaml
     services:
@@ -98,11 +226,11 @@ Se estiver a usar um anfitrião Linux, siga estes passos no seu terminal para in
 
 -----
 
-## Exercício 2: Construir uma Imagem de Servidor Web Personalizada
+## Exercício 3: Construir uma Imagem de Servidor Web Personalizada
 
 **Objetivo:** Usar um `Dockerfile` com o Docker Compose para criar uma imagem de aplicação autónoma.
 
-1.  Crie uma nova pasta (`ex2-build`) e uma subpasta dentro dela chamada `my-website`.
+1.  Crie uma nova pasta (`ex3-build`) e uma subpasta dentro dela chamada `my-website`.
 2.  Dentro de `my-website`, crie um ficheiro chamado `index.html`:
     ```html
     <!DOCTYPE html>
@@ -112,7 +240,7 @@ Se estiver a usar um anfitrião Linux, siga estes passos no seu terminal para in
     </body>
     </html>
     ```
-3.  Na raiz da pasta `ex2-build`, crie um `Dockerfile`:
+3.  Na raiz da pasta `ex3-build`, crie um `Dockerfile`:
     ```dockerfile
     FROM nginx:alpine
     COPY ./my-website /usr/share/nginx/html
@@ -133,11 +261,11 @@ Se estiver a usar um anfitrião Linux, siga estes passos no seu terminal para in
 
 -----
 
-## Exercício 3: Desenvolvimento em Tempo Real com Volumes
+## Exercício 4: Desenvolvimento em Tempo Real com Volumes
 
 **Objetivo:** Compreender como os volumes lhe permitem alterar o conteúdo do seu site sem reconstruir a imagem.
 
-1.  Crie uma nova pasta (`ex3-volumes`) com a mesma estrutura `my-website/index.html` do exercício anterior.
+1.  Crie uma nova pasta (`ex4-volumes`) com a mesma estrutura `my-website/index.html` do exercício anterior.
 2.  Crie um ficheiro `compose.yml`. Desta vez, vamos usar a imagem padrão `nginx:alpine` e montar a nossa pasta local como um volume. **Não é necessário `Dockerfile`.**
     ```yaml
     services:
@@ -155,12 +283,12 @@ Se estiver a usar um anfitrião Linux, siga estes passos no seu terminal para in
 
 -----
 
-## Exercício 4: Conteúdo Rico em Cache com Varnish & NGINX ⚡
+## Exercício 5: Conteúdo em Cache com Varnish & NGINX
 
 **Objetivo:** Construir uma aplicação web de duas camadas com uma cache Varnish a servir uma página web rica a partir de um backend NGINX.
 
 1.  **Criar a Estrutura de Ficheiros:**
-      * Crie uma nova pasta (p. ex., `ex4-varnish-cache`).
+      * Crie uma nova pasta (p. ex., `ex5-varnish-cache`).
       * Dentro dela, crie duas subpastas: `varnish` e `my-dynamic-website`.
 2.  **Criar o Conteúdo Web:**
       * Encontre um GIF animado divertido online e guarde-o dentro de `my-dynamic-website` como `animation.gif`.
@@ -189,7 +317,7 @@ Se estiver a usar um anfitrião Linux, siga estes passos no seu terminal para in
         }
         ```
 4.  **Criar o Ficheiro Compose:**
-      * Na raiz da sua pasta `ex4-varnish-cache`, crie o `compose.yml`:
+      * Na raiz da sua pasta `ex5-varnish-cache`, crie o `compose.yml`:
         ```yaml
         services:
           cache:
@@ -217,11 +345,11 @@ Se estiver a usar um anfitrião Linux, siga estes passos no seu terminal para in
 
 -----
 
-## Exercício 5: Implementar uma Aplicação do Mundo Real
+## Exercício 6: Implementar uma Aplicação do Mundo Real
 
 **Objetivo:** Aprender a ler documentação oficial e a implementar um serviço complexo auto-hospedado à sua escolha.
 
-1.  **Escolha um Serviço:** Vá a [LinuxServer.io](https://www.linuxserver.io/) e navegue pela lista de imagens populares. Escolha uma que lhe interesse, por exemplo:
+1.  **Escolha um Serviço:** Crie uma nova pasta de trabalho (p. ex., `ex6-jellyfin` ou `ex6-realworld`). Vá a [LinuxServer.io](https://www.linuxserver.io/) e navegue pela lista de imagens populares. Escolha uma que lhe interesse, por exemplo:
 
       * **Jellyfin:** Um servidor de multimédia para os seus filmes e música.
       * **Nextcloud:** Uma nuvem pessoal para ficheiros, contactos e calendários.
@@ -258,3 +386,4 @@ Se estiver a usar um anfitrião Linux, siga estes passos no seu terminal para in
       * Execute a aplicação: `docker compose up -d`.
 
 5.  **Explore:** Verifique a documentação para o número da porta padrão. Para o Jellyfin, é `8096`. Abra o seu navegador em `http://localhost:8096` e siga o assistente de configuração para o seu novo serviço\!
+

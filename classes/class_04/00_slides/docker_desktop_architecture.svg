@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 860" width="1800" height="860">
+  <defs>
+    <style>
+      .title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 28px; font-weight: 700; fill: #0F172A; text-anchor: middle; }
+      .box-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 22px; font-weight: 700; text-anchor: middle; }
+      .box-sub { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 15px; font-weight: 600; text-anchor: middle; }
+    </style>
+  </defs>
+
+  <rect width="1800" height="860" fill="#FFFFFF"/>
+
+  <text x="900" y="50" class="title">Execução de Contentores Linux: Linux Nativo vs. macOS &amp; Windows</text>
+
+  <!-- ==================== LEFT: NATIVE LINUX ==================== -->
+  <g transform="translate(60, 100)">
+    <rect width="780" height="710" rx="14" fill="#F0FDF4" stroke="#86EFAC" stroke-width="2.5"/>
+    <rect width="780" height="60" rx="14" fill="#DCFCE7"/>
+    <text x="390" y="40" class="box-title" fill="#14532D">Linux Nativo (Ubuntu, Debian, Fedora)</text>
+
+    <!-- Containers -->
+    <g transform="translate(40, 90)">
+      <rect x="0" y="0" width="215" height="140" rx="8" fill="#D3EFD6" stroke="#86EFAC" stroke-width="2"/>
+      <text x="107" y="60" class="box-title" fill="#14532D" font-size="18px">Contentor 1</text>
+      <text x="107" y="90" class="box-sub" fill="#166534">Processo no Host</text>
+
+      <rect x="240" y="0" width="215" height="140" rx="8" fill="#D3EFD6" stroke="#86EFAC" stroke-width="2"/>
+      <text x="347" y="60" class="box-title" fill="#14532D" font-size="18px">Contentor 2</text>
+      <text x="347" y="90" class="box-sub" fill="#166534">Processo no Host</text>
+
+      <rect x="480" y="0" width="215" height="140" rx="8" fill="#D3EFD6" stroke="#86EFAC" stroke-width="2"/>
+      <text x="587" y="60" class="box-title" fill="#14532D" font-size="18px">Contentor 3</text>
+      <text x="587" y="90" class="box-sub" fill="#166534">Processo no Host</text>
+    </g>
+
+    <!-- Container Engine -->
+    <rect x="40" y="270" width="700" height="90" rx="8" fill="#E0F2FE" stroke="#38BDF8" stroke-width="2"/>
+    <text x="390" y="315" class="box-title" fill="#0369A1">MOTOR DE CONTENTORES (Docker / Podman)</text>
+    <text x="390" y="340" class="box-sub" fill="#0284C7">Gere contentores diretamente no SO anfitrião</text>
+
+    <!-- Linux Kernel -->
+    <rect x="40" y="390" width="700" height="120" rx="8" fill="#CAD7EE" stroke="#93C5FD" stroke-width="2"/>
+    <text x="390" y="445" class="box-title" fill="#1E3A8A" font-size="22px">KERNEL LINUX DO ANFITRIÃO</text>
+    <text x="390" y="480" class="box-sub" fill="#1E40AF">Namespaces e cgroups NATIVOS (Sem camada de virtualização!)</text>
+
+    <!-- Physical Hardware -->
+    <rect x="40" y="540" width="700" height="130" rx="8" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="2"/>
+    <text x="390" y="605" class="box-title" fill="#1E293B">HARDWARE FÍSICO (x86_64, ARM)</text>
+    <text x="390" y="635" class="box-sub" fill="#475569">Desempenho 100% nativo · Mínimo consumo de RAM</text>
+  </g>
+
+  <!-- ==================== RIGHT: MACOS / WINDOWS ==================== -->
+  <g transform="translate(900, 100)">
+    <rect width="840" height="710" rx="14" fill="#F8FAFC" stroke="#94A3B8" stroke-width="2.5"/>
+    <rect width="840" height="60" rx="14" fill="#E2E8F0"/>
+    <text x="420" y="40" class="box-title" fill="#1E293B">macOS &amp; Windows (Docker Desktop / Podman)</text>
+
+    <!-- Containers -->
+    <g transform="translate(50, 90)">
+      <rect x="0" y="0" width="225" height="130" rx="8" fill="#D3EFD6" stroke="#86EFAC" stroke-width="2"/>
+      <text x="112" y="55" class="box-title" fill="#14532D" font-size="18px">Contentor 1</text>
+      <text x="112" y="85" class="box-sub" fill="#166534">Processo na VM Linux</text>
+
+      <rect x="255" y="0" width="225" height="130" rx="8" fill="#D3EFD6" stroke="#86EFAC" stroke-width="2"/>
+      <text x="367" y="55" class="box-title" fill="#14532D" font-size="18px">Contentor 2</text>
+      <text x="367" y="85" class="box-sub" fill="#166534">Processo na VM Linux</text>
+
+      <rect x="510" y="0" width="225" height="130" rx="8" fill="#D3EFD6" stroke="#86EFAC" stroke-width="2"/>
+      <text x="622" y="55" class="box-title" fill="#14532D" font-size="18px">Contentor 3</text>
+      <text x="622" y="85" class="box-sub" fill="#166534">Processo na VM Linux</text>
+    </g>
+
+    <!-- Embedded Linux VM Box -->
+    <rect x="30" y="240" width="780" height="250" rx="10" fill="#FEF3C7" stroke="#FCD34D" stroke-width="2.5"/>
+    <text x="420" y="275" font-family="sans-serif" font-size="18px" font-weight="700" fill="#92400E" text-anchor="middle">
+      MÁQUINA VIRTUAL LINUX LEVE (Gerida em segundo plano: Docker Desktop / Podman)
+    </text>
+
+    <rect x="50" y="295" width="740" height="70" rx="6" fill="#E0F2FE" stroke="#38BDF8" stroke-width="1.5"/>
+    <text x="420" y="335" class="box-title" fill="#0369A1" font-size="18px">MOTOR DE CONTENTORES (Docker / Podman dentro da VM)</text>
+
+    <rect x="50" y="380" width="740" height="90" rx="6" fill="#CAD7EE" stroke="#93C5FD" stroke-width="1.5"/>
+    <text x="420" y="420" class="box-title" fill="#1E3A8A" font-size="19px">KERNEL LINUX CONVIDADO (GUEST KERNEL)</text>
+    <text x="420" y="450" class="box-sub" fill="#1E40AF">Fornece os Namespaces e cgroups que o macOS/Windows não possuem!</text>
+
+    <!-- Host Hypervisor & OS -->
+    <rect x="30" y="510" width="780" height="75" rx="8" fill="#E2E8F0" stroke="#94A3B8" stroke-width="2"/>
+    <text x="420" y="545" class="box-title" fill="#0F172A" font-size="19px">HIPERVISOR: Apple Virtualization.framework / WSL2 (Windows)</text>
+    <text x="420" y="570" class="box-sub" fill="#475569">Ponte com a Aula 03 (Virtualização de Sistemas)</text>
+
+    <!-- Host Hardware -->
+    <rect x="30" y="605" width="780" height="75" rx="8" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="2"/>
+    <text x="420" y="645" class="box-title" fill="#1E293B">HARDWARE ANFITRIÃO (Apple Silicon, Intel, AMD)</text>
+  </g>
+</svg>

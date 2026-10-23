@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 880" width="1800" height="880">
+  <defs>
+    <style>
+      .col-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 26px; font-weight: 800; text-anchor: middle; }
+      .section-hdr { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 19px; font-weight: 800; }
+      .box-desc { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 17px; fill: #1E293B; }
+      .code-tag { font-family: "Fira Code", monospace; font-size: 16px; font-weight: 700; }
+    </style>
+  </defs>
+
+  <rect width="1800" height="880" fill="#FFFFFF"/>
+
+  <!-- ==================== COLUMN 1: Writable Layer ==================== -->
+  <g transform="translate(60, 30)">
+    <rect width="520" height="820" rx="14" fill="#FEF2F2" stroke="#FCA5A5" stroke-width="2.5"/>
+    <rect width="520" height="68" rx="14" fill="#FEE2E2"/>
+    <text x="260" y="44" class="col-title" fill="#991B1B">1. Camada de Escrita (R/W)</text>
+
+    <!-- Top Card -->
+    <rect x="30" y="90" width="460" height="155" rx="10" fill="#FFFFFF" stroke="#F87171" stroke-width="1.5"/>
+    <text x="260" y="132" font-family="sans-serif" font-size="22px" font-weight="800" fill="#DC2626" text-anchor="middle">Interno ao Contentor</text>
+    <text x="260" y="162" font-family="sans-serif" font-size="16px" fill="#7F1D1D" text-anchor="middle">Camada temporária do sistema de ficheiros</text>
+    <rect x="130" y="185" width="260" height="36" rx="6" fill="#FEE2E2"/>
+    <text x="260" y="209" font-family="sans-serif" font-size="15px" font-weight="800" fill="#B91C1C" text-anchor="middle">DADOS NÃO PERSISTENTES</text>
+
+    <!-- Content Sections -->
+    <g transform="translate(35, 275)">
+      <text x="0" y="0" class="section-hdr" fill="#991B1B">Comportamento:</text>
+      <text x="0" y="32" class="box-desc">• Criada ao iniciar o contentor</text>
+      <text x="0" y="64" class="box-desc">• Sobrevive a <tspan class="code-tag">docker stop</tspan> e <tspan class="code-tag">start</tspan></text>
+      <text x="0" y="96" class="box-desc" fill="#DC2626" font-weight="700">• ELIMINADA com <tspan class="code-tag">docker rm</tspan> ou <tspan class="code-tag">compose down</tspan></text>
+
+      <text x="0" y="160" class="section-hdr" fill="#991B1B">Casos de Uso:</text>
+      <text x="0" y="192" class="box-desc">• Ficheiros temporários e scratch</text>
+      <text x="0" y="224" class="box-desc">• Logs de curta duração em consola</text>
+      <text x="0" y="256" class="box-desc">• Contentores 100% stateless (sem estado)</text>
+    </g>
+
+    <!-- Bottom Card -->
+    <rect x="30" y="700" width="460" height="90" rx="10" fill="#FEE2E2" stroke="#FCA5A5" stroke-width="1.5"/>
+    <text x="260" y="740" font-family="sans-serif" font-size="19px" font-weight="800" fill="#991B1B" text-anchor="middle">Sem Configuração Prévia</text>
+    <text x="260" y="768" font-family="sans-serif" font-size="15px" fill="#7F1D1D" text-anchor="middle">Comportamento por omissão do motor Docker</text>
+  </g>
+
+  <!-- ==================== COLUMN 2: Bind Mounts ==================== -->
+  <g transform="translate(640, 30)">
+    <rect width="520" height="820" rx="14" fill="#F0FDF4" stroke="#86EFAC" stroke-width="2.5"/>
+    <rect width="520" height="68" rx="14" fill="#DCFCE7"/>
+    <text x="260" y="44" class="col-title" fill="#166534">2. Bind Mounts (Pastas Locais)</text>
+
+    <!-- Top Card -->
+    <rect x="30" y="90" width="460" height="155" rx="10" fill="#FFFFFF" stroke="#4ADE80" stroke-width="1.5"/>
+    <text x="260" y="130" font-family="sans-serif" font-size="22px" font-weight="800" fill="#15803D" text-anchor="middle">Mapeamento Direto</text>
+    <rect x="50" y="148" width="420" height="40" rx="6" fill="#F0FDF4" stroke="#86EFAC"/>
+    <text x="260" y="174" font-family="Fira Code, monospace" font-size="16px" font-weight="700" fill="#14532D" text-anchor="middle">./my-website : /usr/share/nginx/html</text>
+    <text x="260" y="215" font-family="sans-serif" font-size="15px" fill="#166534" text-anchor="middle">Pasta do anfitrião montada no contentor</text>
+
+    <!-- Content Sections -->
+    <g transform="translate(35, 275)">
+      <text x="0" y="0" class="section-hdr" fill="#166534">Comportamento:</text>
+      <text x="0" y="32" class="box-desc">• Ficheiros residem no disco da máquina anfitriã</text>
+      <text x="0" y="64" class="box-desc">• Edições locais refletem-se instantaneamente</text>
+      <text x="0" y="96" class="box-desc">• Totalmente independente do ciclo de vida</text>
+
+      <text x="0" y="160" class="section-hdr" fill="#166534">Casos de Uso:</text>
+      <text x="0" y="192" class="box-desc">• Desenvolvimento web com código ao vivo</text>
+      <text x="0" y="224" class="box-desc">• Injeção de ficheiros de configuração (ex: default.conf)</text>
+      <text x="0" y="256" class="box-desc">• Partilha bidirecional Host ↔ Contentor</text>
+    </g>
+
+    <!-- Bottom Card -->
+    <rect x="30" y="700" width="460" height="90" rx="10" fill="#DCFCE7" stroke="#86EFAC" stroke-width="1.5"/>
+    <text x="260" y="738" font-family="Fira Code, monospace" font-size="17px" font-weight="800" fill="#14532D" text-anchor="middle">volumes: [ "./site:/var/www" ]</text>
+    <text x="260" y="768" font-family="sans-serif" font-size="15px" fill="#15803D" text-anchor="middle">Sintaxe standard no compose.yml</text>
+  </g>
+
+  <!-- ==================== COLUMN 3: Named Volumes ==================== -->
+  <g transform="translate(1220, 30)">
+    <rect width="520" height="820" rx="14" fill="#EFF6FF" stroke="#93C5FD" stroke-width="2.5"/>
+    <rect width="520" height="68" rx="14" fill="#DBEAFE"/>
+    <text x="260" y="44" class="col-title" fill="#1E40AF">3. Volumes Nomeados (Geridos)</text>
+
+    <!-- Top Card -->
+    <rect x="30" y="90" width="460" height="155" rx="10" fill="#FFFFFF" stroke="#60A5FA" stroke-width="1.5"/>
+    <text x="260" y="130" font-family="sans-serif" font-size="22px" font-weight="800" fill="#1D4ED8" text-anchor="middle">Área Gerida pelo Docker</text>
+    <rect x="45" y="148" width="430" height="40" rx="6" fill="#EFF6FF" stroke="#93C5FD"/>
+    <text x="260" y="174" font-family="Fira Code, monospace" font-size="15px" font-weight="700" fill="#1E40AF" text-anchor="middle">/var/lib/docker/volumes/dados_db/_data</text>
+    <text x="260" y="215" font-family="sans-serif" font-size="15px" fill="#2563EB" text-anchor="middle">Isolado da árvore de ficheiros do utilizador</text>
+
+    <!-- Content Sections -->
+    <g transform="translate(35, 275)">
+      <text x="0" y="0" class="section-hdr" fill="#1E40AF">Comportamento:</text>
+      <text x="0" y="32" class="box-desc">• Docker gere localização, permissões e I/O</text>
+      <text x="0" y="64" class="box-desc">• Pode ser partilhado por múltiplos contentores</text>
+      <text x="0" y="96" class="box-desc">• Sobrevive a <tspan class="code-tag">docker compose down</tspan></text>
+
+      <text x="0" y="160" class="section-hdr" fill="#1E40AF">Casos de Uso:</text>
+      <text x="0" y="192" class="box-desc">• Bases de dados em produção (PostgreSQL, MySQL)</text>
+      <text x="0" y="224" class="box-desc">• Armazenamento persistente seguro e performante</text>
+      <text x="0" y="256" class="box-desc">• Backups automatizados através do motor Docker</text>
+    </g>
+
+    <!-- Bottom Card -->
+    <rect x="30" y="700" width="460" height="90" rx="10" fill="#DBEAFE" stroke="#93C5FD" stroke-width="1.5"/>
+    <text x="260" y="738" font-family="Fira Code, monospace" font-size="16px" font-weight="800" fill="#1E40AF" text-anchor="middle">volumes: [ "dados_db:/var/lib/mysql" ]</text>
+    <text x="260" y="768" font-family="sans-serif" font-size="15px" fill="#2563EB" text-anchor="middle">Requer secção de topo volumes: { dados_db: }</text>
+  </g>
+</svg>

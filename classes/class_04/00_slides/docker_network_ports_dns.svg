@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 860" width="1800" height="860">
+  <defs>
+    <style>
+      .box-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 24px; font-weight: 800; text-anchor: middle; }
+      .box-sub { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 16px; font-weight: 600; text-anchor: middle; }
+      .desc-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 16px; text-anchor: middle; }
+      .code { font-family: "Fira Code", monospace; font-size: 17px; font-weight: 700; }
+    </style>
+  </defs>
+
+  <rect width="1800" height="860" fill="#FFFFFF"/>
+
+  <!-- ==================== OUTSIDE WORLD: USER / BROWSER ==================== -->
+  <g transform="translate(30, 160)">
+    <rect width="270" height="360" rx="14" fill="#F8FAFC" stroke="#94A3B8" stroke-width="2.5"/>
+    <rect width="270" height="60" rx="14" fill="#E2E8F0"/>
+    <text x="135" y="38" class="box-title" fill="#0F172A">Utilizador / Browser</text>
+    <text x="135" y="95" class="box-sub" fill="#475569">Mundo Exterior (Cliente)</text>
+
+    <!-- Browser Address Bar -->
+    <rect x="15" y="125" width="240" height="58" rx="8" fill="#0F172A"/>
+    <text x="135" y="161" class="code" fill="#38BDF8" text-anchor="middle">http://localhost:8080</text>
+
+    <!-- Context Info -->
+    <rect x="15" y="215" width="240" height="115" rx="8" fill="#FFFFFF" stroke="#CBD5E1"/>
+    <text x="135" y="252" font-family="sans-serif" font-size="16.5px" font-weight="700" fill="#0F172A" text-anchor="middle">Acesso ao Porto 8080</text>
+    <text x="135" y="280" font-family="sans-serif" font-size="15.5px" fill="#475569" text-anchor="middle">da Máquina Anfitriã (Host)</text>
+    <text x="135" y="308" font-family="sans-serif" font-size="14.5px" font-weight="600" fill="#0284C7" text-anchor="middle">Tráfego HTTP Externo</text>
+  </g>
+
+  <!-- Arrow from Browser to Host Port -->
+  <line x1="300" y1="340" x2="430" y2="340" stroke="#0284C7" stroke-width="4"/>
+  <polygon points="425,330 445,340 425,350" fill="#0284C7"/>
+  <rect x="315" y="305" width="112" height="28" rx="14" fill="#0284C7"/>
+  <text x="371" y="324" font-family="sans-serif" font-size="13.5px" font-weight="800" fill="#FFFFFF" text-anchor="middle">Pedido HTTP</text>
+
+  <!-- ==================== HOST MACHINE BOUNDARY ==================== -->
+  <rect x="445" y="40" width="1315" height="780" rx="16" fill="#F8FAFC" stroke="#94A3B8" stroke-width="2.5"/>
+  <text x="1102" y="82" font-family="sans-serif" font-size="25px" font-weight="800" fill="#1E293B" text-anchor="middle">MÁQUINA ANFITRIÃ (HOST)</text>
+
+  <!-- ==================== DOCKER PRIVATE BRIDGE NETWORK ==================== -->
+  <rect x="745" y="115" width="990" height="675" rx="14" fill="#F0FDF4" stroke="#22C55E" stroke-width="2.5" stroke-dasharray="10,6"/>
+  <text x="1240" y="152" font-family="sans-serif" font-size="21px" font-weight="800" fill="#15803D" text-anchor="middle">REDE PRIVADA DOCKER (Bridge Network · 172.20.0.0/16)</text>
+
+  <!-- ==================== HOST PORT FORWARDING (NAT) ==================== -->
+  <g transform="translate(470, 230)">
+    <rect width="215" height="220" rx="12" fill="#E0F2FE" stroke="#38BDF8" stroke-width="2.5"/>
+    <text x="107" y="40" class="box-title" fill="#0369A1" font-size="20px">Porto do Anfitrião</text>
+    <rect x="25" y="65" width="165" height="52" rx="8" fill="#0284C7"/>
+    <text x="107" y="98" class="code" fill="#FFFFFF" font-size="21px" text-anchor="middle">8080 : 80</text>
+    
+    <text x="107" y="145" class="box-sub" fill="#0369A1">Regra de NAT no Kernel</text>
+    <rect x="20" y="165" width="175" height="34" rx="6" fill="#BAE6FD"/>
+    <text x="107" y="188" font-family="Fira Code, monospace" font-size="15px" font-weight="800" fill="#0C4A6E" text-anchor="middle">-p 8080:80</text>
+  </g>
+
+  <!-- Arrow from Host Port to Web Container (Drawn over Bridge Network) -->
+  <line x1="685" y1="340" x2="770" y2="340" stroke="#0284C7" stroke-width="4"/>
+  <polygon points="765,330 782,340 765,350" fill="#0284C7"/>
+  <rect x="692" y="306" width="76" height="26" rx="6" fill="#0369A1"/>
+  <text x="730" y="324" font-family="sans-serif" font-size="13px" font-weight="800" fill="#FFFFFF" text-anchor="middle">Porta 80</text>
+
+  <!-- ==================== CONTAINER 1: WEB (NGINX / APP) ==================== -->
+  <g transform="translate(780, 180)">
+    <rect width="405" height="580" rx="12" fill="#FFFFFF" stroke="#0284C7" stroke-width="2.5"/>
+    <rect width="405" height="68" rx="12" fill="#E0F2FE"/>
+    <text x="202" y="36" class="box-title" fill="#0369A1">Serviço: web</text>
+    <text x="202" y="58" class="box-sub" fill="#0284C7">Aplicação Web / NGINX</text>
+
+    <!-- Network Info -->
+    <rect x="25" y="85" width="355" height="65" rx="8" fill="#F8FAFC" stroke="#E2E8F0"/>
+    <text x="202" y="112" class="desc-text" fill="#0369A1">IP Privado: <tspan class="code">172.20.0.2</tspan></text>
+    <text x="202" y="137" class="desc-text" font-weight="700" fill="#0284C7">Porta Interna: 80</text>
+
+    <!-- Role Card -->
+    <rect x="25" y="165" width="355" height="150" rx="8" fill="#F8FAFC" stroke="#CBD5E1"/>
+    <text x="202" y="200" font-family="sans-serif" font-size="17.5px" font-weight="800" fill="#0F172A" text-anchor="middle">Servidor de Aplicação</text>
+    <text x="202" y="235" class="desc-text" fill="#334155">• Recebe pedidos HTTP do exterior</text>
+    <text x="202" y="265" class="desc-text" fill="#334155">• Processa a lógica e páginas web</text>
+    <text x="202" y="295" class="desc-text" fill="#334155">• Consulta a base de dados interna</text>
+
+    <!-- Database Callout via DNS -->
+    <rect x="25" y="330" width="355" height="120" rx="8" fill="#F0FDFA" stroke="#99F6E4" stroke-width="1.5"/>
+    <text x="202" y="360" font-family="sans-serif" font-size="15.5px" font-weight="800" fill="#0F766E" text-anchor="middle">Comunicação com a Base de Dados:</text>
+    <text x="202" y="388" class="desc-text" fill="#134E4A">Usa o nome do serviço via DNS:</text>
+    <rect x="67" y="400" width="270" height="38" rx="6" fill="#CCFBF1"/>
+    <text x="202" y="425" class="code" fill="#0F766E" font-size="16.5px" text-anchor="middle">postgres://db:5432</text>
+
+    <!-- Exposed Port Badge -->
+    <rect x="25" y="480" width="355" height="70" rx="8" fill="#DCFCE7" stroke="#86EFAC"/>
+    <text x="202" y="510" font-family="sans-serif" font-size="15.5px" font-weight="800" fill="#15803D" text-anchor="middle">PORTA 80 EXPOSTA AO HOST</text>
+    <text x="202" y="535" font-family="sans-serif" font-size="14.5px" fill="#166534" text-anchor="middle">Acessível pelo browser em :8080</text>
+  </g>
+
+  <!-- ==================== COMMUNICATION ARROW (WEB -> DB) ==================== -->
+  <line x1="1185" y1="465" x2="1315" y2="465" stroke="#16A34A" stroke-width="4"/>
+  <polygon points="1310,455 1330,465 1310,475" fill="#16A34A"/>
+
+  <!-- DNS Resolver Badge on Arrow -->
+  <g transform="translate(1202, 345)">
+    <rect width="112" height="82" rx="8" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1.5"/>
+    <text x="56" y="27" font-family="sans-serif" font-size="14px" font-weight="800" fill="#92400E" text-anchor="middle">DNS Interno</text>
+    <line x1="10" y1="36" x2="102" y2="36" stroke="#FDE68A" stroke-width="1.5"/>
+    <text x="56" y="55" font-family="Fira Code, monospace" font-size="14.5px" font-weight="800" fill="#B45309" text-anchor="middle">db ➔ .3</text>
+    <text x="56" y="71" font-family="sans-serif" font-size="11.5px" fill="#92400E" text-anchor="middle">(automático)</text>
+  </g>
+
+  <!-- ==================== CONTAINER 2: DB (POSTGRESQL) ==================== -->
+  <g transform="translate(1330, 180)">
+    <rect width="385" height="580" rx="12" fill="#FFFFFF" stroke="#6366F1" stroke-width="2.5"/>
+    <rect width="385" height="68" rx="12" fill="#EEF2FF"/>
+    <text x="192" y="36" class="box-title" fill="#4338CA">Serviço: db</text>
+    <text x="192" y="58" class="box-sub" fill="#4F46E5">Base de Dados / PostgreSQL</text>
+
+    <!-- Network Info -->
+    <rect x="25" y="85" width="335" height="65" rx="8" fill="#F8FAFC" stroke="#E2E8F0"/>
+    <text x="192" y="112" class="desc-text" fill="#4338CA">IP Privado: <tspan class="code">172.20.0.3</tspan></text>
+    <text x="192" y="137" class="desc-text" font-weight="700" fill="#4F46E5">Porta Interna: 5432</text>
+
+    <!-- Role Card -->
+    <rect x="25" y="165" width="335" height="150" rx="8" fill="#F8FAFC" stroke="#CBD5E1"/>
+    <text x="192" y="200" font-family="sans-serif" font-size="17.5px" font-weight="800" fill="#0F172A" text-anchor="middle">Serviço de Persistência</text>
+    <text x="192" y="235" class="desc-text" fill="#334155">• Armazena tabelas e registos SQL</text>
+    <text x="192" y="265" class="desc-text" fill="#334155">• Responde apenas ao contentor web</text>
+    <text x="192" y="295" class="desc-text" fill="#334155">• Dados guardados em Volume gerido</text>
+
+    <!-- Storage Volume callout -->
+    <rect x="25" y="330" width="335" height="120" rx="8" fill="#EFF6FF" stroke="#93C5FD" stroke-width="1.5"/>
+    <text x="192" y="360" font-family="sans-serif" font-size="15.5px" font-weight="800" fill="#1D4ED8" text-anchor="middle">Persistência com Volume:</text>
+    <text x="192" y="388" class="desc-text" fill="#1E40AF">Isolado e protegido do exterior</text>
+    <rect x="52" y="400" width="280" height="38" rx="6" fill="#DBEAFE"/>
+    <text x="192" y="425" class="code" fill="#1E40AF" font-size="15.5px" text-anchor="middle">volume: dados_db</text>
+
+    <!-- Isolation Security Card -->
+    <rect x="25" y="480" width="335" height="70" rx="8" fill="#FEE2E2" stroke="#FCA5A5"/>
+    <text x="192" y="510" font-family="sans-serif" font-size="15.5px" font-weight="800" fill="#DC2626" text-anchor="middle">SEM PORTAS EXPOSTAS AO HOST!</text>
+    <text x="192" y="535" font-family="sans-serif" font-size="14.5px" font-weight="600" fill="#991B1B" text-anchor="middle">100% Protegido e Invisível da Internet</text>
+  </g>
+</svg>

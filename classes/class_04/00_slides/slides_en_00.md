@@ -1,461 +1,699 @@
 ---
-title: Containers
-subtitle: Introdução Engenharia Informática
-author: Mário Antunes
+title: 47138 - Introduction to Computer Engineering
+subtitle: "Containers: Architecture, Docker & Docker Compose"
 institute: Universidade de Aveiro
-date: October 13, 2025
+date: October 19, 2026
 colorlinks: true
 highlight-style: tango
 mainfont: NotoSans
+fontsize: 9pt
+titlegraphic: "../../../resources/ua_logo2.png"
+titlegraphicoptions: "width=6.5cm"
 mainfontfallback:
   - "NotoColorEmoji:mode=harf"
+  - "DejaVu Sans:"
 header-includes:
- - \usetheme[sectionpage=none,numbering=fraction,progressbar=frametitle]{metropolis}
+ - \usetheme[sectionpage=none,numbering=fraction,progressbar=none]{metropolis}
+ - \definecolor{uagreen}{HTML}{92D400}
+ - \setbeamercolor{title separator}{fg=uagreen}
+ - \setbeamersize{text margin left=1.5em, text margin right=1.5em}
+ - |
+    \setbeamertemplate{title graphic}{
+      \begin{tikzpicture}[remember picture,overlay]
+        \node[anchor=north west, xshift=0cm, yshift=-0cm] at (current page.north west) {
+          \inserttitlegraphic
+        };
+        \node[anchor=south east, xshift=-0.2cm, yshift=0.6cm, opacity=0.08] at (current page.south east) {
+          \includegraphics[width=4.8cm]{../../../resources/_deti_black.png}
+        };
+      \end{tikzpicture}
+    }
+ - \usepackage{tikz}
+ - \usetikzlibrary{positioning,arrows.meta,calc}
  - \usepackage{longtable,booktabs}
  - \usepackage{etoolbox}
+ - \BeforeBeginEnvironment{Shaded}{\vspace{1.0em}}
+ - \AfterEndEnvironment{Shaded}{\vspace{0.6em}}
  - \AtBeginEnvironment{longtable}{\tiny}
+ - \usepackage{caption}
+ - \captionsetup[longtable]{labelformat=empty,skip=0pt}
  - \AtBeginEnvironment{cslreferences}{\tiny}
  - \AtBeginEnvironment{Shaded}{\tiny}
  - \AtBeginEnvironment{verbatim}{\tiny}
  - \setmonofont[Contextuals={Alternate}]{FiraCodeNerdFontMono-Retina}
 ---
 
-## Introduction to Containers
+## Session Overview
 
-### A Modern Way to Package and Run Applications
-
------
-
-## Terminology 📖
-
-Before we dive in, let's define some key terms.
-
-* **Image:** A read-only, inert template containing an application and its dependencies. Think of it as a **blueprint** or a class in object-oriented programming.
-* **Container / Instance:** A runnable **instance** of an image. This is the actual, living application (like an object created from a class). The terms are often used interchangeably.
-* **Registry:** A storage system for container images. **Docker Hub** is a popular public registry.
-* **Docker Engine:** The underlying client-server application that builds and runs containers.
-* **Volume:** A mechanism for persisting data outside a container's ephemeral filesystem.
+  * **Part I — Isolation Fundamentals & Architecture:** The portability challenge, OS-level virtualization, namespaces, cgroups, and non-Linux host execution.
+  * **Part II — From Kernel to Tools: Ecosystem & OCI:** Evolution from LXC to Docker, OCI standardization (`runc`, open specifications), and Podman.
+  * **Part III — Images, Storage & Networking:** Terminology, tags, lifecycle, layers (Copy-on-Write), volumes, and DNS-enabled networking.
+  * **Part IV — Docker in Practice & `Dockerfile` Anatomy:** Essential CLI commands, instructions, exec/shell forms, and `CMD` vs. `ENTRYPOINT`.
+  * **Part V — Local Orchestration with Docker Compose:** Syntax of `compose.yml`, management commands, and multi-service architectural patterns.
 
 -----
 
-## The Problem: "It Works on My Machine\!" 🤔
+\vspace{5em}
 
-Every developer has faced this classic problem:
-
-  * Your application works perfectly on your laptop (which has Python 3.9, a specific library version, and runs Debian).
-  * When you give it to a colleague (who has Python 3.8 and runs macOS) or deploy it to a server (running an older OS), it fails.
-
-These differences in environments create a massive challenge for software portability.
+\begin{center}
+{\LARGE \textbf{Part I: Fundamentals \& Architecture}}
+\end{center}
 
 -----
 
-## The Solution: Containers 📦
+## The Software Portability Challenge
 
-A **container** is a standard, executable unit of software that packages up an application's code along with all its runtime dependencies. 
-This package is **isolated**, ensuring the application runs uniformly and consistently everywhere.
+Heterogeneous configurations across development, staging, and production environments pose a major software engineering challenge:
 
-**Analogy:** A container is like a standardized shipping container. 
-It doesn't matter what's inside; it can be handled by any compatible ship (host machine).
+  * **Development Environment:**
+      * Local configuration with specific interpreter versions (e.g., Python 3.11), dynamic shared libraries, and local environment variables.
+  * **Testing or Production Environment:**
+      * Operating systems with different versions of system shared libraries or restrictive security policies.
+      * Risk of runtime failures caused by dependency incompatibilities (*dependency hell*).
 
------
+\vspace{1em}
 
-## How Isolation is Achieved: Namespaces
-
-Containers run at **full hardware** speed because they are just isolated processes on the host's kernel. 
-The isolation is provided by **Linux Namespaces**.
-
-Namespaces virtualize system resources for a process, making it seem like it has its own private copy. 
-Key namespaces include:
-
-  * **PID:** Isolates process IDs. Inside the container, your app is PID 1.
-  * **NET:** Provides an isolated network stack (IP addresses, routing tables).
-  * **MNT:** Isolates filesystem mount points.
-
-**Analogy:** Namespaces are like the walls, private mailboxes, and unique door keys for each apartment in a building.
+\begin{center}
+\textbf{It would be desirable to package the application and all its dependencies into a standardized artifact, ensuring deterministic and reproducible execution.}
+\end{center}
 
 -----
 
-## How Resources are Managed: Cgroups
+## Virtual Machines as a Solution?
 
-To prevent one container from consuming all system resources, the Linux kernel uses **Control Groups (cgroups)**.
+The isolation provided by Virtual Machines incurs substantial overhead when running individual applications:
 
-Cgroups allow the host to limit and monitor the resources a container can use, such as:
+  * **Hardware Virtualization Characteristics:**
+      * Full hardware-level isolation via a hypervisor.
+      * Dedicated guest kernel and operating system per virtual machine.
+  * **Limitations for Application Workloads:**
+      * **Overhead:** Static allocation of gigabytes of RAM and disk per instance.
+      * **Redundancy:** Duplication of complete guest OS stacks to run a single service.
+      * **Latency:** Slow boot times (minutes), hindering dynamic horizontal scaling.
 
-  * CPU usage (e.g., limit to 1 CPU core).
-  * Memory (e.g., limit to 512 MB of RAM).
-  * Disk I/O bandwidth.
+\vspace{1em}
 
-**Analogy:** Cgroups are like the utility meters and circuit breakers for each apartment, ensuring no single tenant can use all the building's water or electricity.
+\begin{center}
+\textbf{Hardware-level virtualization is disproportionately heavy for isolating and distributing lightweight individual applications.}
+\end{center}
 
 -----
 
-## VMs vs. Containers #1
+## The Solution: Containers
 
-  * **Virtual Machines (VMs)** virtualize the **hardware**. Each VM includes a full copy of a guest OS and kernel. They are heavyweight and take minutes to boot.
-  * **Containers** virtualize the **operating system**. They share the host system's kernel and are lightweight, booting in seconds.
+The answer lies in **operating system-level virtualization**:
+
+  * **Container Concept:** A standardized software unit packaging an application and all its dependencies.
+  * **Paradigm Shift:**
+      * Shares the **host OS kernel**, without virtualizing underlying hardware.
+      * Process isolation is enforced directly **by the kernel itself** (via *namespaces* and *cgroups*).
+  * **Deterministic Portability:** Identical execution across developer workstations, CI/CD testing runners, or cloud production clusters.
+
+\vspace{1em}
+
+\begin{center}
+\textbf{Standard shipping containers decoupled cargo from transportation vehicles (ships, trains, trucks). Software containers decouple applications from host operating systems.}
+\end{center}
 
 -----
 
-## VMs vs. Containers #2
+## Comparative Architecture: VMs vs. Containers
 
-| Feature | Virtual Machines (VMs) | Containers |
+\begin{center}
+\includegraphics[width=0.98\linewidth,keepaspectratio]{vm_vs_container_architecture.png}
+\end{center}
+
+-----
+
+## Systematic Comparison: VMs vs. Containers
+
+| Technical Dimension | Virtual Machines (VMs) | Containers |
 | :--- | :--- | :--- |
-| **Analogy** | 🏡 **Houses:** Fully self-contained. | 🏢 **Apartments:** Share building infrastructure. |
-| **Level of Abstraction** | **Hardware Virtualization** | **OS Virtualization** |
-| **Size** | **Gigabytes (GB)** | **Megabytes (MB)** |
-| **Startup Time** | **Minutes** | **Seconds or less** |
-| **Performance Overhead** | Low to Medium | Very Low (Near-native) |
-| **Resource Usage** | Higher (Full OS per VM) | Lower (Shared OS Kernel) |
-| **Isolation** | **Strong** (Hardware level) | **Good** (Process level) |
-| **Portability** | Portable (but large) | **Extremely Portable** |
+| **Abstraction Level** | **Hardware Virtualization** | **OS Virtualization** (Processes) |
+| **System Kernel** | Dedicated guest kernel per VM | **Shared host OS kernel** |
+| **Memory Footprint (RAM)** | High (static allocation to guest OS) | **Minimal** (only what the app consumes) |
+| **Image Size** | Gigabytes (GB) | Megabytes (MB) |
+| **Startup Time** | Tens of seconds to minutes | **Milliseconds to seconds** |
+| **Performance Overhead** | Low to moderate (hypervisor trap latency) | **Near-native** (no hardware mediation) |
+| **Isolation Boundary** | Very strong (hardware / CPU rings) | Strong (kernel isolation mechanisms) |
+| **Typical Use Case** | Multi-OS environments, strict isolation | Backends, Microservices, APIs, Kubernetes |
 
 -----
 
-## The Container Image & Its Layers 📜
+## Kernel Mechanisms: Linux Namespaces
 
-An **image** is a read-only template built from a series of stacked **layers**. 
-Each instruction in a `Dockerfile` creates a new layer. 
+**Linux Namespaces** restrict what a process can **see** within the operating system:
 
-This makes builds fast and disk usage efficient, as multiple images can share common base layers.
-
------
-
-## Persistent Data: Volumes 💾
-
-By default, a container's filesystem is **ephemeral** (deleted when the container stops). 
-
-To save data permanently, you use **volumes**, which map a *directory* inside the container to a *directory* on the host machine.
+  * **PID (Process ID):** Isolates the process table (application runs as **PID 1** inside the container).
+  * **NET (Network):** Private virtual network interfaces (`eth0`), routing tables, and independent port namespaces.
+  * **MNT (Mount):** Isolated mount points with a dedicated root filesystem (`/`).
+  * **UTS (Hostnames):** Independent hostname and domain name assignments.
+  * **USER:** User ID mappings (e.g., `root` inside the container maps to an unprivileged user on the host).
+  * **IPC (Inter-Process Communication):** Isolates shared memory segments and message queues between processes.
 
 -----
 
-## Container Networking & DNS
+## Isolation in Action: Namespaces Mapping
 
-The container engine creates a **virtual bridge network**. Containers on the same network get a private IP and can communicate.
-
-  * **Port Mapping:** To expose a container's service to the outside world, you map a host port to a container port (e.g., `_p 8080:80`).
-  * **Internal DNS:** When using Docker Compose, each service can reach another using its service name as a hostname. Your `webapp` code can simply connect to `http://database` to reach the database container.
-
------
-
-## Introducing Docker
-
-Docker is the platform that popularized containers. It provides a simple set of tools to build, ship, and run any application, anywhere.
-
-  * **Docker Engine:** The background service (daemon) that manages containers.
-  * **Docker CLI:** The command-line tool you use to interact with the Docker Engine.
-  * **Docker Hub:** A public registry of pre-built container images.
+\begin{center}
+\includegraphics[width=0.98\linewidth,keepaspectratio]{linux_namespaces_isolation.png}
+\end{center}
 
 -----
 
-## Common Docker Commands
+## Kernel Mechanisms: Control Groups (cgroups)
+
+**Control Groups (cgroups)** allow the kernel to enforce strict hardware resource limits on containers:
+
+  * **CPU:** Limits processor time share or dedicated core counts (e.g., maximum of 1.5 vCPUs).
+  * **Memory (RAM):** Imposes a hard memory ceiling (e.g., 512 MB). If exceeded, the kernel terminates the process (*Out Of Memory Killer - OOM*).
+  * **Block I/O:** Prevents a noisy container from starving disk bandwidth with heavy read/write operations.
+  * **PID Control (pids cgroup):** Limits the total number of child processes to protect the host against *fork bombs*.
+
+\vspace{1em}
+
+\begin{center}
+\textbf{While \textit{namespaces} define visibility boundaries and logical isolation, \textit{cgroups} enforce quantitative resource quotas and fair-share guarantees.}
+\end{center}
+
+-----
+
+## Linux Containers Outside Linux: macOS and Windows
+
+Because they rely on the Linux kernel (*namespaces* and *cgroups*), running **Linux containers** on macOS or Windows requires a lightweight support virtual machine (managed by tools like **Docker Desktop** or **Podman**):
+
+\begin{center}
+\includegraphics[width=0.92\linewidth,height=0.72\textheight,keepaspectratio]{docker_desktop_architecture.png}
+\end{center}
+
+-----
+
+## Linux Containers Outside Linux: macOS and Windows
+
+  * **On Linux (Native Execution):**
+      * Direct execution over the host kernel with native performance.
+      * No hypervisors and zero virtualization overhead.
+  * **On macOS and Windows (Docker Desktop, Podman, etc.):**
+      * Host kernels (Darwin / NT) cannot execute Linux binaries natively.
+      * Tools run a lightweight **micro-VM Linux** (*Virtualization.framework* / *WSL2*) shared across containers.
+      * *(Note: Windows supports native Windows containers, but nearly all industry deployments use Linux images).*
+  * **Operational Impact:**
+      * Dedicated RAM and CPU resources reserved for the support virtual machine.
+      * Higher I/O latency when sharing host filesystems (*bind mounts*) across VM boundaries.
+
+-----
+
+\vspace{5em}
+
+\begin{center}
+{\LARGE \textbf{Part II: From Kernel to Tools: Ecosystem \& OCI}}
+\end{center}
+
+-----
+
+## The Evolution: Linux Containers (LXC) vs. Docker
+
+Container technology did not originate with Docker:
+
+  * **LXC (Linux Containers, 2008):**
+      * The first comprehensive solution integrating cgroups and namespaces in the Linux kernel.
+      * Focused on **system containers**: operating like lightweight VMs running a full `init` system (systemd), multiple processes, and background daemons.
+  * **The Docker Revolution (2013):**
+      * Docker initially leveraged LXC as its execution backend, adding a superior abstraction layer.
+      * Popularized **application / microservice containers**: each container runs **a single primary process**.
+      * Introduced layered image format (`Dockerfile`) and global image registry (Docker Hub), revolutionizing modern software engineering.
+
+-----
+
+## Standardization and Open Standards: The OCI
+
+To prevent vendor lock-in to a single company, the industry established the **Open Container Initiative (OCI)**:
+
+  * **Image Specification (Image Spec):**
+      * Defines the exact binary layout of container image layers and configuration manifests.
+      * An image built by Docker adheres to the OCI spec and runs identically on Podman, containerd, CRI-O, or Kubernetes.
+  * **Runtime Specification (Runtime Spec):**
+      * Defines the kernel interface for launching container processes.
+      * The open-source reference implementation is **`runc`**, universally utilized by both Docker and Podman.
+
+-----
+
+## Podman and Container Security
+
+**Podman** (developed by Red Hat) was designed to address traditional Docker security and architectural challenges:
+
+  * **Daemonless Architecture:**
+      * Docker relies on a centralized background daemon (`dockerd`) running persistently as `root`. If the daemon fails, all container management is impacted.
+      * Podman is completely daemonless: each container is a direct child process of the user who launched it.
+  * **Rootless by Design:**
+      * Allows unprivileged users (without `sudo`) to pull, build, and run containers on Linux using *User Namespaces*.
+  * **Complete CLI Compatibility:**
+      * CLI syntax is identical to Docker:
+        ```bash
+        $ alias docker=podman
+        $ docker run -d -p 8080:80 nginx:alpine
+        ```
+
+\vspace{1em}
+
+\begin{center}
+\textbf{Both tools share the same commands and OCI standards; mastering the Docker CLI provides universal skills across the entire cloud container ecosystem.}
+\end{center}
+
+-----
+
+\vspace{5em}
+
+\begin{center}
+{\LARGE \textbf{Part III: Images, Storage \& Networking}}
+\end{center}
+
+-----
+
+## Core Terminology: Image vs. Container
+
+Three fundamental concepts define the container model:
+
+  * **1. Container Image:**
+      * An immutable, read-only template packaging the filesystem, binaries, libraries, and runtime metadata.
+      * **Analogy:** Equivalent to a **Class** in Object-Oriented Programming (static blueprint).
+  * **2. Container:**
+      * A runnable, isolated instance of an image executed by the kernel.
+      * **Analogy:** Equivalent to an **Object** (multiple container instances can derive from the same image).
+  * **3. Registry:**
+      * A centralized service for storing, versioning, and distributing images (e.g., Docker Hub, GitHub Packages).
+
+-----
+
+## The Docker Lifecycle
+
+\begin{center}
+\includegraphics[width=0.98\linewidth,keepaspectratio]{docker_lifecycle.png}
+\end{center}
+
+-----
+
+## Image Identification and Naming Convention
+
+Images are identified following a standardized syntax:
+
+$$\texttt{[registry/][repository/]name\textbf{:}tag}$$
+
+  * **Official Repositories:** Official Docker Hub images omit registry and user prefixes (e.g., `nginx`, `alpine`, `ubuntu`).
+  * **Role of the Tag:** Specifies the version or variant; defaults to `:latest` if omitted.
+  * **Examples:**
+      * `nginx:alpine` $\rightarrow$ NGINX based on minimalist Alpine Linux (~20 MB).
+      * `python:3.11-slim` $\rightarrow$ Python 3.11 without heavy build tools.
+      * `lscr.io/linuxserver/jellyfin:latest` $\rightarrow$ Image sourced from an external registry (`lscr.io`).
+  * **Digest (SHA-256):** A unique cryptographic hash guaranteeing absolute image integrity and immutability.
+
+-----
+
+## Image Anatomy: Layers & Copy-on-Write (CoW)
+
+A Docker image is not a monolithic archive, but rather a **stack of immutable read-only layers**:
+
+\begin{center}
+\includegraphics[width=0.92\linewidth,height=0.72\textheight,keepaspectratio]{container_layers_cow.png}
+\end{center}
+
+-----
+
+## Copy-on-Write (CoW) Mechanism: Efficiency & Immutability
+
+  * **Disk Layer Sharing:**
+      * Common base layers (e.g., `alpine:3.20`) are stored on disk **only once**.
+      * Substantial savings in network download bandwidth and local storage capacity.
+  * **Layer Immutability (Read-Only):**
+      * The underlying image layers are never altered or corrupted by running containers.
+  * **Container Writable Layer (Read-Write Layer):**
+      * A thin temporary layer added on top of the image stack when a container starts.
+      * **Read:** Files are read directly from underlying shared image layers.
+      * **Modify (CoW):** When modifying an existing file, it is copied to the R/W layer before editing.
+      * **Destruction:** When the container is deleted, only this ephemeral R/W layer is discarded.
+
+-----
+
+## Data Persistence: Storage Types
+
+By default, a container's filesystem is **ephemeral**. To manage persistent data, Docker provides three mechanisms:
+
+  * **1. Writable Layer:**
+      * **Lifecycle:** Ephemeral; permanently deleted when the container is removed.
+      * **Typical Use:** Temporary scratch files and stateless workloads.
+  * **2. Bind Mounts:**
+      * **Mechanism:** Mounts a host directory directly into the container (`host:container`).
+      * **Typical Use:** **Local development** (source code changes on host reflect live without rebuilding images).
+  * **3. Managed Volumes (Named Volumes):**
+      * **Mechanism:** Storage managed by the Docker Engine within a dedicated system location.
+      * **Typical Use:** **Production persistence** (databases, high-performance I/O, independent of container lifecycle).
+
+-----
+
+## Virtual Networks: Bridge Mode and Port Mapping
+
+By default, every container connects to a private virtual bridge network:
+
+\begin{center}
+\includegraphics[width=0.92\linewidth,height=0.72\textheight,keepaspectratio]{docker_network_ports_dns.png}
+\end{center}
+
+-----
+
+## Container Networking: Isolation and DNS Resolution
+
+  * **Private Virtual Network (Bridge Network):**
+      * Isolates containers from the external network using kernel bridge interfaces and NAT firewall rules.
+      * Each container receives an internal dynamic private IP address (e.g., `172.20.0.x`).
+  * **Port Mapping (`-p <host_port>:<container_port>`):**
+      * Forwards traffic arriving at a host port to the internal container port (e.g., `-p 8080:80`).
+      * Allows external access to the containerized service via `http://localhost:8080`.
+  * **Embedded DNS Resolution:**
+      * Containers in the same custom bridge network resolve peer IP addresses automatically using **service names** (e.g., `postgres://db:5432`).
+      * Completely decouples services from dynamic ephemeral IP addresses.
+  * **Security Isolation:**
+      * Internal services (e.g., database `db`) need no exposed host ports.
+      * Kept invisible and protected from direct access from the external network or Internet.
+
+-----
+
+\vspace{5em}
+
+\begin{center}
+{\LARGE \textbf{Part IV: Docker in Practice \& Dockerfile Anatomy}}
+\end{center}
+
+-----
+
+## Essential Docker Commands
+
+The `docker` command-line interface controls the entire container lifecycle:
 
 | Command | Description |
 | :--- | :--- |
-| `docker run [image]` | Creates and starts a new container from an image. |
-| `docker ps` | Lists all running containers. `ps -a` lists all containers (running or stopped). |
-| `docker stop [id/name]` | Stops a running container gracefully. |
-| `docker rm [id/name]` | Removes a stopped container. |
-| `docker logs [id/name]` | Fetches the logs (standard output) from a container. |
-| `docker pull [image]` | Downloads an image from a registry (like Docker Hub). |
-| `docker images` | Lists all images stored locally. |
-| `docker build -t [name] .` | Builds a new image from a `Dockerfile` in the current directory. |
+| `docker run [options] <image>` | Creates and starts a new container from an image. |
+| `docker run -d -p 8080:80 <image>` | Runs in background (*detached*) mapping host port 8080. |
+| `docker ps` | Lists currently active/running containers. |
+| `docker ps -a` | Lists all containers (including stopped and exited ones). |
+| `docker stop <id/name>` | Sends `SIGTERM` to gracefully stop a running container. |
+| `docker rm <id/name>` | Permanently removes an exited container and its R/W layer. |
+| `docker logs -f <id/name>` | Streams and monitors standard output (`stdout`/`stderr`) logs. |
+| `docker exec -it <name> sh` | Opens an interactive terminal session inside a running container. |
+| `docker images` | Lists all container images stored locally on disk. |
+| `docker rmi <image>` | Deletes a local container image from storage. |
 
 -----
 
-## The `Dockerfile`: A Deeper Look
+## High-Level Overview: `Dockerfile` Example
 
-A `Dockerfile` is a recipe for building a container image.
-Here are the most common instructions:
-
-  * `FROM`: Specifies the base image to build upon (e.g., `ubuntu:22.04`).
-  * `WORKDIR`: Sets the working directory for subsequent commands.
-  * `COPY`: Copies files or directories from the host into the image.
-
------
-
-  * `RUN`: Executes a command during the image build process (e.g., `RUN apt-get install -y nginx`).
-  * `CMD`: Provides the default command to run when a container is started from the image.
-  * `ENTRYPOINT`: Configures the container to run as an executable.
-  * `EXPOSE`: Informs Docker that the container listens on the specified network ports at runtime.
-  * `ENV`: Sets persistent environment variables.
-
------
-
-## `Dockerfile` Example: A Logging Service
-
-This simple `Dockerfile` creates a service whose only job is to print a timestamp every 5 seconds.
-This is perfect for testing the `docker logs` command.
+A `Dockerfile` is a declarative, automated recipe for building container images:
 
 ```dockerfile
-# Use a minimal base image
-FROM alpine:latest
+# 1. Base starting image
+FROM python:3.11-slim
 
-# The command to execute when the container starts.
-# It's an infinite loop that prints the current 
-# date and sleeps for 5 seconds.
-CMD ["sh", "-c", "while true; do echo 
-\"[LOG] Server is running at $(date)\"; sleep 5; done"]
+# 2. Working directory inside container
+WORKDIR /app
+
+# 3. Copy files and install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+
+# 4. Network metadata and startup command
+EXPOSE 8080
+CMD ["python", "app.py"]
 ```
-
------
-
-To build and run it:
 
 ```bash
-$ docker build -t logging-service .
-$ docker run -d --name logger logging-service
-$ docker logs -f logger
+$ docker build -t my-app:1.0 .              # Builds the image from context (.)
+$ docker run -d -p 8080:8080 my-app:1.0     # Starts the container
 ```
 
 -----
 
-## Docker Compose: A Deeper Look
+## `Dockerfile` Anatomy: Structure Instructions
 
-A `compose.yml` file defines a multi-service application.
-Here are the most common keys:
+With the overview in mind, let's explore the core filesystem instructions:
 
-  * `services`: The root key where all your application services are defined.
-  * `image`: Specifies a pre-built image from a registry (like Docker Hub).
-  * `build`: Specifies the path to a `Dockerfile` to build the service's image.
-
------
-
-  * `ports`: Maps ports from the host to the container (e.g., `"8080:80"`).
-  * `volumes`: Mounts host paths or named volumes into the container.
-  * `environment`: Sets environment variables for the service.
-  * `depends_on`: Defines dependencies between services, controlling startup order.
+  * `FROM <image>:<tag>`
+      * Sets the base image from which the new image is derived (e.g., `alpine:3.20`).
+  * `WORKDIR <path>`
+      * Sets the active working directory for subsequent instructions (creates folder if missing).
+  * `COPY <src> <dest>`
+      * Copies files and directories from the host build context into the image filesystem.
+  * `RUN <command>`
+      * Executes commands during build time and commits the result into a new immutable layer (e.g., `RUN apk add --no-cache curl`).
 
 -----
 
-## Compose Example 1: Building a Custom NGINX Image
+## `Dockerfile` Anatomy: Environment, Ports & Security
 
-This example shows how to package your website's files directly into a custom image.
+  * `ENV <key>=<value>`
+      * Defines environment variables available during build and persistently across container execution (e.g., `ENV PORT=8080`).
+  * `ARG <name>=<value>`
+      * Defines temporary variables used exclusively during image compilation.
+  * `EXPOSE <port>`
+      * **Documentation metadata**: specifies the network ports on which the application listens (does not publish to host).
+  * `USER <user>`
+      * Sets the username or UID for subsequent processes, avoiding running containers with root privileges.
 
-**Required File Structure:**
+-----
 
+## `Dockerfile` Anatomy: Execution (`CMD` & `ENTRYPOINT`)
+
+To define the process started when a container launches, Docker provides two key instructions:
+
+  * `CMD ["executable", "arg1", ...]`
+      * Defines the **default** command and/or arguments executed upon startup.
+      * If arguments are passed to `docker run`, the entire `CMD` instruction is overridden.
+  * `ENTRYPOINT ["executable", "arg1", ...]`
+      * Configures the container to run as a **dedicated, fixed executable**.
+      * Arguments supplied to `docker run` are appended as parameters to the executable.
+
+-----
+
+## `CMD` vs. `ENTRYPOINT` in Practice: Demonstration
+
+Consider two representative scenarios built on top of Alpine Linux:
+
+**Scenario A: `CMD` only (Flexible default command)**
+```dockerfile
+FROM alpine:3.20
+CMD ["echo", "Default message"]
 ```
-.
-├── docker-compose.yml
-├── Dockerfile
-└── my-website/
-    └── index.html
+```bash
+$ docker run demo-cmd              # Prints: "Default message"
+$ docker run demo-cmd uname -a     # Runs uname -a; overrides the original CMD command
+```
+
+**Scenario B: `ENTRYPOINT` with `CMD` (Fixed executable + Flexible argument)**
+```dockerfile
+FROM alpine:3.20
+ENTRYPOINT ["echo", "Environment:"]
+CMD ["Production"]
+```
+```bash
+$ docker run demo-ep               # Prints: "Environment: Production"
+$ docker run demo-ep Staging       # Prints: "Environment: Staging" (overrides CMD)
 ```
 
 -----
 
-**`Dockerfile`**
+## The Build Context and `.dockerignore`
+
+When running the image build command:
+
+```bash
+$ docker build -t my-service:1.0 .
+```
+
+  * **Meaning of the Path Argument (`.`):**
+      * Defines the root of the **Build Context**.
+      * The Docker client creates an archive of this directory and sends it to the Docker Daemon before processing instructions.
+  * **The `.dockerignore` File:**
+      * Follows semantics similar to `.gitignore`.
+      * Prevents large folders or sensitive files from being transferred to the daemon:
+        ```text
+        .git
+        node_modules
+        .env
+        *.log
+        ```
+      * Minimizes build transfer latency and prevents accidental inclusion of credentials, secrets, or local dependencies into image layers.
+
+-----
+
+## Comprehensive Example: Building and Inspecting a Service
+
+Consider a `Dockerfile` packaging a diagnostics service running under an unprivileged user:
 
 ```dockerfile
-# Use the official NGINX image as a base
-FROM nginx:alpine
-
-# Copy our custom webpage into the image's web root directory
-COPY ./my-website /usr/share/nginx/html
+FROM alpine:3.20
+WORKDIR /app
+RUN adduser -D -u 1000 appuser
+USER appuser
+CMD ["sh", "-c", "while true; do echo \"[LOG] Service active at $(date)\"; sleep 5; done"]
 ```
 
-**`docker-compose.yml`**
+**Validation Sequence in the Terminal:**
+
+```bash
+# 1. Build the image with a formal tag
+$ docker build -t logging-service:1.0 .
+
+# 2. Run the container in detached background mode
+$ docker run -d --name logger logging-service:1.0
+
+# 3. Inspect execution environment and logs
+$ docker exec -it logger whoami        # Confirms execution under appuser (non-root)
+$ docker logs --tail 3 logger          # Inspects recent standard output log entries
+$ docker stop logger && docker rm logger
+```
+
+-----
+
+\vspace{5em}
+
+\begin{center}
+{\LARGE \textbf{Part V: Local Orchestration with Docker Compose}}
+\end{center}
+
+-----
+
+## Motivation and Scope of Docker Compose
+
+In real-world system architecture, applications rarely run as a single isolated container:
+
+  * A typical web application requires a web server (NGINX), an application runtime (Python/Node), and a database (PostgreSQL).
+  * Starting this architecture manually with individual `docker run` commands requires:
+      * Manually creating virtual networks (`docker network create`).
+      * Launching each container individually with dozens of port, volume, and environment parameters.
+      * Manually ensuring the correct order of startup.
+  * **Docker Compose:**
+      * A declarative orchestration tool that defines and manages multi-container applications via a single file: `compose.yml`.
+      * Application infrastructure is declared as code (*Infrastructure as Code*) and tracked directly in the project's Git repository.
+
+-----
+
+## Anatomy of the `compose.yml` File
+
+A `compose.yml` file organizes application services into a cohesive topology:
+
+```yaml
+services:
+  web:
+    image: nginx:alpine
+    ports:
+      - "8080:80"                  # host:container
+    volumes:
+      - ./site:/usr/share/nginx/html
+    environment:
+      - TZ=Europe/Lisbon           # Timezone
+    restart: unless-stopped        # Restart policy
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_PASSWORD=secret   # Initialization variable
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:                         # Docker-managed named volume
+```
+
+-----
+
+## Docker Compose Commands
+
+Service orchestration is managed centrally from the directory containing `compose.yml`:
+
+| Command | Action Performed |
+| :--- | :--- |
+| `docker compose up -d` | Pulls images, creates networks and volumes, and starts all services in background. |
+| `docker compose up --build -d` | Forces a rebuild of local images (`build:`) before starting. |
+| `docker compose ps` | Displays the status and port mappings of all services. |
+| `docker compose logs -f` | Streams aggregated logs from all services in real time. |
+| `docker compose logs -f <service>` | Filters logs for a specific service (e.g., `docker compose logs -f web`). |
+| `docker compose stop` | Halts service containers without removing networks or containers. |
+| `docker compose down` | Stops and removes containers and internal networks created by Compose. |
+| `docker compose down -v` | Stops services and additionally removes persistent named volumes. |
+
+-----
+
+## Compose Pattern 1: Custom Image Packaging
 
 ```yaml
 services:
   webserver:
+    build: .             # Path to Dockerfile in local context
+    ports:
+      - "8080:80"        # Host port 8080 mapped to container port 80
+```
+
+  * **Concept:** Application source code is baked directly into the image layers during build time.
+  * **Behavior:** The resulting container is an autonomous, self-contained, and immutable artifact ready for staging and production.
+  * **Updates:** Code modifications require explicitly rebuilding the image (`docker compose up --build -d`).
+
+-----
+
+## Compose Pattern 2: Live Development with Volumes
+
+```yaml
+services:
+  webserver:
+    image: nginx:alpine                  # Standard official image
+    ports:
+      - "8080:80"
+    volumes:
+      - ./my-website:/usr/share/nginx/html # Dynamic host folder mount
+```
+
+  * **Concept:** Eliminates the need for a custom `Dockerfile`, directly utilizing the official NGINX image.
+  * **Direct Mount:** The host directory `./my-website` is mounted over the web server's document root.
+  * **Fast Feedback Cycle:** Edits made to host source files reflect instantly in the browser without restarting containers.
+
+-----
+
+## Compose Pattern 3: Multi-Service Architecture (Web + Database)
+
+```yaml
+services:
+  web:
     build: .
     ports:
-      - "8080:80"
-```
-
------
-
-## Example 1: Explanation
-
-In this method, we create a **self-contained, portable image** that includes our application code.
-
-1.  When you run `docker-compose up`, the `build: .` directive tells Compose to look for a `Dockerfile` in the current directory.
-2.  The `Dockerfile` starts from a standard `nginx` base image.
-3.  The `COPY` instruction takes your local `./my-website` folder and copies its contents directly into the image's filesystem at `/usr/share/nginx/html`.
-4.  A new, custom image is created containing both NGINX and your webpage.
-5.  A container is started from this new image.
-
------
-
-**Key Concept:** The application and its code are bundled together. This is ideal for **production deployments**, as the resulting image is a consistent, immutable artifact that can be run anywhere.
-
------
-
-## Compose Example 2: Using a Volume to Serve Content
-
-This example uses a standard NGINX image and injects the website content using a volume.
-
-**Required File Structure:**
-
-```
-.
-├── docker-compose.yml
-└── my-website/
-    └── index.html
-```
-
------
-
-**`docker-compose.yml`**
-
-```yaml
-services:
-  webserver:
-    image: nginx:alpine
-    ports:
-      - "8080:80"
-    volumes:
-      - ./my-website:/usr/share/nginx/html
-```
-
-*(No Dockerfile is needed for this method)*
-
------
-
-## Example 2: Explanation
-
-This method keeps your code on the host machine and dynamically links it into the container.
-
-1.  When you run `docker-compose up`, the `image: nginx:alpine` directive tells Compose to pull the standard NGINX image from Docker Hub. No custom image is built.
-2.  A container is started from this standard image.
-3.  The `volumes` directive creates a live link between the `./my-website` folder on your host and the `/usr/share/nginx/html` folder inside the container.
-4.  When NGINX inside the container looks for files to serve, it is actually reading them directly from your host machine's disk.
-
------
-
-**Key Concept:** The container is stateless, and the code lives on the host. If you change your `index.html` file on the host, the change is reflected **instantly** without rebuilding or restarting the container. This is ideal for **local development**.
-
------
-
-### Compose Example 3: NGINX with a Varnish Cache
-
-This advanced example orchestrates two services: an NGINX web server and a Varnish cache that sits in front of it to speed up content delivery.
-
-**Required File Structure:**
-
-```
-.
-├── docker-compose.yml
-└── varnish/
-    └── default.vcl
-```
-
------
-
-**`varnish/default.vcl` (Varnish Configuration)**
-
-```vcl
-vcl 4.1;
-
-// Define the backend server Varnish will get content from.
-// 'nginx' is the name of our other service in docker-compose.yml.
-backend default {
-    .host = "nginx";
-    .port = "80";
-}
-```
-
-**`docker-compose.yml`**
-
-```yaml
-services:
-  # The Varnish cache that is exposed to the outside world
-  cache:
-    image: varnish:stable
-    volumes:
-      # Mount our custom Varnish configuration
-      - ./varnish:/etc/varnish
-    ports:
-      # Map host port 8080 to the cache's port 80
-      - "8080:80"
+      - "8080:80"                        # Public port mapped to host
     depends_on:
-      - nginx
-
-  # The NGINX web server, which is NOT exposed to the host
-  nginx:
-    image: nginx:alpine
-    # No ports section means it's only accessible from within the Docker network
+      - db                               # Starts after database service
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_PASSWORD=secret
+    volumes:
+      - db_data:/var/lib/postgresql/data # No public host ports exposed
+volumes:
+  db_data:                               # Managed persistent volume
 ```
 
------
-
-### Example 3: Explanation
-
-This setup demonstrates a realistic, high-performance, multi-tier architecture where services communicate internally.
-
-1.  The `docker-compose.yml` defines two services: `cache` (Varnish) and `nginx`.
-2.  Only the `cache` service exposes a port (`8080`) to the host machine. The `nginx` service is completely isolated from the outside world.
-3.  The custom Varnish configuration file (`default.vcl`) is mounted into the `cache` container. This file tells Varnish that its "backend" (the actual web server) is located at the hostname `nginx`.
-4.  Thanks to Docker's **internal DNS**, the service name `nginx` automatically resolves to the private IP address of the `nginx` container, allowing Varnish to connect to it.
+  * **Name Resolution:** The `web` service connects to `postgres://db:5432`, resolved automatically by embedded DNS.
+  * **Security Isolation:** Only `web` exposes a public host port (`:8080`); database remains protected on internal network.
+  * **Data Persistence:** Data is stored in managed volume `db_data`, surviving service restarts (`docker compose down`).
 
 -----
 
-**The Request Flow:**
-`User's Browser` → `Host Machine (Port 8080)` → `Varnish Container (Cache)` → `NGINX Container (Origin Server)`
+## Authoritative Technical References
 
-**The Caching Magic:**
-On the first request for a webpage, Varnish fetches it from the `nginx` container and stores a copy in its memory. For all subsequent requests for that same page, Varnish serves the copy directly from its cache, which is incredibly fast and prevents the NGINX server from having to do any work.
+Official documentation and specifications for further study in systems engineering and cloud computing:
 
-**Key Concept:** This demonstrates powerful **service discovery** and the creation of a **reverse proxy**, a fundamental pattern in web architecture.
-
------
-
-## The Origin: Linux Containers (LXC)
-
-Before Docker, there was **LXC**.
-
-  * LXC is a user-space interface for the Linux kernel's containment features (namespaces and cgroups).
-  * It provides a lower-level set of tools for creating and managing containers.
-  * LXC containers are often described as being more like very lightweight, fast-booting virtual machines than application containers. They typically run a full `init` system and are used for isolating entire operating systems.
-
------
-
-## The Standard: Docker
-
-Docker took the underlying technology of LXC and built a high-level, user-friendly ecosystem around it.
-
-  * It introduced the concept of portable images via the `Dockerfile`.
-  * It created a centralized registry (Docker Hub) for sharing images.
-  * Its focus is on **application-centric** containers, packaging a single application or process per container. This philosophy is a cornerstone of the microservices architecture.
-
------
-
-## The Modern Alternative: Podman
-
-Podman is a popular, modern alternative to Docker, developed by Red Hat.
-
-  * **Daemonless:** Unlike Docker, Podman does not require a central, always-running daemon, which is often cited as a security benefit.
-  * **Rootless:** Podman is designed to run containers as a regular user, without needing root privileges.
-  * **CLI Compatible:** Podman's command-line interface is intentionally identical to Docker's. In many systems, you can simply run `alias docker=podman` and use the same commands you already know.
-
------
-
-## Conclusion & Key Takeaways
-
-  * Containers solve the "it works on my machine" problem by packaging an application with its dependencies into a **portable** unit.
-  * They achieve isolation and resource management via Linux kernel features like **namespaces** and **cgroups**.
-  * **`Dockerfile`** provides a recipe to build images, and **Docker Compose** helps manage multi-service applications.
-  * Containers have revolutionized software development, forming the foundation of modern **DevOps and cloud-native** practices.
-
------
-
-## Further Resources & Useful Links 📚
-
-To continue your learning journey with containers, here are some excellent resources:
-
-* **Docker Official Cheat Sheet:** A concise, official reference for the most common commands.
-    * [https://docs.docker.com/get-started/docker_cheatsheet.pdf](https://docs.docker.com/get-started/docker_cheatsheet.pdf)
-
-* **Docker Ultimate Cheat Sheet (Collabnix):** A more comprehensive cheat sheet with detailed examples and explanations.
-    * [https://dockerlabs.collabnix.com/docker/cheatsheet/](https://dockerlabs.collabnix.com/docker/cheatsheet/)
-
------
-
-* **How to Optimize Docker Images (GeeksforGeeks):** Learn techniques like multi-stage builds to make your images smaller, faster, and more secure.
-    * [https://www.geeksforgeeks.org/devops/how-to-optimize-docker-image/](https://www.geeksforgeeks.org/devops/how-to-optimize-docker-image/)
-
-* **Optimizing Dockerfiles for Fast Builds (WarpBuild):** Understand how to structure your `Dockerfile` to take full advantage of layer caching and significantly speed up your build process.
-    * [https://www.warpbuild.com/blog/optimizing-docker-builds](https://www.warpbuild.com/blog/optimizing-docker-builds)
-
-* **LinuxServer.io:** A community project that provides and maintains high-quality, easy-to-use container images for many popular self-hosted applications (like media servers, download clients, and more).
-    * [https://www.linuxserver.io/](https://www.linuxserver.io/)
+  * **Docker Documentation:**
+      * [Official Docker Architecture & Guides](https://docs.docker.com/)
+      * [Dockerfile Reference](https://docs.docker.com/reference/dockerfile/)
+      * [Compose File Specification](https://docs.docker.com/compose/compose-file/)
+  * **Open Container Initiative (OCI):**
+      * [Official OCI Image and Runtime Specifications](https://opencontainers.org/)
+  * **Podman Documentation:**
+      * [Podman User Guide and Architecture](https://docs.podman.io/)
+  * **Linux Kernel Documentation:**
+      * [Linux Namespaces (`namespaces(7)`)](https://man7.org/linux/man-pages/man7/namespaces.7.html)
+      * [Linux Control Groups (`cgroups(7)`)](https://man7.org/linux/man-pages/man7/cgroups.7.html)
