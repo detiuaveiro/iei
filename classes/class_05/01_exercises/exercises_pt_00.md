@@ -1,15 +1,15 @@
 ---
-title: Containers para Aplicações
-subtitle: Introdução Engenharia Informática
-author: Mário Antunes
+title: 47138 - Introdução à Engenharia Informática
+subtitle: "Contentores de Aplicação & Desktop Sandboxing em Linux (Flatpak & AppImage)"
 institute: Universidade de Aveiro
-date: October 20, 2025
+date: October 26, 2026
 colorlinks: true
 highlight-style: tango
 geometry: a4paper,margin=2cm
 mainfont: NotoSans
 mainfontfallback:
   - "NotoColorEmoji:mode=harf"
+  - "DejaVu Sans:"
 header-includes:
  - \usepackage{longtable,booktabs}
  - \usepackage{etoolbox}
@@ -20,13 +20,35 @@ header-includes:
  - \setmonofont[Contextuals={Alternate}]{FiraCodeNerdFontMono-Retina}
 ---
 
-# Exercícios
+# Guião Prático de Laboratório
 
-## Exercícios Práticos: Flatpak & AppImage
+**Enquadramento Pedagógico & Objetivos:**
+Enquanto na aula anterior explorámos o Docker para empacotar e orquestrar serviços de rede e servidores em segundo plano (*headless*), neste laboratório o foco desloca-se para o empacotamento e distribuição de **aplicações desktop em Linux**.
 
-**Objetivo:** Esta aula irá guiá-lo através dos fundamentos do empacotamento de aplicações. Começará com um simples "Hello World" e progredirá até ao empacotamento de uma aplicação gráfica (GUI) completa em Python, com as suas dependências.
+Neste guião de **3 horas**, irá aprender a empacotar desde scripts simples de linha de comandos até uma **aplicação gráfica interativa com janela e som (o Jogo do Galo / Tic-Tac-Toe em Pygame)**. Irá explorar como o **Flatpak** (com a sua sandbox baseada em *bubblewrap*, sockets X11/Wayland e aceleração GPU) e o **AppImage** (com a estrutura autónoma `AppDir`) permitem entregar aplicações portáteis prontas a usar, que se integram diretamente nos menus do sistema operativo sem exigir permissões de administração (`sudo`).
 
-## 0. Setup: Configurar o Ambiente de Trabalho
+\vspace{0.5em}
+
+### Preparação do Diretório de Trabalho
+
+Antes de iniciar os exercícios, crie e aceda à pasta de trabalho dedicada para esta sessão:
+
+```bash
+$ mkdir -p ~/IEI/aula05
+$ cd ~/IEI/aula05
+```
+
+Todos os ficheiros criados durante a aula (ficheiros de manifesto YAML, scripts `AppRun`, aplicações Python e metadados de desktop) deverão ser organizados em subpastas dentro deste diretório de trabalho.
+
+> **Nota sobre caminhos de ficheiros:**
+> Os comandos deste guião assumem que o terminal está posicionado no diretório de trabalho `~/IEI/aula05`. Cada exercício deve ser desenvolvido na respetiva subpasta (p. ex., `ex1-flatpak`, `ex1-appimage`, `ex2-pytree`, `ex3-flatpak`, etc.).
+
+-----
+
+## 0. Setup: Configurar o Ambiente de Desenvolvimento
+
+> **Nota para utilizadores de macOS e Windows:**
+> O Flatpak e o AppImage são tecnologias exclusivas do ecossistema Linux (requerem o kernel Linux, *namespaces*, *cgroups* e *libfuse2*). Se o seu computador pessoal corre macOS ou Windows, execute todos os exercícios deste guião **dentro da sua máquina virtual Ubuntu (criada na Aula 00 via UTM ou VirtualBox)** ou nos computadores dos laboratórios do DETI.
 
 Primeiro, temos de instalar todas as ferramentas necessárias para construir e testar os nossos pacotes de aplicação.
 
@@ -43,17 +65,18 @@ $ sudo apt update && sudo apt full-upgrade -y
 <!-- end list -->
 
   * `curl` & `wget`: Utilitários para descarregar ficheiros da internet.
+  * `unzip`: Utilitário para descompactar ficheiros ZIP.
   * `file`: Um utilitário para identificar tipos de ficheiro.
   * `libfuse2`: Uma biblioteca necessária ao AppImage para "montar" (mount) o pacote da aplicação como um sistema de ficheiros virtual (virtual filesystem).
   * `flatpak`: A ferramenta de linha de comandos para executar e gerir aplicações Flatpak.
   * `flatpak-builder`: A ferramenta específica usada para construir pacotes Flatpak a partir de um ficheiro `manifest`.
-  * `python3`, `python3-pip`, `python3-venv`: O interpretador Python, o seu gestor de pacotes (`pip`), e a ferramenta de **virtual environment** (`venv`).
+  * `python3`, `python3-pip`, `python3-venv`, `python3-dev`: O interpretador Python, o seu gestor de pacotes (`pip`), a ferramenta de **virtual environment** (`venv`), e os ficheiros de desenvolvimento (`dev`) necessários para compilar módulos C.
 
 <!-- end list -->
 
 ```bash
-$ sudo apt install curl wget file libfuse2 flatpak \
-flatpak-builder python3 python3-pip python3-venv
+$ sudo apt install curl wget unzip file libfuse2 flatpak \
+flatpak-builder python3 python3-pip python3-venv python3-dev
 ```
 
 3.  **Adicionar o Flathub:** Este comando adiciona o repositório **Flathub** à configuração do Flatpak do seu sistema, mas apenas para o seu utilizador local (`--user`). Um "repositório" (ou "remote") é um servidor que aloja aplicações e `runtimes` do Flatpak. O Flathub é o maior e mais comum repositório, e precisamos dele para descarregar os "SDKs" (Software Development Kits) necessários para a compilação.
@@ -201,7 +224,7 @@ $ chmod +x HelloWorld.AppDir/AppRun
 $ touch HelloWorld.AppDir/icon.png
 ```
 
-3.  Crie um ficheiro chamado `HelloWorld.AppDir/hello.desktop`. Este é um **ficheiro `.desktop`**, uma forma padrão de informar o ambiente de trabalho Linux sobre a sua aplicação. Ele define o `Name` (Nome) da aplicação, o comando a `Exec` (Executar) (o nosso `script` `AppRun`), e o `Icon` (Ícone) a usar. O `appimagetool` *exige* este ficheiro.
+3.  Crie um ficheiro chamado `HelloWorld.AppDir/hello.desktop`. Este é um **ficheiro `.desktop`**, a especificação padrão para integrar a aplicação no desktop Linux (menus de aplicações, ícones e atalhos do sistema). Ele define o `Name` (Nome) da aplicação, o comando a `Exec` (Executar) (o nosso `script` `AppRun`), e o `Icon` (Ícone) a usar. O `appimagetool` *exige* este ficheiro.
 
 <!-- end list -->
 
@@ -273,9 +296,9 @@ def tree(startpath):
 
         level = root.replace(startpath, '').count(os.sep)
         indent = '│   ' * (level - 1) + '├── ' if level > 0 else ''
-        
+
         print(f'{indent} {os.path.basename(root)}/')
-        
+
         subindent = '│   ' * level + '├── '
         for f in files:
             print(f'{subindent} {f}')
@@ -323,7 +346,7 @@ $ cp ../ex2-pytree/pytree.py .
 ```yaml
 app-id: pt.ua.deti.iei.pytree
 runtime: org.gnome.Platform
-runtime-version: '48'
+runtime-version: '50'
 sdk: org.gnome.Sdk
 command: pytree.py
 
@@ -376,21 +399,28 @@ $ flatpak uninstall pt.ua.deti.iei.pytree
     $ mkdir -p Pytree.AppDir && cd Pytree.AppDir
     ```
 
-3.  **Descarregar e extrair o Python portátil:** Aqui, usamos o **`wget`** para descarregar uma versão do Python pré-construída e portátil. Um AppImage é apenas um sistema de ficheiros comprimido, por isso usamos `--appimage-extract` para o desempacotar. De seguida, movemos o seu conteúdo (`mv squashfs-root/* .`) para a raiz do nosso `AppDir`. Altere o URL do Python se usar outra arquitetura (como arm ou arm64).
+3.  **Descarregar e extrair o Python portátil:** Aqui, usamos o **`wget`** para descarregar uma versão do Python pré-construída e portátil. Um AppImage é apenas um sistema de ficheiros comprimido, por isso usamos `--appimage-extract` para o desempacotar. De seguida, movemos o seu conteúdo (`mv squashfs-root/* .`) para a raiz do nosso `AppDir`.
 
 <!-- end list -->
 
 ```bash
+# Para PC Intel/AMD (x86_64):
 $ wget "https://github.com/niess/python-appimage/releases/\
-download/python3.10/python3.10.19-cp310-cp310-manylinux_2_28_x86_64.AppImage" \
+download/python3.15/python3.15.1-cp315-cp315-manylinux_2_28_x86_64.AppImage" \
 -O python.AppImage
+
+# OU para Mac Apple Silicon / ARM64 (aarch64) em máquina virtual:
+# $ wget "https://github.com/niess/python-appimage/releases/\
+# download/python3.15/python3.15.1-cp315-cp315-manylinux2014_aarch64.AppImage" \
+# -O python.AppImage
+
 $ chmod +x python.AppImage
 $ ./python.AppImage --appimage-extract
 $ mv squashfs-root/* .
 $ rm -rf python* squashfs-root/
 ```
 
-3.  **Copiar o seu `script`:** Copiamos o nosso `script` para o diretório `usr/bin` fornecido pelo Python portátil que acabámos de extrair.
+4.  **Copiar o seu `script`:** Copiamos o nosso `script` para o diretório `usr/bin` fornecido pelo Python portátil que acabámos de extrair.
 
 <!-- end list -->
 
@@ -398,7 +428,7 @@ $ rm -rf python* squashfs-root/
 $ cp ../../ex2-pytree/pytree.py usr/bin/
 ```
 
-4.  **Atualizar o ponto de entrada (entrypoint) `AppRun`:** O pacote Python portátil vem com o seu próprio `script` `AppRun`. Só precisamos de editar a sua *última linha* para chamar o nosso `script` `pytree.py` em vez de iniciar uma `shell` Python. Finalmente, torne-o executável: `chmod +x AppRun`
+5.  **Atualizar o ponto de entrada (entrypoint) `AppRun`:** O pacote Python portátil vem com o seu próprio `script` `AppRun`. Só precisamos de editar a sua *última linha* para chamar o nosso `script` `pytree.py` em vez de iniciar uma `shell` Python. Finalmente, torne-o executável: `chmod +x AppRun`
 
 <!-- end list -->
 
@@ -426,10 +456,10 @@ export TKPATH="${TK_LIBRARY}"
 export SSL_CERT_FILE="${APPDIR}/opt/_internal/certs.pem"
 
 # Chamar o Python
-"$APPDIR/opt/python3.10/bin/python3.10" "$APPDIR/usr/bin/pytree.py" "$@"
+"$APPDIR/opt/python3.15/bin/python3.15" "$APPDIR/usr/bin/pytree.py" "$@"
 ```
 
-5.  Crie um ficheiro chamado `pytree.desktop` e preencha-o.
+6.  Crie um ficheiro chamado `pytree.desktop` e preencha-o.
     Também criamos um ficheiro `icon.png` vazio (dummy) para satisfazer o `appimagetool`.
 
 <!-- end list -->
@@ -447,21 +477,21 @@ Categories=Utility;
 $ touch icon.png
 ```
 
-6.  **Construir, Executar e Limpar:** Após usar, `cd ..` para sair do diretório.
+7.  **Construir, Executar e Limpar:** Após usar, `cd ..` para sair do diretório.
 
 <!-- end list -->
 
 ```bash
 $ cd ..  # Voltar ao diretório ex2-appimage
-$ ARCH=x86_64 appimagetool Pytree.AppDir
+$ ARCH=x86_64 appimagetool Pytree.AppDir  # Se estiver em ARM64, utilize ARCH=arm64
 
-$ chmod +x PyTree-x86_64.AppImage
-$ ./PyTree-x86_64.AppImage
+$ chmod +x PyTree-*.AppImage
+$ ./PyTree-*.AppImage
 
 # Testar no seu diretório home
-$ ./PyTree-x86_64.AppImage ~/
+$ ./PyTree-*.AppImage ~/
 
-$ rm -rf PyTree-x86_64.AppImage
+$ rm -rf PyTree-*.AppImage
 ```
 
 -----
@@ -472,27 +502,36 @@ $ rm -rf PyTree-x86_64.AppImage
 
 Este passo simula o que um utilizador faria: descarregar o código-fonte, extraí-lo e executá-lo localmente.
 
-1.  Crie um diretório e descarregue o código-fonte: Este arquivo (um `.tar.gz`) contém uma pasta de nível superior. `tar --strip-components=1` é um comando útil para extrair o *conteúdo* dessa pasta diretamente para o nosso diretório atual, ignorando a própria pasta de nível superior.
+1.  Crie um diretório e descarregue o código-fonte: Descarregamos o código-fonte do jogo a partir do repositório público em formato ZIP, extraímo-lo com o `unzip` e movemos os ficheiros para a pasta de trabalho.
 
 <!-- end list -->
 
 ```bash
 $ mkdir ex3-tictactoe && cd ex3-tictactoe
 
-$ wget "https://github.com/mariolpantunes/tictactoe/archive/refs/tags/tictactoe-1.0.tar.gz"\
--O tictactoe-1.0.tar.gz
+# Garantir que o unzip está instalado
+$ sudo apt update && sudo apt install unzip
 
-# Extrair o código-fonte descarregado
-$ tar --strip-components=1 -zxvf tictactoe-1.0.tar.gz
+# Ir buscar o ficheiro com o jogo ao repositório público
+$ wget "https://github.com/mariolpantunes/tictactoe/archive/refs/heads/main.zip" \
+-O tictactoe.zip
+
+# Fazer o unzip do ficheiro
+$ unzip tictactoe.zip
+
+# Mover os ficheiros para a pasta de trabalho
+$ mv tictactoe-main/* .
+$ rm -rf tictactoe-main
 ```
 
-2.  **Criar e ativar o `venv`:** Desta vez, criar um `virtual environment` é crucial porque temos dependências. Deverá ver `(venv)` no início do 'prompt' do seu terminal. Isto significa que a sua `shell` está agora a usar o Python e o `pip` de dentro do diretório `./venv`.
+2.  **Criar e ativar o `venv`:** Desta vez, criar um `virtual environment` é crucial porque temos dependências. Deverá ver `(venv)` no início do 'prompt' do seu terminal. Isto significa que a sua `shell` está agora a usar o Python e o `pip` de dentro do diretório `./venv`. Atualizamos também as ferramentas de empacotamento (`pip`, `setuptools`, `wheel`).
 
 <!-- end list -->
 
 ```bash
 $ python3 -m venv ./venv
 $ source venv/bin/activate
+$ pip install --upgrade pip setuptools wheel
 ```
 
 3.  **Instalar dependências a partir do ficheiro:** Um ficheiro `requirements.txt` lista todos os pacotes Python que um projeto necessita. `pip install -r` lê este ficheiro e instala-os (como o `pygame`) no `virtual environment` *ativo*.
@@ -502,6 +541,13 @@ $ source venv/bin/activate
 ```bash
 $ pip install -r requirements.txt
 ```
+
+> **Resolução de Problemas (compilação do Pygame):**
+> Caso a instalação do `pygame` falhe por falta de bibliotecas de desenvolvimento C/SDL (situação que ocorre quando o `pip` compila a partir do código-fonte em certas distribuições ou arquiteturas ARM64/Apple Silicon), instale os seguintes pacotes no sistema antes de repetir o comando `pip install`:
+> ```bash
+> $ sudo apt install -y python3-dev libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev \
+>   libsdl2-ttf-dev libfreetype6-dev libportmidi-dev libjpeg-dev libpng-dev
+> ```
 
 4.  **Executar o jogo:**
 
@@ -542,7 +588,7 @@ $ mkdir ex3-flatpak && cd ex3-flatpak
 ```yaml
 app-id: pt.ua.deti.iei.tictactoe
 runtime: org.gnome.Platform
-runtime-version: "48"
+runtime-version: '50'
 sdk: org.gnome.Sdk
 command: game
 finish-args:
@@ -558,7 +604,8 @@ modules:
       env:
         MAKEFLAGS: -j$(nproc)
     build-commands:
-      - pip3 install --isolated --no-index --find-links="file://${PWD}" --prefix=/app pygame
+      - pip3 install --isolated --no-index
+        --find-links="file://${PWD}" --prefix=/app pygame
     sources:
       - type: file
         url: https://pypi.io/packages/source/p/pygame/pygame-2.6.1.tar.gz
@@ -577,8 +624,8 @@ modules:
         /app/share/icons/hicolor/128x128/apps/pt.ua.deti.iei.tictactoe.png
     sources:
       - type: archive
-        url: https://github.com/mariolpantunes/tictactoe/archive/refs/tags/tictactoe-1.0.zip
-        sha256: 4210c04451ae8520770b0a7ab61e8b72f0ca46fbf2d65504d7d98646fda79b5a
+        url: https://github.com/mariolpantunes/tictactoe/archive/refs/heads/main.zip
+        sha256: 038b54a775c2934cfa17ecced82c5db33a5d9ff15243cd5682ae2a3d07866ba2
 ```
 
 4.  **Construir e Instalar:** Após a instalação, o seu jogo deverá aparecer no menu de aplicações do seu `desktop`\!
@@ -616,8 +663,8 @@ $ mkdir ex3-appimage && cd ex3-appimage
 <!-- end list -->
 
 ```bash
-$ wget "https://github.com/mariolpantunes/tictactoe/archive/refs/tags/tictactoe-1.0.tar.gz" \
--O tictactoe-1.0.tar.gz
+$ wget "https://github.com/mariolpantunes/tictactoe/archive/refs/heads/main.zip" \
+-O tictactoe.zip
 ```
 
 3.  Crie o `AppDir`:
@@ -633,9 +680,16 @@ $ mkdir -p TTT.AppDir && cd TTT.AppDir
 <!-- end list -->
 
 ```bash
+# Para PC Intel/AMD (x86_64):
 $ wget "https://github.com/niess/python-appimage/releases/\
-download/python3.10/python3.10.19-cp310-cp310-manylinux_2_28_x86_64.AppImage" \
+download/python3.15/python3.15.1-cp315-cp315-manylinux_2_28_x86_64.AppImage" \
 -O python.AppImage
+
+# OU para Mac Apple Silicon / ARM64 (aarch64) em máquina virtual:
+# $ wget "https://github.com/niess/python-appimage/releases/\
+# download/python3.15/python3.15.1-cp315-cp315-manylinux2014_aarch64.AppImage" \
+# -O python.AppImage
+
 $ chmod +x python.AppImage
 $ ./python.AppImage --appimage-extract
 $ mv squashfs-root/* .
@@ -647,7 +701,9 @@ $ rm -rf python* squashfs-root/
 <!-- end list -->
 
 ```bash
-$ tar --strip-components=1 -zxvf ../tictactoe-1.0.tar.gz
+$ unzip ../tictactoe.zip
+$ mv tictactoe-main/* .
+$ rm -rf tictactoe-main
 ```
 
 6.  **Instalar dependências a partir do `requirements.txt`:** Usamos o `pip` do Python *embutido* (`bundled`) para instalar pacotes. A `flag` `--target` diz ao `pip` para instalar o `pygame` *dentro* da pasta `site-packages` do nosso `AppDir`, e não no sistema anfitrião.
@@ -655,8 +711,8 @@ $ tar --strip-components=1 -zxvf ../tictactoe-1.0.tar.gz
 <!-- end list -->
 
 ```bash
-$ ./usr/bin/python3.10 -m pip install -r ./requirements.txt \
---target ./usr/lib/python3.10/site-packages/
+$ ./usr/bin/python3.15 -m pip install -r ./requirements.txt \
+--target ./usr/lib/python3.15/site-packages/
 ```
 
 7.  **Copiar os ficheiros do seu jogo:** Movemos os `scripts` e `assets` do jogo para dentro do `AppDir`.
@@ -695,10 +751,10 @@ export TKPATH="${TK_LIBRARY}"
 export SSL_CERT_FILE="${APPDIR}/opt/_internal/certs.pem"
 
 # Exportar PyGame
-export PYTHONPATH="$APPDIR/usr/lib/python3.10/site-packages:$APPDIR/usr/bin"
+export PYTHONPATH="$APPDIR/usr/lib/python3.15/site-packages:$APPDIR/usr/bin"
 
 # Chamar o Python
-"$APPDIR/opt/python3.10/bin/python3.10" "$APPDIR/usr/bin/main.py" "$@"
+"$APPDIR/opt/python3.15/bin/python3.15" "$APPDIR/usr/bin/main.py" "$@"
 ```
 
 9.  **Adicionar metadados:** Movemos o ficheiro `.desktop` e copiamos o ícone para a raiz do `AppDir` para que o `appimagetool` os possa encontrar.
@@ -716,12 +772,12 @@ $ cp usr/bin/assets/icon.png ./pt.ua.deti.iei.tictactoe.png
 
 ```bash
 $ cd .. # Voltar ao diretório ex3-appimage
-$ appimagetool TTT.AppDir
+$ ARCH=x86_64 appimagetool TTT.AppDir  # Se estiver em ARM64, utilize ARCH=arm64
 
-$ chmod +x TicTacToe-x86_64.AppImage
-$ ./TicTacToe-x86_64.AppImage
+$ chmod +x TicTacToe-*.AppImage
+$ ./TicTacToe-*.AppImage
 
-$ rm -rf *.AppImage tictactoe-v1.0.tar.gz
+$ rm -rf *.AppImage tictactoe.zip
 ```
 
 -----

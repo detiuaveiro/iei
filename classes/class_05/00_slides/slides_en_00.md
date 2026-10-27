@@ -1,356 +1,388 @@
 ---
-title: Application Containers
-subtitle: Introdução Engenharia Informática
-author: Mário Antunes
+title: 47138 - Introduction to Computer Engineering
+subtitle: "Application Containers & Desktop Sandboxing in Linux"
 institute: Universidade de Aveiro
-date: October 20, 2025
+date: October 26, 2026
 colorlinks: true
 highlight-style: tango
 mainfont: NotoSans
+fontsize: 9pt
+titlegraphic: "../../../resources/ua_logo2.png"
+titlegraphicoptions: "width=6.5cm"
 mainfontfallback:
   - "NotoColorEmoji:mode=harf"
+  - "DejaVu Sans:"
 header-includes:
- - \usetheme[sectionpage=none,numbering=fraction,progressbar=frametitle]{metropolis}
+ - \usetheme[sectionpage=none,numbering=fraction,progressbar=none]{metropolis}
+ - \definecolor{uagreen}{HTML}{92D400}
+ - \setbeamercolor{title separator}{fg=uagreen}
+ - \setbeamersize{text margin left=1.5em, text margin right=1.5em}
+ - |
+    \setbeamertemplate{title graphic}{
+      \begin{tikzpicture}[remember picture,overlay]
+        \node[anchor=north west, xshift=0cm, yshift=-0cm] at (current page.north west) {
+          \inserttitlegraphic
+        };
+        \node[anchor=south east, xshift=-0.2cm, yshift=0.6cm, opacity=0.08] at (current page.south east) {
+          \includegraphics[width=4.8cm]{../../../resources/_deti_black.png}
+        };
+      \end{tikzpicture}
+    }
+ - \usepackage{tikz}
+ - \usetikzlibrary{positioning,arrows.meta,calc}
  - \usepackage{longtable,booktabs}
  - \usepackage{etoolbox}
+ - \BeforeBeginEnvironment{Shaded}{\vspace{1.0em}}
+ - \AfterEndEnvironment{Shaded}{\vspace{0.6em}}
  - \AtBeginEnvironment{longtable}{\tiny}
+ - \usepackage{caption}
+ - \captionsetup[longtable]{labelformat=empty,skip=0pt}
  - \AtBeginEnvironment{cslreferences}{\tiny}
  - \AtBeginEnvironment{Shaded}{\tiny}
  - \AtBeginEnvironment{verbatim}{\tiny}
  - \setmonofont[Contextuals={Alternate}]{FiraCodeNerdFontMono-Retina}
 ---
 
-## Application Containers & Sandboxing on Linux
+## Session Overview
 
-### A Deep Dive into AppImage, Snap, and Flatpak
-
------
-
-## The Core Problem: "Linux Dependency Hell" 👹
-
-Traditional Linux apps rely on **shared system libraries** (`.so` files).
-
-  * **The Conflict:**
-      * App A needs `libXYZ v1.0`
-      * App B needs `libXYZ v2.0`
-  * **The Result:**
-      * Your package manager (`apt`, `dnf`) can often only install one version.
-      * Installing App B breaks App A (or vice-versa).
+  * **Part I — Dependencies & Sandboxing Requirements:**
+      * Docker in infrastructure vs. desktop limitations, *dependency hell*, alternative models (Windows, macOS, venv), and confinement requirements.
+  * **Part II — Desktop Containerization Paradigms:**
+      * Conceptual and comparative analysis of **AppImage**, **Snap**, and **Flatpak** (architecture, security, and distribution).
+  * **Part III — Packaging with AppImage and Flatpak:**
+      * Practical artifact construction: `AppDir` hierarchy, YAML manifests, Pygame integration, and `flatpak-builder`.
 
 -----
 
-## The Need for Isolation & Portability
+\vspace{5em}
 
-  * **Portability:** An app packaged with its dependencies will "run anywhere" on any Linux distro, regardless of its system libraries.
-  * **Stability:** Apps can't conflict with each other's dependencies.
-  * **Security:** If an app is isolated (sandboxed), it can't read your SSH keys, browser history, or other sensitive data.
-
------
-
-## How Other OSes Handle This
-
-This isn't just a Linux problem.
-
-  * **Windows:** Apps bundle almost *all* their `.dll` files in their installation folder (e.g., `C:\Program Files\App`).
-
-      * **Pro:** Prevents conflicts.
-      * **Con:** Lots of duplication; inefficient.
-
-  * **macOS:** `.app` "bundles" are just folders that contain the app's binary and all its libraries.
-
-      * **Pro:** Self-contained and portable.
-      * **Con:** Also duplicates libraries.
+\begin{center}
+{\LARGE \textbf{Part I: Dependencies and Sandboxing Requirements}}
+\end{center}
 
 -----
 
-## "Natural" Isolation: VMs & Runtimes
+## Docker and OCI in Infrastructure vs. Desktop Limitations
 
-Some technologies provide isolation by their very nature.
+The Docker and OCI ecosystem was designed for infrastructure services:
 
-  * **Java Virtual Machine (JVM):**
+  * **Infrastructure Containers (Docker & OCI):**
+      * **Headless Services:** Optimized for background server processes (APIs, databases) without graphical interfaces.
+      * **Networking & Orchestration:** Private virtual networks (*bridge*), port mapping, and cluster orchestration.
+      * **Privileges:** Managed via a centralized daemon with administrative privileges (`dockerd` as `root`).
 
-      * The OS runs the `java` process, not your app directly.
-      * The JVM runs the Java bytecode in a managed, sandboxed environment.
-
------
-
-  * **Python Virtual Environments (`venv`):**
-
-      * This is **dependency isolation**, not security sandboxing.
-      * Creates a local folder (`.venv`) with its own Python interpreter and packages (like `pygame`).
-      * A `requirements.txt` file lists all dependencies, allowing `pip install -r requirements.txt` to create a reproducible environment, just as we did in our exercise.
-      * This solves the "App A vs. App B" problem on our local machine but doesn't stop the app from reading our files.
+  * **Desktop Application Limitations:**
+      * **Graphics & Audio:** No native support for Wayland/X11, 3D acceleration (`/dev/dri`), or PipeWire.
+      * **System Integration:** No menu/dock shortcuts, native notifications, or file associations.
+      * **Security & File Access:** No dynamic access delegation; bind mounts expose host folders without mediation.
 
 -----
 
-## The Modern Linux Solutions
+## Dynamic Dependency Management (*Dependency Hell*)
 
-Three major technologies emerged to solve this for *any* application, aiming to bundle the app *and* its dependencies.
+Desktop application distribution faces the challenge of shared dynamic dependencies:
 
-1.  **AppImage 📦**
-
-      * **Philosophy:** "One app = one file." No installation needed.
-
-2.  **Snap 🧩**
-
-      * **Philosophy:** "A secure, universal package." Backed by Canonical (Ubuntu).
-
-3.  **Flatpak 🎁**
-
-      * **Philosophy:** "The future of desktop apps." Backed by Red Hat & the GNOME community.
+  * **Traditional Linux Architecture:**
+      * Global sharing of dynamic libraries (`.so` files in `/usr/lib`).
+  * **Version Conflict Scenario:**
+      * Application A requires `libXYZ v1.0` vs. Application B requires `libXYZ v2.0`.
+  * **Package Manager Limitations (`apt`, `dnf`):**
+      * Only a single global version of each library is allowed in system paths.
+      * Installing or upgrading Application B breaks Application A (*breaking changes*).
+  * **Ecosystem Fragmentation:**
+      * Requires dedicated packaging and compilation per distribution (Debian, Fedora, Arch).
 
 -----
 
-## Deep Dive: AppImage 📦
+## The Shared Dependencies Problem
 
-  * **Isolation:** **None by default.** It's about portability, not security. The app runs as a normal user process.
-
-      * *(Can be sandboxed by optional, external tools like `firejail`)*.
-
-  * **Dependencies:** **"Bundle Everything."** The app bundles all libraries it needs, assuming only a minimal base system.
-
-  * **Host Access:** **Full User Access.** The app can see and modify anything the user who ran it can.
+\begin{center}
+\includegraphics[width=\linewidth,keepaspectratio]{dependency_hell.png}
+\end{center}
 
 -----
 
-## Deep Dive: Snap 🧩
+## Other Operating Systems: The Bundling Model (Windows & macOS)
 
-  * **Isolation:** **Strong Sandbox.** Uses Linux kernel features like **cgroups**, **namespaces**, and **AppArmor** to strictly confine the app.
+Self-contained packaging strategies to avoid global shared library conflicts:
 
-  * **Dependencies:** **Bundled + Core Snaps.** Apps bundle their specific libraries but also depend on a shared `core` snap (e.g., `core22`) that provides a base Ubuntu runtime.
-
-  * **Host Access:** **"Interfaces."** Denied by default. The app must declare what it needs (e.g., `network`, `home`, `camera`).
-
------
-
-## Deep Dive: Flatpak 🎁
-
-  * **Isolation:** **Strong Sandbox.** Uses kernel **namespaces** and a tool called **Bubblewrap (`bwrap`)** to create a private environment for the app.
-
-  * **Dependencies:** **Shared Runtimes.** An app requests a "Runtime" (e.g., `org.gnome.Platform`). This is downloaded *once* and shared by all apps that need it. Very efficient.
-
-  * **Host Access:** **"Portals."** Denied by default. When an app needs a file, it asks a Portal, which opens a file-picker *outside* the sandbox. The user picks a file, and *only* that file is given to the app.
+  * **Microsoft Windows (Local DLL Loading):**
+      * Each application bundles dynamic libraries (`.dll`) directly within its installation folder (`Program Files`).
+      * **Advantage:** Prevents global filesystem conflicts.
+      * **Trade-off:** High disk space duplication; no process sandbox by default.
+  * **Apple macOS (Self-Contained .app Bundles):**
+      * Unified directory structure grouping the binary executable, assets, and shared libraries (`.dylib`).
+      * **Advantage:** Decoupled, portable bundle model for end users.
+      * **Trade-off:** Redundant storage footprint; relies on a proprietary, uniform OS platform.
 
 -----
 
-## Comparison: Sandboxing & Dependencies
+## Language-Level Isolation: The Case of Python (venv)
 
-| Feature | AppImage | Snap | Flatpak |
+Why not solve desktop application distribution using only language virtual environments?
+
+  * **What `venv` Solves:**
+      * Creates a local directory (`.venv`) isolating Python packages and modules (`site-packages`).
+      * Ensures Python package reproducibility via `requirements.txt`.
+  * **Why It Falls Short for Desktop Applications:**
+      * **No Confinement:** Code runs with full user account privileges (no sandbox).
+      * **Host OS Dependency:** Requires a pre-installed Python interpreter and **does not bundle system C libraries** (e.g., SDL2, libGL, and audio required by Pygame).
+      * **No Desktop Integration:** Does not create application menu entries, manage windowing permissions, or register MIME types.
+
+-----
+
+## Isolation and Confinement Requirements (*Sandboxing*)
+
+Given the limitations of traditional models, desktop Linux requires three fundamental guarantees:
+
+  * **Deterministic Portability (*Run Anywhere*):**
+      * Identical and reproducible execution across any Linux distribution.
+  * **Stability and Non-Interference:**
+      * Installing, upgrading, or removing an application leaves the host system intact.
+  * **Security Confinement (*Sandboxing*):**
+      * No unauthorized access to personal files (`$HOME`, `~/.ssh`), credentials, or hardware peripherals (camera, microphone).
+
+-----
+
+\vspace{5em}
+
+\begin{center}
+{\LARGE \textbf{Part II: Desktop Containerization Paradigms}}
+\end{center}
+
+-----
+
+## Application Containers in Linux: Three Paradigms
+
+Three modern approaches for software distribution on desktop Linux:
+
+  * **1. AppImage:**
+      * **Single Self-Contained File:** "One app = one file".
+      * Direct execution by the user without installation or `root` privileges.
+  * **2. Snap:**
+      * **Universal Sandboxed Package:** Managed by a system background daemon (`snapd`).
+      * Developed by Canonical, deeply integrated into Ubuntu, and used in IoT/servers.
+  * **3. Flatpak:**
+      * **Open Standard for Desktop:** Built on shared *Runtimes* and strict sandboxing.
+      * Backed by Red Hat, GNOME, and KDE; distributed via **Flathub**.
+
+-----
+
+## Comparative Architectures: Services vs. Desktop
+
+\begin{center}
+\includegraphics[width=\linewidth,keepaspectratio]{desktop_containers_architecture.png}
+\end{center}
+
+-----
+
+## Comparative Analysis: AppImage vs. Snap vs. Flatpak
+
+| Comparison Vector | AppImage | Snap | Flatpak |
 | :--- | :--- | :--- | :--- |
-| **Sandboxing** | ❌ None (by default) | ✅ Strong (AppArmor) | ✅ Strong (Bubblewrap) |
-| **Permissions** | Full user access | Interfaces (Declarative) | Portals (Interactive) |
-| **Dependency Model**| All bundled in file | Bundled + Core snaps | Shared Runtimes |
+| **System Installation** | **None required (direct file execution)** | Required (requires `sudo` and daemon) | Optional (per-user install without `sudo`) |
+| **Dependency Bundling** | **100% self-contained (all in one file)** | Local dependencies + base *core snap* | Shared *Runtimes* across applications |
+| **Disk Footprint** | High (total duplication) | Medium/High (per-snap dependencies) | **Optimized (amortized across *runtimes*)** |
+| **Startup Latency** | **Fast** | Slower | **Fast / near-native** |
+| **Security Sandboxing** | None by default | **AppArmor** | **Bubblewrap** |
+| **Resource Access (Network/Files)** | Direct and unrestricted (inherits user access) | Declarative interfaces (*plugs* / *slots*) | **Declarative manifest permissions** |
+| **Desktop Integration** | Manual (no automatic shortcuts) | **Automatic (system menus and icons)** | **Automatic (system menus and icons)** |
+| **Distribution Model** | **Decentralized (direct download)** | Centralized by Canonical (Snap Store) | **Decentralized and community-driven (Flathub)** |
+| **Community & Backing** | Independent open-source community | **Canonical (Ubuntu)** | **Red Hat, GNOME, KDE, and community** |
+| **Primary Use Case** | **Quick portability ("USB drive")** | **Ubuntu desktop, servers, and IoT** | **Graphical desktop and multimedia apps** |
 
 -----
 
-## Comparison: Distribution & Backing
+\vspace{5em}
 
-| Feature | AppImage | Snap | Flatpak |
-| :--- | :--- | :--- | :--- |
-| **Distribution** | Decentralized (any URL) | Centralized (Snap Store) | Decentralized (Repos) |
-| **Central Backer** | Community | Canonical (Ubuntu) | Red Hat / GNOME |
-| **Needs a Daemon?**| ❌ No | ✅ Yes (`snapd`) | ✅ Yes (`flatpak-daemon`) |
-| **Desktop Integration**| Optional (`appimaged`) | Automatic | Automatic |
+\begin{center}
+{\LARGE \textbf{Part III: Packaging with AppImage and Flatpak}}
+\end{center}
 
 -----
 
-## Limitations: The Trade-Offs
+## AppImage: The AppDir Hierarchy
 
-  * **Disk Space:**
+The AppImage format is structured around an **`AppDir`** directory tree, packaged into an executable SquashFS image:
 
-      * **AppImage/Snap:** Bundling can be inefficient. A 10MB app might become a 150MB package.
-      * **Flatpak:** Runtimes are large (often 500MB+), but this is a **one-time** download.
+```text
+MeuJogo.AppDir/
+├── AppRun               # Executable entrypoint (Mandatory script)
+├── meujogo.desktop      # Desktop menu integration metadata
+├── meujogo.png          # Application icon
+└── usr/                 # Standard Unix hierarchy
+    ├── bin/             # Compiled binaries
+    └── lib/             # Dynamic libraries (.so) and Python packages
+```
 
-  * **Startup Time:**
-
-      * **AppImage:** Must mount the compressed file system on every launch (can be slow).
-      * **Snap:** Notoriously slow *first launch* as it sets up the sandbox.
-
------
-
-## Limitations: The "Jail" Problem
-
-  * **Security vs. Usability:**
-
-      * The sandbox is a "jail." This is great for security but can be frustrating.
-      * "Why can't my app see my home folder?" This is a **feature**, not a bug, but it requires apps to be written to use Portals correctly.
-
-  * **Not for Everything:**
-
-      * Poorly suited for command-line tools that need deep system integration (e.g., `docker`, `htop`, system drivers).
+  * **`AppRun` (Mandatory):** Entrypoint script executed on launch; configures environment variables (`PATH`, `PYTHONPATH`) and runs the main application.
 
 -----
 
-## Practical: The AppImage `AppDir` Structure
+## AppImage: Desktop Integration (.desktop)
 
-An AppImage is just a compressed directory. This directory is called the **`AppDir`**.
+The `.desktop` entry file integrates the application into desktop menus:
 
-**`MyGame.AppDir/`** (The root folder)
-
-  * **`AppRun` (Required):** The entrypoint script. This is what runs when you double-click the AppImage. It's our job to write this script to set up the environment (like `PYTHONPATH` for Pygame) and launch the main binary.
-
-  -----
-
-  * **`my-game.desktop` (Required):** The desktop integration file. It tells the system's app menu:
-      * `Name=My Game`
-      * `Exec=AppRun` (Always `AppRun`)
-      * `Icon=my-game` (The name of the icon, without extension)
-  * **`my-game.png` (Required):** The icon file named in the `.desktop` file.
-  * **`usr/`...:** A standard Linux structure containing your binaries, libraries, and the portable Python interpreter.
-
------
-
-## Practical: AppImage "Hello World"
-
-Here, we create the *minimal* `AppDir` structure.
-
-1.  **Create the directory, script, and metadata:**
-
-    ```bash
-    mkdir -p HelloWorld.AppDir
-    cd HelloWorld.AppDir
-
-    # Create the AppRun entrypoint
-    echo '#!/bin/bash' > AppRun
-    echo 'echo "Hello from an AppImage!"' >> AppRun
-    chmod +x AppRun
-
-    # Create the desktop file
-    echo '[Desktop Entry]' > hello.desktop
-    echo 'Name=Hello' >> hello.desktop
-    echo 'Exec=AppRun' >> hello.desktop
-    echo 'Icon=hello' >> hello.desktop
-    echo 'Type=Application' >> hello.desktop
-
-    # Add a dummy icon
-    touch hello.png
+  * **Typical content of `meujogo.desktop`:**
+    ```ini
+    [Desktop Entry]
+    Name=Meu Jogo
+    Exec=AppRun
+    Icon=meujogo
+    Type=Application
+    Categories=Game;
     ```
+  * **Resource Mapping:**
+      * `Exec=AppRun`: Invokes the entrypoint script at the image root.
+      * `Icon=meujogo`: Links to `meujogo.png` in the `AppDir` root.
 
 -----
 
-## Practical: Bundling the AppImage
+## AppImage: "Hello World" Example
 
-1.  **Bundle it\!**
-
-    ```bash
-    # Go back to parent dir
-    cd ..
-
-    # Download appimagetool (only need to do this once)
-    wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
-    chmod +x appimagetool-x86_64.AppImage
-
-    # Run the tool on your directory
-    # We must set ARCH for script-based apps
-    ARCH=x86_64 ./appimagetool-x86_64.AppImage HelloWorld.AppDir
-    ```
-
-    **Result:** You now have `Hello-x86_64.AppImage`. Run it:
-    `./Hello-x86_64.AppImage`
-
------
-
-## Practical: The Flatpak Manifest (`.yml`)
-
-A Flatpak is built from a "manifest" file that acts as a "recipe."
-
-  * `app-id`: The unique name (e.g., `com.example.HelloWorld`).
-  * `runtime` / `sdk`: The base system to build upon (e.g., `org.gnome.Platform`). We don't bundle Python; we use the one from the runtime.
-  * `command`: The executable to run.
-  * `modules`: The list of "parts" to build. This is where we list our app's code and its dependencies (like `pygame` from PyPI or our game from a `git` URL).
-
------
-
-## Practical: Flatpak "Hello World"
-
-1.  **Create the script:**
-
-    ```bash
-    # Create a file named hello.sh
-    echo '#!/bin/sh' > hello.sh
-    echo 'echo "Hello from a Flatpak Sandbox!"' >> hello.sh
-    ```
-
-2.  **Create the manifest (`com.example.HelloWorld.yml`):**
-
-    ```yaml
-    app-id: com.example.HelloWorld
-    runtime: org.freedesktop.Platform
-    runtime-version: '25.08'
-    sdk: org.freedesktop.Sdk
-    command: hello.sh
-    modules:
-      - name: hello-module
-        buildsystem: simple
-        build-commands:
-          # Install the script into the sandbox
-          - install -Dm755 hello.sh /app/bin/hello.sh
-        sources:
-          - type: file
-            path: hello.sh
-    ```
-
------
-
-## Practical: The `flatpak-builder` Tool
-
-The `flatpak-builder` command reads your `.yml` manifest and performs the build inside a clean, sandboxed environment.
+Creating the minimal `AppDir` structure for a shell script:
 
 ```bash
-# 1. Build and install the app
+# 1. Create working directory
+mkdir -p HelloWorld.AppDir && cd HelloWorld.AppDir
+
+# 2. Create executable AppRun entrypoint script
+echo '#!/bin/bash' > AppRun
+echo 'echo "Hello from an AppImage!"' >> AppRun
+chmod +x AppRun
+
+# 3. Create desktop metadata and icon
+echo '[Desktop Entry]' > hello.desktop
+echo 'Name=Hello' >> hello.desktop
+echo 'Exec=AppRun' >> hello.desktop
+echo 'Icon=hello' >> hello.desktop
+echo 'Type=Application' >> hello.desktop
+touch hello.png
+```
+
+-----
+
+## AppImage: Packaging with appimagetool
+
+Transforming the `AppDir` folder into a single portable executable:
+
+```bash
+# Return to parent directory
+cd ..
+
+# Download appimagetool (if not present on system)
+wget https://github.com/AppImage/AppImageKit/releases/\
+download/continuous/appimagetool-x86_64.AppImage
+chmod +x appimagetool-x86_64.AppImage
+
+# Generate the final .AppImage file
+ARCH=x86_64 ./appimagetool-x86_64.AppImage HelloWorld.AppDir
+
+# Test the generated self-contained binary
+./Hello-x86_64.AppImage
+```
+
+-----
+
+## Flatpak: The Declarative Manifest (.yml)
+
+Flatpak applications are built from a declarative YAML or JSON manifest:
+
+  * **`app-id`:** Globally unique ID in reverse-DNS notation (e.g., `pt.ua.deti.iei.HelloWorld`).
+  * **`runtime` / `sdk`:** Base execution platform and development SDK (e.g., `org.freedesktop.Platform`).
+  * **`command`:** Binary or script executed when the sandbox starts.
+  * **`modules`:** Declarative list of components to fetch and build (git sources, PyPI packages, local scripts).
+
+-----
+
+## Flatpak: Example Manifest (com.example.HelloWorld.yml)
+
+Manifest example for a simple shell script:
+
+```yaml
+app-id: com.example.HelloWorld
+runtime: org.freedesktop.Platform
+runtime-version: '25.08'
+sdk: org.freedesktop.Sdk
+command: hello.sh
+modules:
+  - name: hello-module
+    buildsystem: simple
+    build-commands:
+      # Installs the script into the sandbox binary path
+      - install -Dm755 hello.sh /app/bin/hello.sh
+    sources:
+      - type: file
+        path: hello.sh
+```
+
+-----
+
+## Flatpak in the Lab: Tic-Tac-Toe (Pygame)
+
+In the lab guide, this pattern packages an interactive graphical game:
+
+  * **Graphics Requirements & Hardware Acceleration:**
+      * Peripheral access declared in `finish-args`:
+        ```yaml
+        finish-args:
+          - --share=ipc
+          - --socket=x11
+          - --socket=wayland
+          - --device=dri        # GPU hardware acceleration
+          - --env=PYTHONPATH=/app/lib/game
+        ```
+  * **Python Dependency Management via Modules:**
+      * The manifest bundles `pygame` from PyPI and installs game code to `/app/lib/game`.
+  * **Desktop Integration:**
+      * `.desktop` file and icon installed to standard XDG sandbox paths (`/app/share/applications/` and `/app/share/icons/`).
+
+-----
+
+## Flatpak: The flatpak-builder Tool
+
+The `flatpak-builder` utility parses the manifest and builds the app in an isolated environment:
+
+```bash
+# 1. Build and install locally for the current user
 flatpak-builder --user --install --force-clean \
   build-dir com.example.HelloWorld.yml
 ```
 
-  * **`--user`**: Installs for the current user (no `sudo`).
-  * **`--install`**: Installs the app as soon as it's built.
-  * **`--force-clean`**: Deletes the old build directory for a fresh start.
-  * **`build-dir`**: A temporary folder for the build process.
-
-<!-- end list -->
+  * **`--user`:** Installs into user profile (`~/.local/share/flatpak`), requiring no `sudo`.
+  * **`--install`:** Registers the application in the system upon successful build.
+  * **`--force-clean`:** Cleans the temporary build directory `build-dir`.
 
 ```bash
-# 2. Run your new app!
+# 2. Run the application inside the Flatpak sandbox
 flatpak run com.example.HelloWorld
 ```
 
------
-
-## Practical: Flatpak Repositories
-
-Flatpak is decentralized, like `git`. There is no single "store."
-
-  * **What is a Repository?**
-
-      * A server (or local folder) that hosts apps, managed by `ostree`.
-      * You can have multiple "remotes" (repositories) configured.
-
-  * **Flathub: The "Main" Repo**
-
-      * `flathub.org` is the *de facto* central repository for most desktop apps (Spotify, VS Code, GIMP, Steam).
-      * `flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo`
-
-  -----
-
-  * **How to Publish:**
-
-      * To get your app on Flathub, you submit your `.yml` manifest file to their GitHub repository as a pull request.
-      * Their build system automatically builds, signs, and publishes your app for you.
 
 -----
 
-## Conclusion
+## Session Summary & Key Takeaways
 
-  * **Isolation** solves "Dependency Hell" and adds **security**.
+  * **Infrastructure vs. Desktop:** Docker manages backend server workloads (*headless*); AppImage, Snap, and Flatpak distribute interactive graphical desktop applications.
+  * **Solving Dependency Hell:** Self-contained packaging eliminates shared library (`.so`) version conflicts, guaranteeing deterministic execution.
+  * **AppImage:** Single portable executable focused on simplicity, without a sandbox by default.
+  * **Snap:** Mandatory confinement (AppArmor) and centralized distribution closely tied to Ubuntu.
+  * **Flatpak:** Open standard for desktop applications, combining shared *Runtimes* with robust sandboxing (*Bubblewrap*).
 
-  * **AppImage:** Best for simple **portability**.
+-----
 
-      * *Focus:* Manually creating a file structure (`AppDir`) and an `AppRun` script.
+## Authoritative Technical References
 
-  * **Snap:** Strong in **IoT/Server** and on Ubuntu.
+Official documentation and specifications for further study in desktop systems and sandboxing:
 
-      * *Focus:* Central store, strong security.
-
-  * **Flatpak:** The leader in the **desktop** space.
-
-      * *Focus:* Writing a declarative "recipe" (`.yml` manifest) and letting `flatpak-builder` and shared runtimes do the heavy lifting.
+  * **Flatpak Documentation:**
+      * [Flatpak Developer Guide and Architecture Reference](https://docs.flatpak.org/)
+      * [flatpak-builder Command Reference](https://docs.flatpak.org/en/latest/flatpak-builder.html)
+  * **AppImage Documentation:**
+      * [Official AppImage Packaging Guide](https://docs.appimage.org/)
+      * [AppImage File Format Specification](https://github.com/AppImage/AppImageSpec)
+  * **Canonical Snapcraft:**
+      * [Snap Architecture and Interfaces Documentation](https://snapcraft.io/docs)
+  * **FreeDesktop.org Specifications:**
+      * [Desktop Entry Specification (`.desktop`)](https://specifications.freedesktop.org/desktop-entry-spec/latest/)
+      * [XDG Desktop Portals Specification](https://flatpak.github.io/xdg-desktop-portal/)

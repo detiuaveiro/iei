@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1810 900" width="1810" height="900">
+
+  <defs>
+    <style>
+      .title { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 30px; font-weight: 700; fill: #0F172A; text-anchor: middle; }
+      .subtitle { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 18px; font-weight: 600; fill: #475569; text-anchor: middle; }
+      .box-title { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 21px; font-weight: 700; text-anchor: middle; }
+      .box-sub { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 15px; font-weight: 600; text-anchor: middle; }
+      .note { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 15px; fill: #334155; text-anchor: middle; }
+      .code { font-family: "Fira Code", Menlo, monospace; font-size: 15px; font-weight: 700; text-anchor: middle; }
+      .step { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 18px; font-weight: 800; fill: #FFFFFF; text-anchor: middle; }
+      .lbl { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 15px; font-weight: 600; fill: #1E293B; text-anchor: middle; }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#DC2626"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#16A34A"/>
+    </marker>
+  </defs>
+
+  <rect width="1810" height="900" fill="#FFFFFF"/>
+  <text x="905" y="55" class="title" font-size="34px">Arquiteturas Comparadas: Contentores de Serviço vs. Contentores Desktop</text>
+  <g transform="translate(40, 100)">
+<rect width="410" height="655" rx="14" fill="#EFF6FF" stroke="#2563EB" stroke-width="2"/>
+<rect width="410" height="74" rx="14" fill="#2563EB"/>
+<text x="205" y="34" class="box-title" fill="#FFFFFF" font-size="28px">Docker / OCI</text>
+<text x="205" y="60" class="box-sub" fill="#FFFFFF" font-size="20px">Aula 04 · Serviços de servidor</text>
+<rect x="25" y="90" width="360" height="130" rx="10" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.8"/>
+<text x="205" y="122" class="lbl" fill="#1E3A8A" font-size="20px" font-weight="700" letter-spacing="1">UNIDADE ISOLADA</text>
+<text x="205" y="160" class="box-title" fill="#1E3A8A" font-size="23px">Serviço headless</text>
+<text x="205" y="194" class="note" font-size="20px">API, base de dados, servidor web</text>
+<rect x="25" y="230" width="360" height="130" rx="10" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.8"/>
+<text x="205" y="262" class="lbl" fill="#1E3A8A" font-size="20px" font-weight="700" letter-spacing="1">DEPENDÊNCIAS</text>
+<text x="205" y="300" class="box-title" fill="#1E3A8A" font-size="23px">Imagem OCI em camadas</text>
+<text x="205" y="334" class="note" font-size="20px">Copy-on-Write · Docker Hub</text>
+<rect x="25" y="370" width="360" height="130" rx="10" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.8"/>
+<text x="205" y="402" class="lbl" fill="#1E3A8A" font-size="20px" font-weight="700" letter-spacing="1">MOTOR DE EXECUÇÃO</text>
+<text x="205" y="440" class="box-title" fill="#1E3A8A" font-size="23px">dockerd + containerd + runc</text>
+<text x="205" y="474" class="note" font-size="20px">Daemon com privilégios root</text>
+<rect x="25" y="510" width="360" height="130" rx="10" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.8"/>
+<text x="205" y="542" class="lbl" fill="#1E3A8A" font-size="20px" font-weight="700" letter-spacing="1">ISOLAMENTO</text>
+<text x="205" y="580" class="box-title" fill="#1E3A8A" font-size="23px">Namespaces + cgroups</text>
+<text x="205" y="614" class="note" font-size="20px">Rede própria, portos mapeados</text>
+</g><g transform="translate(480, 100)">
+<rect width="410" height="655" rx="14" fill="#FFF7ED" stroke="#EA580C" stroke-width="2"/>
+<rect width="410" height="74" rx="14" fill="#EA580C"/>
+<text x="205" y="34" class="box-title" fill="#FFFFFF" font-size="28px">AppImage</text>
+<text x="205" y="60" class="box-sub" fill="#FFFFFF" font-size="20px">Ficheiro único autónomo</text>
+<rect x="25" y="90" width="360" height="130" rx="10" fill="#FFFFFF" stroke="#EA580C" stroke-width="1.8"/>
+<text x="205" y="122" class="lbl" fill="#7C2D12" font-size="20px" font-weight="700" letter-spacing="1">UNIDADE ISOLADA</text>
+<text x="205" y="160" class="box-title" fill="#7C2D12" font-size="23px">Aplicação gráfica</text>
+<text x="205" y="194" class="note" font-size="20px">Executável sem instalação</text>
+<rect x="25" y="230" width="360" height="130" rx="10" fill="#FFFFFF" stroke="#EA580C" stroke-width="1.8"/>
+<text x="205" y="262" class="lbl" fill="#7C2D12" font-size="20px" font-weight="700" letter-spacing="1">DEPENDÊNCIAS</text>
+<text x="205" y="300" class="box-title" fill="#7C2D12" font-size="23px">Todas embutidas (AppDir)</text>
+<text x="205" y="334" class="note" font-size="20px">Imagem SquashFS comprimida</text>
+<rect x="25" y="370" width="360" height="130" rx="10" fill="#FFFFFF" stroke="#EA580C" stroke-width="1.8"/>
+<text x="205" y="402" class="lbl" fill="#7C2D12" font-size="20px" font-weight="700" letter-spacing="1">MOTOR DE EXECUÇÃO</text>
+<text x="205" y="440" class="box-title" fill="#7C2D12" font-size="23px">Montagem FUSE + AppRun</text>
+<text x="205" y="474" class="note" font-size="20px">Sem daemon de sistema</text>
+<rect x="25" y="510" width="360" height="130" rx="10" fill="#FEF2F2" stroke="#EA580C" stroke-width="1.8"/>
+<text x="205" y="542" class="lbl" fill="#7C2D12" font-size="20px" font-weight="700" letter-spacing="1">ISOLAMENTO</text>
+<text x="205" y="580" class="box-title" fill="#7C2D12" font-size="23px">Inexistente por omissão</text>
+<text x="205" y="614" class="note" font-size="20px">Privilégios totais de utilizador</text>
+</g><g transform="translate(920, 100)">
+<rect width="410" height="655" rx="14" fill="#FDF4FF" stroke="#C026D3" stroke-width="2"/>
+<rect width="410" height="74" rx="14" fill="#C026D3"/>
+<text x="205" y="34" class="box-title" fill="#FFFFFF" font-size="28px">Snap</text>
+<text x="205" y="60" class="box-sub" fill="#FFFFFF" font-size="20px">Canonical · Snap Store</text>
+<rect x="25" y="90" width="360" height="130" rx="10" fill="#FFFFFF" stroke="#C026D3" stroke-width="1.8"/>
+<text x="205" y="122" class="lbl" fill="#701A75" font-size="20px" font-weight="700" letter-spacing="1">UNIDADE ISOLADA</text>
+<text x="205" y="160" class="box-title" fill="#701A75" font-size="23px">Aplicação ou serviço</text>
+<text x="205" y="194" class="note" font-size="20px">Desktop, CLI e servidores / IoT</text>
+<rect x="25" y="230" width="360" height="130" rx="10" fill="#FFFFFF" stroke="#C026D3" stroke-width="1.8"/>
+<text x="205" y="262" class="lbl" fill="#701A75" font-size="20px" font-weight="700" letter-spacing="1">DEPENDÊNCIAS</text>
+<text x="205" y="300" class="box-title" fill="#701A75" font-size="23px">Embutidas + core snap</text>
+<text x="205" y="334" class="note" font-size="20px">core22 · SquashFS em loopback</text>
+<rect x="25" y="370" width="360" height="130" rx="10" fill="#FFFFFF" stroke="#C026D3" stroke-width="1.8"/>
+<text x="205" y="402" class="lbl" fill="#701A75" font-size="20px" font-weight="700" letter-spacing="1">MOTOR DE EXECUÇÃO</text>
+<text x="205" y="440" class="box-title" fill="#701A75" font-size="23px">snapd</text>
+<text x="205" y="474" class="note" font-size="20px">Daemon central com root</text>
+<rect x="25" y="510" width="360" height="130" rx="10" fill="#F0FDF4" stroke="#C026D3" stroke-width="1.8"/>
+<text x="205" y="542" class="lbl" fill="#701A75" font-size="20px" font-weight="700" letter-spacing="1">ISOLAMENTO</text>
+<text x="205" y="580" class="box-title" fill="#701A75" font-size="23px">AppArmor + seccomp</text>
+<text x="205" y="614" class="note" font-size="20px">Namespaces · interfaces</text>
+</g><g transform="translate(1360, 100)">
+<rect width="410" height="655" rx="14" fill="#F0FDF4" stroke="#16A34A" stroke-width="2"/>
+<rect width="410" height="74" rx="14" fill="#16A34A"/>
+<text x="205" y="34" class="box-title" fill="#FFFFFF" font-size="28px">Flatpak</text>
+<text x="205" y="60" class="box-sub" fill="#FFFFFF" font-size="20px">Padrão aberto · Flathub</text>
+<rect x="25" y="90" width="360" height="130" rx="10" fill="#FFFFFF" stroke="#16A34A" stroke-width="1.8"/>
+<text x="205" y="122" class="lbl" fill="#14532D" font-size="20px" font-weight="700" letter-spacing="1">UNIDADE ISOLADA</text>
+<text x="205" y="160" class="box-title" fill="#14532D" font-size="23px">Aplicação gráfica</text>
+<text x="205" y="194" class="note" font-size="20px">GUI, áudio, GPU, Wayland / X11</text>
+<rect x="25" y="230" width="360" height="130" rx="10" fill="#FFFFFF" stroke="#16A34A" stroke-width="1.8"/>
+<text x="205" y="262" class="lbl" fill="#14532D" font-size="20px" font-weight="700" letter-spacing="1">DEPENDÊNCIAS</text>
+<text x="205" y="300" class="box-title" fill="#14532D" font-size="23px">Runtime partilhado</text>
+<text x="205" y="334" class="note" font-size="20px">org.freedesktop / org.gnome</text>
+<rect x="25" y="370" width="360" height="130" rx="10" fill="#FFFFFF" stroke="#16A34A" stroke-width="1.8"/>
+<text x="205" y="402" class="lbl" fill="#14532D" font-size="20px" font-weight="700" letter-spacing="1">MOTOR DE EXECUÇÃO</text>
+<text x="205" y="440" class="box-title" fill="#14532D" font-size="23px">bubblewrap (bwrap)</text>
+<text x="205" y="474" class="note" font-size="20px">Sem daemon · user namespaces</text>
+<rect x="25" y="510" width="360" height="130" rx="10" fill="#DCFCE7" stroke="#16A34A" stroke-width="1.8"/>
+<text x="205" y="542" class="lbl" fill="#14532D" font-size="20px" font-weight="700" letter-spacing="1">ISOLAMENTO</text>
+<text x="205" y="580" class="box-title" fill="#14532D" font-size="23px">Sandbox + Portals</text>
+<text x="205" y="614" class="note" font-size="20px">Acesso mediado e autorizado</text>
+</g>
+  <rect x="40" y="775" width="1730" height="90" rx="12" fill="#F1F5F9" stroke="#94A3B8" stroke-width="2.5"/>
+  <text x="905" y="815" class="box-title" fill="#1E293B" font-size="26px">Kernel Linux do Anfitrião (partilhado)</text>
+  <text x="905" y="848" class="note" font-size="21px">namespaces (PID, MNT, NET, USER, IPC) · cgroups · seccomp · LSM (AppArmor / SELinux)</text>
+</svg>

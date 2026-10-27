@@ -1,6 +1,6 @@
 app-id: pt.ua.deti.iei.tictactoe
 runtime: org.gnome.Platform
-runtime-version: "48"
+runtime-version: '50'
 sdk: org.gnome.Sdk
 command: game
 finish-args:
@@ -16,7 +16,8 @@ modules:
       env:
         MAKEFLAGS: -j$(nproc)
     build-commands:
-      - pip3 install --isolated --no-index --find-links="file://${PWD}" --prefix=/app pygame
+      - pip3 install --isolated --no-index
+        --find-links="file://${PWD}" --prefix=/app pygame
     sources:
       - type: file
         url: https://pypi.io/packages/source/p/pygame/pygame-2.6.1.tar.gz
@@ -35,5 +36,5 @@ modules:
         /app/share/icons/hicolor/128x128/apps/pt.ua.deti.iei.tictactoe.png
     sources:
       - type: archive
-        url: https://github.com/mariolpantunes/tictactoe/archive/refs/tags/tictactoe-1.0.zip
-        sha256: 4210c04451ae8520770b0a7ab61e8b72f0ca46fbf2d65504d7d98646fda79b5a
+        url: https://github.com/mariolpantunes/tictactoe/archive/refs/heads/main.zip
+        sha256: 038b54a775c2934cfa17ecced82c5db33a5d9ff15243cd5682ae2a3d07866ba2
