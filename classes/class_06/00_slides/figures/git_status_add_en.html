@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  html, body {
+    margin: 0;
+    padding: 16px;
+    background: transparent;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+    overflow: hidden;
+    width: 1080px;
+    box-sizing: border-box;
+  }
+  .window {
+    background: #1e1e2e;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    overflow: hidden;
+    border: 1px solid #313244;
+  }
+  .titlebar {
+    background: #181825;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .dot { width: 14px; height: 14px; border-radius: 50%; }
+  .red { background: #f38ba8; }
+  .yellow { background: #f9e2af; }
+  .green { background: #a6e3a1; }
+  .title {
+    color: #a6adc8;
+    font-size: 19pt;
+    margin-left: 10px;
+    font-weight: 600;
+    font-family: monospace;
+  }
+  .content {
+    padding: 18px 24px;
+    font-family: "Courier New", monospace;
+    font-size: 20pt;
+    line-height: 1.4;
+    color: #cdd6f4;
+    white-space: pre;
+  }
+  .prompt { color: #89b4fa; font-weight: bold; }
+  .cmd { color: #f9e2af; font-weight: bold; }
+  .untracked { color: #f38ba8; font-weight: bold; }
+  .staged { color: #a6e3a1; font-weight: bold; }
+  .muted { color: #6c7086; }
+  .action-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 0;
+  }
+  .arrow-badge {
+    background: #92D400;
+    color: #11111b;
+    font-family: "Courier New", monospace;
+    font-size: 21pt;
+    font-weight: bold;
+    padding: 8px 28px;
+    border-radius: 26px;
+    box-shadow: 0 4px 14px rgba(146, 212, 0, 0.4);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+</style>
+</head>
+<body>
+
+  <div class="window">
+    <div class="titlebar">
+      <span class="dot red"></span>
+      <span class="dot yellow"></span>
+      <span class="dot green"></span>
+      <span class="title">1. BEFORE: Initial inspection (Untracked file)</span>
+    </div>
+    <div class="content"><span class="prompt">$</span> <span class="cmd">git status</span>
+On branch main
+Untracked files:
+  (use "git add &lt;file&gt;..." to include in what will be committed)
+	<span class="untracked">main.c</span>
+
+<span class="muted">nothing added to commit but untracked files present</span></div>
+  </div>
+
+  <div class="action-arrow">
+    <div class="arrow-badge">
+      <span>&darr;</span>
+      <span>$ git add main.c</span>
+      <span>&darr;</span>
+    </div>
+  </div>
+
+  <div class="window">
+    <div class="titlebar">
+      <span class="dot red"></span>
+      <span class="dot yellow"></span>
+      <span class="dot green"></span>
+      <span class="title">2. AFTER: Staged in the Index (Ready to commit)</span>
+    </div>
+    <div class="content"><span class="prompt">$</span> <span class="cmd">git status</span>
+On branch main
+Changes to be committed:
+  (use "git restore --staged &lt;file&gt;..." to unstage)
+	<span class="staged">new file:   main.c</span></div>
+  </div>
+
+</body>
+</html>

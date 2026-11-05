@@ -1,15 +1,15 @@
 ---
-title: Git & GitHub
-subtitle: Introdução Engenharia Informática
-author: Mário Antunes
+title: 47138 - Introdução à Engenharia Informática
+subtitle: "Controlo de Versões com Git & Plataforma Colaborativa GitHub"
 institute: Universidade de Aveiro
-date: 27 de Outubro de 2025
+date: November 02, 2026
 colorlinks: true
 highlight-style: tango
 geometry: a4paper,margin=2cm
 mainfont: NotoSans
 mainfontfallback:
   - "NotoColorEmoji:mode=harf"
+  - "DejaVu Sans:"
 header-includes:
  - \usepackage{longtable,booktabs}
  - \usepackage{etoolbox}
@@ -20,401 +20,600 @@ header-includes:
  - \setmonofont[Contextuals={Alternate}]{FiraCodeNerdFontMono-Retina}
 ---
 
-# Exercícios
+# Guião Prático de Laboratório
 
-## Laboratório Prático: Git & GitHub
+**Enquadramento Pedagógico & Objetivos:**
+O controlo de versões distribuído com **Git** e a colaboração através de plataformas na nuvem como o **GitHub** constituem a espinha dorsal da engenharia de software contemporânea. Nesta sessão prática de **3 horas**, irá aplicar passo a passo todos os conceitos abordados na apresentação teórica, adquirindo a disciplina operacional para controlar o ciclo de vida do código-fonte com rastreabilidade, reversibilidade e colaboração segura em equipa:
 
-### De Repositório Local a Colaboração Open-Source
+* **Parte 0 — Configuração do Ambiente & Autenticação no GitHub:** Instalação do Git, configuração de identidade (`user.name`, `user.email`) e autenticação criptográfica segura com o GitHub via chave SSH `ed25519`.
+* **Parte 1 — Aspetos Funcionais do Git & Ciclo de Vida Local:** Inicialização de repositórios (`git init`), transição entre as três zonas operacionais (*Working Tree*, *Staging Area* e *Repositório Local*) e os quatro estados dos ficheiros, boas práticas (regra 50/72) e padronização com *Conventional Commits*, inspeção detalhada com `git log`, marcação local de versões com `git tag` ([SemVer](https://semver.org/)) e exclusão de artefactos com `.gitignore`.
+* **Parte 2 — Ramificação, Integração & Resolução de Conflitos:** O paradigma de ramos como ponteiros leves ($O(1)$) e o ponteiro simbólico `HEAD`, comandos de gestão (`git branch`, `git switch`, `git switch -c`, `git branch -d`), estratégias de integração com `git merge` (*Fast-Forward* vs. *3-Way Merge*), linearização do histórico com `git rebase` e resolução manual de conflitos de *merge*.
+* **Parte 3 — Colaboração Distribuída, Workflows & GitHub Releases:** Gestão de repositórios remotos (`origin`), sincronização com `fetch`, `pull` e `push`, execução *end-to-end* do modelo **Scaled Trunk-Based Development** (com *Short-Lived Feature Branches* e *Pull Requests* com *Code Review*) e publicação oficial de versões com **GitHub Releases**.
 
-**Objetivo:** Este laboratório irá guiá-lo através do ciclo de vida completo de um repositório Git. Irá aprender a criar um repositório local, gerir versões, trabalhar com branches, e finalmente, colaborar num projeto remoto usando o GitHub.
+\vspace{0.5em}
 
-**Pré-requisitos:**
+### Preparação do Diretório de Trabalho
 
-  * **Git Instalado:** Tem de ter o Git instalado na sua máquina.
-  * **Uma Conta GitHub:** Irá precisar de uma conta GitHub gratuita para os exercícios de colaboração.
-  * **Um Editor de Texto:** Qualquer editor de texto (como VS Code, Sublime Text, ou Nano) servirá.
-
------
-
-## Parte 0: Configuração & Autenticação
-
-Antes de podermos trabalhar com repositórios remotos, precisamos de instalar o Git e dizer ao GitHub quem somos.
-
-### Passo 1: Instalar o Git
-
-Em sistemas baseados em Debian (como debian trixieOS ou Ubuntu), pode instalar o Git usando o `apt`.
-
-1.  Primeiro, atualize a sua lista de pacotes:
-    ```bash
-    $ sudo apt update
-    ```
-2.  De seguida, instale o Git:
-    ```bash
-    $ sudo apt install git
-    ```
-
-### Passo 2: Configurar a Sua Identidade
-
-Tem de dizer ao Git o seu nome e email. Esta informação será incorporada em cada `commit` que fizer.
+Antes de iniciar os exercícios, crie e aceda à pasta de trabalho dedicada para esta sessão laboratorial:
 
 ```bash
-$ git config --global user.name "Your Name"
-$ git config --global user.email "your.email@ua.pt"
+$ mkdir -p ~/IEI/aula06
+$ cd ~/IEI/aula06
 ```
 
-*(Use o seu email da UA.)*
+Todos os repositórios locais e ficheiros criados durante a aula deverão ser organizados dentro deste diretório de trabalho.
 
-### Passo 3: Autenticar no GitHub
-
-Para fazer `push` do seu código para o GitHub, tem de provar quem é.
-Tem duas opções principais: SSH (recomendado) ou um Personal Access Token (PAT).
-
-**Método 1: Usar uma Chave SSH (Recomendado)**
-
-Este método é mais seguro e conveniente. Adiciona uma "chave" (key) à sua conta GitHub, e o seu computador usa-a para autenticar automaticamente.
-
-1.  Gere uma nova chave SSH `ed25519`. Este comando cria um par de chaves sem pedir uma password (`-N ""`).
-    ```bash
-    $ ssh-keygen -t ed25519 -C "your.email@example.com" -f ~/.ssh/id_ed25519 -N ""
-    ```
-2.  Mostre a sua nova chave pública (public key) no terminal para a poder copiar.
-    ```bash
-    $ cat ~/.ssh/id_ed25519.pub
-    ```
-3.  Copie o output completo (começando com `ssh-ed25519...` e terminando com o seu email).
-4.  Adicione a chave ao GitHub:
-      * Vá a **GitHub.com** e clique no ícone do seu perfil no canto superior direito.
-      * Vá a **Settings** -\> **SSH and GPG keys** (na barra lateral "Access").
-      * Clique em **New SSH key**.
-      * Dê-lhe um **Title** (título) (ex: "Portátil TrixieOS").
-      * Cole a chave copiada na caixa **Key**.
-      * Clique em **Add SSH key**.
-
-**Método 2: Usar um Fine-Grained Personal Access Token (PAT)**
-
-Um PAT é como uma password que pode usar para operações Git.
-
-1.  Vá a **GitHub.com** -\> **Settings** -\> **Developer settings** (no fundo da barra lateral).
-2.  Vá a **Personal access tokens** -\> **Fine-grained tokens**.
-3.  Clique em **Generate new token**.
-4.  Defina as seguintes opções:
-      * **Token name:** Dê-lhe um nome descritivo (ex: "Token Aula IEI").
-      * **Expiration:** Selecione **No expiration** (Sem expiração).
-      * **Repository access:** Selecione **All repositories** (Todos os repositórios).
-      * **Permissions:** Faça scroll até "Repository permissions" e encontre **Contents**. Altere o seu acesso para **Read and write** (Leitura e escrita).
-5.  Clique em **Generate token**.
-6.  **IMPORTANTE:** Copie o token (começa por `github_pat_...`) *imediatamente*. Nunca mais o verá depois de sair desta página.
-7.  Quando precisar de se ligar ao GitHub (nas Partes 2 e 3), irá usar este token no URL:
-    `https://<YOUR_USERNAME>:<YOUR_TOKEN>@github.com/<YOUR_USERNAME>/<REPOSITORY>.git`
+> **Nota sobre caminhos de ficheiros:**
+> Os comandos deste guião assumem que o terminal está posicionado no diretório de trabalho `~/IEI/aula06`.
 
 -----
 
-### Parte 1: O Seu Repositório Local
+## Parte 0: Configuração do Ambiente & Autenticação no GitHub
 
-#### Exercício 1: `git init` (Criar um Repositório)
+Antes de iniciar o desenvolvimento, é necessário preparar o cliente Git local e estabelecer a autenticação segura com a plataforma GitHub.
 
-O nosso primeiro passo é dizer ao Git para começar a seguir (track) um novo projeto.
+### Passo 1: Instalação e Verificação do Git
 
-1.  Crie uma nova pasta para o seu projeto e navegue para dentro dela.
-    ```bash
-    $ mkdir my-git-project
-    $ cd my-git-project
-    ```
-2.  Agora, inicialize-o como um repositório Git.
-    ```bash
-    $ git init
-    ```
-3.  Isto cria uma pasta oculta `.git`. Criou oficialmente um repositório\!
+Em sistemas baseados em Debian/Ubuntu, verifique se o Git se encontra instalado ou proceda à sua instalação:
 
-#### Exercício 2: O Ciclo Principal (`add`, `commit`, `status`, `log`)
+```bash
+$ sudo apt update && sudo apt install -y git
+$ git --version
+```
 
-Vamos criar um ficheiro, adicioná-lo à "staging area" e fazer "commit" para o nosso histórico.
+### Passo 2: Configuração Global de Identidade
 
-1.  Crie um ficheiro chamado `index.html` dentro da sua pasta `my-git-project` e adicione o seguinte conteúdo:
-    ```html
-    <h1>Welcome to My Project</h1>
-    ```
-2.  Verifique o "status" do seu repositório.
-    ```bash
-    $ git status
-    ```
-    O Git irá mostrar-lhe `index.html` como um "untracked file" (ficheiro não seguido).
-3.  Diga ao Git que quer seguir este ficheiro, adicionando-o à **Staging Area**.
-    ```bash
-    $ git add index.html
-    ```
-4.  Verifique o status novamente. O ficheiro está agora "staged" (em staging) e pronto para o `commit`.
-    ```bash
-    $ git status
-    ```
-5.  Agora, guarde esta "snapshot" (fotografia) no seu histórico com um **commit**.
-    ```bash
-    $ git commit -m "Initial commit: Add homepage"
-    ```
-6.  Finalmente, veja o histórico (log).
-    ```bash
-    $ git log
-    ```
+O Git incorpora a identidade do autor de forma imutável em cada *commit* criado. Configure o seu nome completo, o seu endereço de correio eletrónico institucional da Universidade de Aveiro e o nome padrão do ramo principal (`main`):
 
-#### Exercício 3: Corrigir um Commit Mau (`--amend`)
+```bash
+$ git config --global user.name "O Seu Nome Completo"
+$ git config --global user.email "o.seu.email@ua.pt"
+$ git config --global init.defaultBranch main
+```
 
-Boas mensagens de `commit` são vitais. Vamos corrigir uma má.
+Pode consultar a configuração gravada em `~/.gitconfig` executando:
 
-1.  Faça uma pequena alteração ao `index.html`. Por exemplo, adicione um parágrafo:
-    ```html
-    <h1>Welcome to My Project</h1>
-    <p>This is a project for my IEI class.</p>
-    ```
-2.  Faça `commit` desta alteração com uma mensagem **má**. A flag `-a` é um atalho para `git add` (para ficheiros seguidos) e `git commit`.
-    ```bash
-    $ git commit -a -m "fix stuff"
-    ```
-3.  Verifique o seu log: `git log --oneline`. Verá a sua mensagem "fix stuff". Vamos corrigi-la.
-4.  Execute o comando **amend**. Isto irá substituir o seu *previous* `commit` anterior por um novo.
-    ```bash
-    $ git commit --amend -m "Doc: Update homepage text"
-    ```
-5.  Verifique o seu log novamente: `git log --oneline`. O `commit` "fix stuff" desapareceu, substituído pela sua mensagem melhor.
+```bash
+$ git config --global --list
+```
 
-#### Exercício 4: Ignorar Ficheiros (`.gitignore`)
+### Passo 3: Autenticação Segura com o GitHub
 
-Nunca queremos fazer `commit` de chaves secretas ou ficheiros temporários.
+Para sincronizar código com o GitHub (`git push`), a plataforma exige autenticação por chave SSH (recomendada) ou *Personal Access Token* (PAT).
 
-1.  Crie um ficheiro chamado `.env` e adicione um "segredo" a ele.
-    ```bash
-    $ echo "DATABASE_PASSWORD=12345" > .env
-    ```
-2.  Execute `git status`. Verá que o Git quer adicionar o `.env`. Nós não queremos isto.
-3.  Crie um ficheiro chamado `.gitignore` (sim, começa com um ponto).
-4.  Adicione a seguinte linha inside `.gitignore`:
-    ```
-    .env
-    ```
-5.  Execute `git status` novamente. O ficheiro `.env` desapareceu da lista, mas o Git agora quer seguir o ficheiro `.gitignore`, que é exatamente o que queremos.
-6.  Adicione e faça `commit` do ficheiro `.gitignore`.
-    ```bash
-    $ git add .gitignore
-    $ git commit -m "Feat: Add .gitignore to ignore environment files"
-    ```
+#### Método Recomendado: Par de Chaves SSH (ed25519)
 
-#### Exercício 5: Ramificações (`branch`, `checkout`)
+1. Gere um novo par de chaves SSH utilizando o algoritmo `ed25519`:
+   ```bash
+   $ ssh-keygen -t ed25519 -C "o.seu.email@ua.pt" -f ~/.ssh/id_ed25519 -N ""
+   ```
+2. Visualize e copie o conteúdo integral da sua **chave pública** (`.pub`):
+   ```bash
+   $ cat ~/.ssh/id_ed25519.pub
+   ```
+   *(O conteúdo deve começar por `ssh-ed25519 AAAAC3...` e terminar no seu email).*
+3. Registe a chave pública na sua conta GitHub:
+   * Aceda a [GitHub.com](https://github.com/) e inicie sessão.
+   * No canto superior direito, clique na fotografia de perfil $\rightarrow$ **Settings**.
+   * Na barra lateral esquerda (secção *Access*), selecione **SSH and GPG keys**.
+   * Clique no botão verde **New SSH key**.
+   * Preencha o campo **Title** com um identificador da máquina (ex.: `Portátil Ubuntu IEI`).
+   * No campo **Key**, cole exatamente o texto copiado da chave pública e clique em **Add SSH key**.
+4. Teste a ligação segura a partir do terminal:
+   ```bash
+   $ ssh -T git@github.com
+   ```
+   > Na primeira ligação, confirme a impressão digital (*fingerprint*) do servidor digitando `yes`. Deverá receber a confirmação:
+   > `Hi <utilizador>! You've successfully authenticated, but GitHub does not provide shell access.`
 
-Vamos trabalhar numa nova funcionalidade (feature) isoladamente, sem estragar o nosso código principal.
+#### Método Alternativo: Personal Access Token (PAT)
 
-1.  Crie um novo `branch` para uma nova página "about".
-    ```bash
-    $ git branch feature/about-page
-    ```
-2.  Mude para o seu novo `branch`.
-    ```bash
-    $ git checkout feature/about-page
-    ```
-    *(**Atalho:** `git checkout -b <nome-do-branch>` cria e muda num só comando.)*
-3.  Crie um ficheiro `about.html` com este conteúdo:
-    ```html
-    <h1>About Us</h1>
-    <p>This is the about page.</p>
-    ```
-4.  Adicione e faça `commit` deste novo ficheiro *no seu feature branch*.
-    ```bash
-    $ git add about.html
-    $ git commit -m "Feat: Add new about page"
-    ```
-5.  Agora, volte para o seu `branch` `main` e veja os seus ficheiros.
-    ```bash
-    $ git checkout main
-    $ ls
-    ```
-    O ficheiro `about.html` desapareceu\! Isto acontece porque ele apenas existe no `feature branch`.
-
-#### Exercício 6: Juntar (`merge`)
-
-A sua funcionalidade "about page" está completa. Vamos fazer `merge` dela para o `branch` `main`.
-
-1.  Certifique-se de que está no `branch` que quer receber as alterações (ou seja, `main`).
-    ```bash
-    $ git checkout main
-    ```
-2.  Execute o comando `merge` para puxar as alterações do seu `feature branch`.
-    ```bash
-    $ git merge feature/about-page
-    ```
-3.  Verifique os seus ficheiros com `ls`. O ficheiro `about.html` está agora presente no `main`.
-4.  Veja o seu histórico para ver o `merge commit`.
-    ```bash
-    $ git log --oneline --graph
-    ```
-
-#### Exercício 7: Resolver Conflitos de Merge
-
-O que acontece quando dois `branches` editam a mesma linha?
-
-1.  A partir do seu `branch` `main`, crie um novo `branch`.
-    ```bash
-    $ git checkout -b change-title-A
-    ```
-2.  Neste `branch` `change-title-A`, edite o `index.html` para dizer:
-    ```html
-    <h1>Welcome to the IEI Project</h1>
-    ```
-3.  Faça `commit` desta alteração.
-    ```bash
-    $ git commit -a -m "Update title on branch A"
-    ```
-4.  Agora, volte ao `main` e crie uma alteração *conflituante*.
-    ```bash
-    $ git checkout main
-    $ git checkout -b change-title-B
-    ```
-5.  Neste `branch` `change-title-B`, edite a *mesma linha* no `index.html` para dizer:
-    ```html
-    <h1>Welcome to the TIA Project</h1>
-    ```
-6.  Faça `commit` desta alteração: `git commit -a -m "Update title on branch B"`
-7.  Agora, vamos tentar fazer `merge` do `change-title-B` para o `change-title-A`.
-    ```bash
-    $ git checkout change-title-A
-    $ git merge change-title-B
-    ```
-    **CONFLITO (CONFLICT)\!** O Git irá parar e dizer-lhe que há um conflito no `index.html`.
-8.  **Corrija-o:** Abra o `index.html`. Verá os marcadores de conflito (`<<<<<`, `=====`, `>>>>>`). Edite o ficheiro para ficar correto (ex: apague os marcadores e escolha um título, ou escreva um novo).
-9.  **Finalize:** Assim que estiver corrigido, faça `add` do ficheiro e `commit`.
-    ```bash
-    $ git add index.html
-    $ git commit -m "Merge: Resolve title conflict"
-    ```
+Caso não disponha de acesso SSH na rede onde se encontra:
+1. No GitHub, aceda a **Settings** $\rightarrow$ **Developer settings** $\rightarrow$ **Personal access tokens** $\rightarrow$ **Fine-grained tokens**.
+2. Clique em **Generate new token**, defina um nome descritivo (ex.: `IEI-Token-Aula06`), escolha a validade e conceda permissão **Read and write** em **Repository permissions $\rightarrow$ Contents**.
+3. Copie imediatamente o token gerado (`github_pat_...`) e utilize-o como palavra-passe nas operações HTTPS.
 
 -----
 
-### Parte 2: GitHub - Colaboração
+## Parte 1: Aspetos Funcionais do Git & Ciclo de Vida Local
 
-#### Exercício 8: `clone`, `remote`, & `origin`
+Nesta parte (correspondente à **Parte II** dos slides teóricos), irá operar localmente sobre as três zonas do Git (**Working Tree**, **Staging Area** e **Repositório Local**), sem depender de qualquer ligação à Internet.
 
-Vamos ligar o nosso repositório local a um repositório remoto no GitHub.
+### Exercício 1: Inicialização do Repositório (`git init`) e Estrutura `.git/`
 
-1.  Vá a **GitHub.com**. Crie um **repositório (repository) novo, vazio e público**. Dê-lhe o nome `git-practice-repo`.
-2.  **NÃO** o inicialize com um README. Queremos que esteja vazio.
-3.  O GitHub irá mostrar-lhe URLs. Encontre o botão **Code**.
-      * **Se configurou uma Chave SSH:** Selecione o separador (tab) **SSH** e copie o URL (ex: `git@github.com:<O_SEU_USERNAME>/git-practice-repo.git`).
-      * **Se criou um PAT:** Selecione o separador **HTTPS** e copie o URL (ex: `https://github.com/<O_SEU_USERNAME>/git-practice-repo.git`).
-4.  No seu terminal local, volte para a sua pasta `my-git-project`.
-5.  Adicione este novo repositório GitHub como o seu "remote" chamado "origin", usando o URL que corresponde ao seu método de autenticação.
-      * **Se estiver a usar SSH:**
-        ```bash
-        $ git remote add origin <PASTE_O_SEU_SSH_URL_AQUI>
-        ```
-      * **Se estiver a usar PAT:** Use o formato de URL especial da Parte 0, substituindo os placeholders.
-        ```bash
-        $ git remote add origin https://<O_SEU_USERNAME>:<O_SEU_TOKEN>@github.com/<O_SEU_USERNAME>/git-practice-repo.git
-        ```
-6.  Verifique se o `remote` foi adicionado.
-    ```bash
-    $ git remote -v
-    ```
+1. Crie uma pasta para o seu projeto e inicialize-a como repositório Git:
+   ```bash
+   $ mkdir ~/IEI/aula06/meu-projeto && cd ~/IEI/aula06/meu-projeto
+   $ git init
+   ```
+2. Inspecione a diretoria oculta `.git/` criada automaticamente:
+   ```bash
+   $ ls -la .git/
+   $ cat .git/HEAD
+   ```
+   > **Compreensão Arquitetural:**
+   > A diretoria `.git/` é a base de dados local que armazena todo o grafo do histórico, objetos comprimidos (`objects/`), ponteiros de ramos (`refs/heads/`) e a referência simbólica `HEAD` (`ref: refs/heads/main`).
 
-#### Exercício 9: `push` (Enviar o Seu Trabalho)
+### Exercício 2: As Três Zonas, Estados dos Ficheiros (`status`, `add`, `commit`)
 
-O seu repositório local tem histórico, mas o remoto está vazio. Vamos fazer `push` do seu trabalho.
+Ao transitar entre o **Working Tree**, a **Staging Area** e o **Repositório Local**, cada ficheiro assume um de quatro estados: **Untracked**, **Modified**, **Staged** ou **Unmodified**.
 
-1.  Primeiro, vamos renomear o nosso `branch` local `master` para `main` para corresponder ao padrão do GitHub.
-    ```bash
-    $ git branch -M main
-    ```
-2.  Agora, faça **push** do seu `branch` local `main` para o `remote` `origin`. A flag `-u` define-o como o padrão, para que possa usar apenas `git push` no futuro.
-    ```bash
-    $ git push -u origin main
-    ```
-3.  Atualize a sua página do repositório GitHub. Todos os seus ficheiros (`index.html`, `about.html`, `.gitignore`) e o seu histórico de `commits` estão agora online\!
+1. Crie um ficheiro `index.html` no seu *Working Tree*:
+   ```html
+   <!DOCTYPE html>
+   <html lang="pt">
+   <head>
+       <meta charset="UTF-8">
+       <title>Portal IEI - Universidade de Aveiro</title>
+   </head>
+   <body>
+       <h1>Bem-vindo ao Projeto de IEI</h1>
+       <p>Controlo de versões distribuído com Git e GitHub.</p>
+   </body>
+   </html>
+   ```
+2. Inspecione o estado com `git status`:
+   ```bash
+   $ git status
+   ```
+   O ficheiro surge a vermelho como **Untracked** (o Git ainda não o monitoriza).
+3. Promova o ficheiro para a **Staging Area / Index** com `git add`:
+   ```bash
+   $ git add index.html
+   $ git status
+   ```
+   O ficheiro surge agora a verde no estado **Staged** (*Changes to be committed*).
+4. Consolide o conteúdo da *Staging Area* num snapshot permanente no **Repositório Local** usando `git commit`:
+   ```bash
+   $ git commit -m "feat: adiciona estrutura HTML inicial da página principal"
+   $ git status
+   ```
+   O ficheiro encontra-se agora no estado **Unmodified** (*nothing to commit, working tree clean*).
+5. Edite o ficheiro `index.html` acrescentando um rodapé antes de `</body>`:
+   ```html
+       <footer>DETI - Universidade de Aveiro</footer>
+   ```
+   Execute `git status` e verifique que o ficheiro já rastreado passou ao estado **Modified** (a vermelho, *Changes not staged for commit*).
+6. **Teste de Desindexação (`git restore --staged`):**
+   Se preparar um ficheiro modificado por engano (`git add`), pode retirá-lo da *Staging Area* de volta para o estado *Modified* no *Working Tree* sem perder as edições em disco:
+   ```bash
+   $ git add index.html
+   $ git restore --staged index.html
+   $ git status
+   ```
 
-#### Exercício 10: `tag` & `release` (Marcar uma Versão)
+### Exercício 3: Boas Práticas (50/72), Conventional Commits e Retificação (`--amend`)
 
-O seu projeto está num ponto estável. Vamos marcá-lo (tag) como versão 1.0.
+Como abordado nos slides teóricos, mensagens de commit estruturadas segundo a especificação [Conventional Commits](https://www.conventionalcommits.org/) (`<tipo>[âmbito opcional]: <descrição>`) viabilizam auditorias rápidas, geração automática de *changelogs* e cálculo automático de versões SemVer.
 
-1.  Crie uma "tag" que aponte para o seu último `commit`.
-    ```bash
-    $ git tag -a v1.0.0 -m "First stable release"
-    ```
-2.  Faça `push` da sua nova `tag` para o GitHub (as `tags` não são enviadas automaticamente).
-    ```bash
-    $ git push origin v1.0.0
-    ```
-3.  **No GitHub:** Vá à página principal do seu repositório. Encontre "Releases" no lado direito. Clique em "Create a new release" (ou "Draft a new release").
-4.  Selecione a sua `tag` `v1.0.0`, dê-lhe um título como "Version 1.0.0", e escreva uma breve descrição. Clique em "Publish release". Agora tem uma `release` oficial\!
+1. Indexe a alteração efetuada no `index.html` e simule um commit com uma mensagem descuidada (anti-padrão):
+   ```bash
+   $ git add index.html
+   $ git commit -m "mudancas no html"
+   $ git log --oneline
+   ```
+2. Corrija o último commit utilizando `git commit --amend`, substituindo-o por uma mensagem que respeita a **convenção 50/72** (assunto conciso no modo imperativo $\le 50$ caracteres, seguido de corpo explicativo separado por linha em branco):
+   ```bash
+   $ git commit --amend -m "feat(ui): adiciona rodapé institucional" \
+   -m "Inclui identificação oficial do departamento segundo o guia de estilo."
+   $ git log --oneline
+   ```
+   > **Nota Técnica:** O comando `--amend` substitui o último commit por um novo objeto com novo hash SHA-1. Apenas deve ser utilizado em commits locais que **ainda não tenham sido partilhados** via `push`.
+3. Crie um ficheiro de documentação `README.md` e registe um commit do tipo `docs:`:
+   ```bash
+   $ cat << 'EOF' > README.md
+   # Portal IEI
+   Projeto laboratorial da Aula 06 de Introdução à Engenharia Informática.
+   EOF
+   $ git add README.md
+   $ git commit -m "docs: adiciona documentação inicial no ficheiro README"
+   ```
+
+### Exercício 4: Inspeção do Histórico (`git log`) e Marcação de Versões (`git tag`)
+
+1. Pratique as cinco variantes de inspeção do histórico estudadas nos slides teóricos:
+   ```bash
+   # 1. Apresentação detalhada padrão (autor, data, hash SHA completo e corpo)
+   $ git log
+
+   # 2. Visão compacta de uma linha por commit (Hash curto + Assunto)
+   $ git log --oneline
+
+   # 3. Representação visual da topologia em ASCII
+   $ git log --graph --oneline --all
+
+   # 4. Exibição das diferenças de código (diff) introduzidas nos últimos 2 commits
+   $ git log -p -2
+
+   # 5. Resumo estatístico de ficheiros alterados, inserções e deleções
+   $ git log --stat
+   ```
+2. **Marcação de Versões com `git tag` e Versionamento Semântico ([SemVer](https://semver.org/)):**
+   Ao contrário de um *branch*, uma **tag** é um ponteiro fixo e imutável para um commit específico (`vMAJOR.MINOR.PATCH`):
+   ```bash
+   # 1. Criar uma tag leve no commit atual (HEAD)
+   $ git tag v0.1.0
+
+   # 2. Listar todas as tags existentes no repositório
+   $ git tag
+
+   # 3. Visualizar os commits com as respetivas tags e ponteiros associados
+   $ git log --oneline --decorate
+   ```
+
+### Exercício 5: Exclusão de Ficheiros Não-Rastreados (`.gitignore`)
+
+Binários compilados (`*.o`), dependências (`node_modules/`, `.venv/`), segredos locais (`.env`) e metadados do sistema (`.DS_Store`) nunca devem ser versionados.
+
+1. Simule a presença de um ficheiro de credenciais sensíveis e de um binário compilado no *Working Tree*:
+   ```bash
+   $ echo "API_SECRET_KEY=9988776655" > .env
+   $ touch modulo.o
+   $ git status
+   ```
+2. Crie o ficheiro `.gitignore` com as regras de exclusão estudadas:
+   ```bash
+   $ cat << 'EOF' > .gitignore
+   # Binários e diretórios de compilação
+   bin/
+   build/
+   *.o
+
+   # Ambientes virtuais Python
+   .venv/
+   __pycache__/
+
+   # Ficheiros sensíveis e de configuração local
+   .env
+   .DS_Store
+   EOF
+   ```
+3. Verifique com `git status` que `.env` e `modulo.o` deixaram de ser listados como *Untracked*:
+   ```bash
+   $ git status
+   ```
+4. Indexe e consolide o `.gitignore` com o tipo `chore:`:
+   ```bash
+   $ git add .gitignore
+   $ git commit -m "chore: configura regras de exclusão no .gitignore"
+   ```
 
 -----
 
-### Parte 3: O Fluxo de Trabalho Open-Source Completo
+## Parte 2: Ramificação, Integração & Resolução de Conflitos
 
-#### Exercício 11: `fork` (Contribuir para um Projeto)
+Nesta parte (correspondente à **Parte III** dos slides teóricos), irá explorar o modelo de ramificação em $O(1)$ do Git, comparar os dois tipos de `git merge` (*Fast-Forward* vs. *3-Way Merge*), linearizar o histórico com `git rebase` e resolver conflitos de fusão.
 
-Irá agora contribuir para um projeto que não lhe pertence.
+### Exercício 6: Paradigma de Branches ($O(1)$) e Comandos de Gestão
 
-1.  Vá a este repositório no GitHub (o repositório tictactoe da última aula):
-    **[https://github.com/mariolpantunes/tictactoe](https://github.com/mariolpantunes/tictactoe)**
-2.  No canto superior direito, clique no botão **"Fork"**. Isto irá criar uma cópia do repositório na sua própria conta GitHub.
-3.  Agora, na página do **seu** `fork` no GitHub, clique no botão verde "\<\> Code".
-      * **Se configurou uma Chave SSH:** Selecione o separador **SSH** e copie o URL (ex: `git@github.com:<O_SEU_USERNAME>/tictactoe.git`).
-      * **Se criou um PAT:** Selecione o separador **HTTPS** e copie o URL (ex: `https://github.com/<O_SEU_USERNAME>/tictactoe.git`).
-4.  No seu terminal (fora da pasta do seu projeto anterior), faça **clone** do *seu fork* usando o comando correto para o seu método de autenticação.
-      * **Se estiver a usar SSH:**
-        ```bash
-        $ git clone <PASTE_O_SEU_SSH_URL_AQUI>
-        $ cd tictactoe
-        ```
-      * **Se estiver a usar PAT:**
-        ```bash
-        $ git clone https://<O_SEU_USERNAME>:<O_SEU_TOKEN>@github.com/<O_SEU_USERNAME>/tictactoe.git
-        $ cd tictactoe
-        ```
+No Git, um ramo é apenas um ficheiro de **41 bytes** (40 caracteres do hash SHA-1 + `\n`) guardado em `.git/refs/heads/`.
 
-#### Exercício 12: O Pull Request (`pull request`)
+1. Crie e mude para um novo ramo `feature-login` num único passo utilizando a sintaxe moderna recomendada (`git switch -c`):
+   ```bash
+   $ git switch -c feature-login
+   ```
+   *(Nota: Na sintaxe clássica equivalente utilizava-se `git checkout -b feature-login`).*
+2. Verifique como o Git representa este ramo internamente em `.git/`:
+   ```bash
+   $ cat .git/HEAD
+   $ cat .git/refs/heads/feature-login
+   $ wc -c .git/refs/heads/feature-login
+   ```
+   > **Confirmação Experimental:** O ficheiro `.git/refs/heads/feature-login` tem exatamente **41 bytes**! E o `.git/HEAD` aponta simbolicamente para `ref: refs/heads/feature-login`.
+3. Liste todos os ramos existentes:
+   ```bash
+   $ git branch -a
+   ```
+4. Crie um ficheiro `login.html` para desenvolver esta funcionalidade isoladamente:
+   ```html
+   <!DOCTYPE html>
+   <html lang="pt">
+   <head>
+       <meta charset="UTF-8">
+       <title>Autenticação - Portal IEI</title>
+   </head>
+   <body>
+       <h1>Iniciar Sessão</h1>
+   </body>
+   </html>
+   ```
+5. Indexe e faça commit no ramo `feature-login`:
+   ```bash
+   $ git add login.html
+   $ git commit -m "feat(auth): cria página de autenticação de utilizadores"
+   ```
+6. Comute de volta para `main` e observe o *Working Tree*:
+   ```bash
+   $ git switch main
+   $ ls -la
+   ```
+   O ficheiro `login.html` desapareceu do diretório de trabalho, pois pertence exclusivamente ao ramo `feature-login`.
 
-Vamos fazer uma alteração e propô-la ao projeto original.
+### Exercício 7: Estratégias de Integração com `git merge` (*Fast-Forward* vs. *3-Way*)
 
-1.  Crie um novo `branch` para a sua alteração.
-    ```bash
-    $ git checkout -b add-my-name
-    ```
-2.  Edite o ficheiro `CONTRIBUTORS.md` e adicione o seu nome à lista.
-3.  Adicione e faça `commit` da sua alteração.
-    ```bash
-    $ git add CONTRIBUTORS.md
-    $ git commit -m "Add [Your Name] to contributors list"
-    ```
-4.  Faça `push` deste novo `branch` *para o seu fork* (`origin`).
-    ```bash
-    $ git push origin add-my-name
-    ```
-5.  **Vá ao GitHub:** Vá à página do seu `fork`. Deverá ver uma faixa verde a dizer "This branch is 1 commit ahead..." Clique no botão **"Contribute"** e depois em **"Open a pull request"**.
-6.  Reveja as alterações, adicione uma mensagem simpática, e clique em **"Create pull request"**.
-7.  **Parabéns\!** Acabou de fazer um `pull request`, o coração da colaboração open-source.
+1. **Cenário 1 — Fusão *Fast-Forward* (Linear):**
+   Como o ramo `main` não recebeu novos commits desde a criação de `feature-login`, integre o ramo executando a sequência de comandos estudada:
+   ```bash
+   $ git switch main
+   $ git merge feature-login
+   ```
+   Observe a mensagem `Fast-forward`: o ponteiro `main` simplesmente deslizou em $O(1)$ para o commit de `feature-login`, **sem criar nenhum commit de fusão**.
+2. Elimine com segurança o ramo `feature-login` já integrado:
+   ```bash
+   $ git branch -d feature-login
+   ```
+3. **Cenário 2 — Fusão *3-Way Merge* (Ramos Divergentes):**
+   Vamos agora criar uma divergência real entre `main` e um novo ramo `feature-estilos`:
+   ```bash
+   # 1. Criar e comutar para o ramo feature-estilos
+   $ git switch -c feature-estilos
+   $ echo "body { font-family: Arial, sans-serif; }" > style.css
+   $ git add style.css
+   $ git commit -m "feat(ui): adiciona folha de estilos CSS"
+
+   # 2. Regressar ao main e realizar um commit independente noutro ficheiro
+   $ git switch main
+   $ echo "Licença MIT - 2026" > LICENSE
+   $ git add LICENSE
+   $ git commit -m "docs: adiciona ficheiro de licença MIT"
+   ```
+4. Agora as duas histórias divergiram a partir do seu ancestral comum. Integre `feature-estilos` em `main`:
+   ```bash
+   $ git merge feature-estilos -m "Merge branch 'feature-estilos' into main"
+   ```
+5. Visualize o grafo resultante e elimine o ramo temporário:
+   ```bash
+   $ git log --graph --oneline --all
+   $ git branch -d feature-estilos
+   ```
+   > **Observação:** Como os ramos tinham divergido, o Git executou um **3-Way Merge**, criando um novo **Commit de Fusão (*Merge Commit*)** com dois pais!
+
+### Exercício 8: Linearização do Histórico com `git rebase`
+
+Como vimos nos slides teóricos, sincronizações repetidas via *3-Way Merge* geram históricos complexos ("grafo *spaghetti*"). O `git rebase` resolve este problema reaplicando os commits do ramo de funcionalidade sobre o topo atualizado de `main`.
+
+1. Crie um novo ramo `feature-perfil` e registe um commit:
+   ```bash
+   $ git switch -c feature-perfil
+   $ echo "<h1>Perfil do Estudante</h1>" > perfil.html
+   $ git add perfil.html
+   $ git commit -m "feat(perfil): adiciona página de perfil do estudante"
+   ```
+2. Regresse ao `main` e simule uma atualização concorrente na linha principal:
+   ```bash
+   $ git switch main
+   $ echo "Versão: 0.2.0" >> README.md
+   $ git add README.md
+   $ git commit -m "docs: regista número de versão no README"
+   ```
+3. Os ramos `main` e `feature-perfil` voltaram a divergir! Em vez de usar `git merge` (que criaria uma nova bifurcação), comute para `feature-perfil` e linearize-o sobre `main` com `git rebase`:
+   ```bash
+   $ git switch feature-perfil
+   $ git rebase main
+   ```
+   > **Mecanismo Interno:** O Git "desprendeu" o commit de `feature-perfil` e reaplicou-o sobre o topo mais recente de `main`, gerando um novo commit (`E'`) com novo hash SHA.
+4. Agora regresse ao `main` e integre `feature-perfil`:
+   ```bash
+   $ git switch main
+   $ git merge feature-perfil
+   $ git branch -d feature-perfil
+   ```
+5. Inspecione o histórico com `git log --graph --oneline`:
+   ```bash
+   $ git log --graph --oneline
+   ```
+   Repare que a integração ocorreu por **Fast-Forward** e o topo do histórico manteve-se **estritamente linear**!
+   > **Regra de Ouro do Rebase:** **NUNCA** execute `git rebase` sobre ramos públicos partilhados com colegas, pois a reescrita de hashes SHA quebra a sincronização da equipa.
+
+### Exercício 9: Deteção e Resolução de Conflitos de Merge
+
+Um conflito ocorre quando dois ramos alteram **as mesmas linhas no mesmo ficheiro** de forma contraditória.
+
+1. Em `main`, crie um ficheiro de configuração `config.txt`:
+   ```bash
+   $ echo "timeout_ms = 5000" > config.txt
+   $ git add config.txt
+   $ git commit -m "chore(config): define timeout padrão de 5000ms"
+   ```
+2. Crie um ramo `feature-timeout` e altere o valor para `10000`:
+   ```bash
+   $ git switch -c feature-timeout
+   $ echo "timeout_ms = 10000" > config.txt
+   $ git add config.txt
+   $ git commit -m "perf(config): aumenta timeout para 10000ms em redes lentas"
+   ```
+3. Volte ao `main` e altere a **mesma linha** de `config.txt` para `3000`:
+   ```bash
+   $ git switch main
+   $ echo "timeout_ms = 3000" > config.txt
+   $ git add config.txt
+   $ git commit -m "perf(config): reduz timeout para 3000ms no ramo principal"
+   ```
+4. Tente integrar `feature-timeout` em `main`:
+   ```bash
+   $ git merge feature-timeout
+   ```
+   O Git suspende o merge e emite o aviso:
+   ```text
+   Auto-merging config.txt
+   CONFLICT (content): Merge conflict in config.txt
+   Automatic merge failed; fix conflicts and then commit the result.
+   ```
+5. Inspecione o conteúdo de `config.txt` para observar os marcadores visuais injetados pelo Git:
+   ```bash
+   $ cat config.txt
+   ```
+   ```text
+   <<<<<<< HEAD
+   timeout_ms = 3000
+   =======
+   timeout_ms = 10000
+   >>>>>>> feature-timeout
+   ```
+6. **Protocolo de Resolução (4 passos dos slides teóricos):**
+   * **Passo 1 & 2:** Decida o valor final (ex.: `8000`) e substitua o conteúdo do ficheiro **eliminando todos os marcadores** (`<<<<<<<`, `=======`, `>>>>>>>`):
+     ```bash
+     $ echo "timeout_ms = 8000" > config.txt
+     ```
+   * **Passo 3:** Adicione o ficheiro resolvido à *Staging Area*:
+     ```bash
+     $ git add config.txt
+     ```
+   * **Passo 4:** Conclua o merge commit:
+     ```bash
+     $ git commit -m "fix(config): resolve conflito de merge com timeout 8000"
+     $ git branch -d feature-timeout
+     ```
 
 -----
 
-### Desafio Bónus: `rebase` (Limpar o Histórico)
+## Parte 3: Colaboração Distribuída, Workflows & GitHub Releases
 
-Vamos refazer o Exercício 6, mas com `rebase` para um histórico mais limpo.
+Nesta parte final (correspondente à **Parte IV** dos slides teóricos), irá publicar o projeto no GitHub, sincronizar alterações remotas (`fetch`, `pull`, `push`), executar o modelo colaborativo proposto (**Scaled Trunk-Based Development com Feature Branches e Pull Requests**) e lançar uma **GitHub Release**.
 
-1.  Volte a um estado anterior ao `merge`. Uma boa forma é fazer `reset` ao `main`.
-    ```bash
-    $ cd ~/my-git-project  # Volte para o seu primeiro projeto
-    $ git checkout main
-    $ git reset --hard HEAD~1  # Isto rebobina o 'main' um commit (apaga o merge)
-    ```
-2.  Você ainda tem o seu `branch` `feature/about-page`. Vamos fazer outro `commit` no `main` para criar uma divergência.
-    ```bash
-    $ echo "" >> index.html
-    $ git commit -a -m "Add a comment to homepage"
-    ```
-3.  Agora, o `main` tem um `commit` que o `feature/about-page` não tem.
-4.  Mude para o seu `feature branch` e use `rebase` para "reaplicar" os `commits` do seu `branch` *por cima* do novo `main`.
-    ```bash
-    $ git checkout feature/about-page
-    $ git rebase main
-    ```
-5.  Agora, volte ao `main` e faça `merge`.
-    ```bash
-    $ git checkout main
-    $ git merge feature/about-page
-    ```
-6.  Irá dizer "Fast-forward". Veja o seu log (`git log --oneline --graph`). O histórico está perfeitamente linear e limpo\!
+### Exercício 10: Repositórios Remotos (`origin`) e Sincronização (`push`, `fetch`, `pull`)
+
+1. No seu browser, aceda a [GitHub.com](https://github.com/) e crie um **novo repositório vazio**:
+   * **Repository name:** `iei-projeto-git`
+   * **Visibility:** Public
+   * **Importante:** **NÃO** selecione *Add a README file*, `.gitignore` ou *license*. Clique em **Create repository**.
+2. No seu terminal local (`~/IEI/aula06/meu-projeto`), associe o repositório remoto sob o nome convencional `origin`:
+   ```bash
+   # Substitua <UTILIZADOR> pelo seu username do GitHub
+   $ git remote add origin git@github.com:<UTILIZADOR>/iei-projeto-git.git
+   $ git remote -v
+   ```
+   *(Se utilizar HTTPS/PAT, use `https://github.com/<UTILIZADOR>/iei-projeto-git.git`).*
+3. **Publicar o ramo local (`git push`):**
+   ```bash
+   $ git push -u origin main
+   ```
+   Atualize a página do GitHub no browser e confirme que todo o código e histórico estão agora alojados na nuvem.
+4. **Diferença prática entre `git fetch` e `git pull`:**
+   * Na interface web do GitHub, clique no ficheiro `README.md`, clique no ícone de lápis (**Edit this file**), adicione uma linha no final (`## Equipa de Desenvolvimento`) e clique em **Commit changes...** diretamente no browser.
+   * O servidor remoto (`origin/main`) tem agora um commit novo que o seu computador desconhece!
+   * No terminal local, execute primeiro `git fetch origin`:
+     ```bash
+     $ git fetch origin
+     $ cat README.md
+     $ git log --graph --oneline --all
+     ```
+     > **Verificação:** Como estudado nos slides, o `git fetch` descarregou o novo commit do servidor (visível em `origin/main` no `git log`), mas **não alterou os ficheiros do seu Working Tree**!
+   * Agora integre as alterações descarregadas no seu ramo `main` local:
+     ```bash
+     $ git pull --rebase origin main
+     $ cat README.md
+     ```
+
+### Exercício 11: Modelo Proposto — Workflow Trunk-Based com Feature Branches & Pull Requests
+
+Nos projetos em equipa, adotamos o **Scaled Trunk-Based Development**: criamos *Short-Lived Feature Branches* a partir de `main`, mantemo-los atualizados com `rebase` e integramo-los através de **Pull Requests (PR)** com **Revisão de Código (*Code Review*)**.
+
+Execute a sequência completa passo a passo (idêntica ao exemplo prático dos slides teóricos):
+
+```bash
+# 1. Garantir que o ramo 'main' local está sincronizado
+# e criar o feature branch de curta duração
+$ git switch main && git pull --rebase
+$ git switch -c feat/autenticacao-oauth
+```
+
+2. **Desenvolver de forma iterativa com commits pequenos e atómicos (Conventional Commits):**
+   ```bash
+   $ echo "<h2>Autenticação Segura via OAuth2</h2>" >> login.html
+   $ git add login.html
+   $ git commit -m "feat(auth): adiciona suporte a autenticação OAuth2"
+   ```
+3. **Antes de submeter, atualizar o `main` e linearizar o feature branch (prevenir conflitos):**
+   ```bash
+   $ git switch main && git pull --rebase
+   $ git switch feat/autenticacao-oauth && git rebase main
+   ```
+4. **Publicar o ramo no repositório remoto:**
+   ```bash
+   $ git push -u origin feat/autenticacao-oauth
+   ```
+5. **Abrir o Pull Request e realizar *Code Review* no GitHub:**
+   * Aceda à página do seu repositório no GitHub e clique no botão verde **Compare & pull request**.
+   * Confirme a direção da fusão: `base: main` $\leftarrow$ `compare: feat/autenticacao-oauth`.
+   * Preencha a descrição explicando o objetivo da funcionalidade e clique em **Create pull request**.
+   * Na página do Pull Request, clique no separador **Files changed**, passe o cursor sobre a linha adicionada em `login.html`, clique no botão `+` e adicione um comentário de revisão (*Code Review*).
+   * Regresse ao separador **Conversation** e conclua a integração clicando em **Merge pull request** $\rightarrow$ **Confirm merge**.
+6. **Após aprovação e merge do PR no GitHub, atualizar o `main` local e remover o ramo temporário:**
+   ```bash
+   $ git switch main && git pull --rebase
+   $ git branch -d feat/autenticacao-oauth
+   $ git log --oneline -5
+   ```
+
+### Exercício 12: Publicação de Versões e GitHub Releases
+
+Para encerrar o ciclo de desenvolvimento, vamos etiquetar a versão estável `v1.0.0` (após o merge do Pull Request) e publicar uma **GitHub Release** oficial:
+
+1. No terminal (no ramo `main` atualizado), crie a tag leve `v1.0.0`:
+   ```bash
+   $ git tag v1.0.0
+   ```
+2. Como o `git push` padrão não transfere etiquetas para o servidor, publique a tag explicitamente no remoto `origin`:
+   ```bash
+   $ git push origin v1.0.0
+   ```
+   *(Nota: Para enviar todas as tags locais de uma só vez, pode também utilizar `git push origin --tags`).*
+3. **Criar a Release na plataforma GitHub:**
+   * Na página principal do repositório no GitHub, localize a secção **Releases** (barra lateral direita) e clique em **Create a new release** (ou **Draft a new release**).
+   * Em **Choose a tag**, selecione `v1.0.0`.
+   * Em **Release title**, escreva `v1.0.0 — Primeira Versão Estável`.
+   * Clique no botão **Generate release notes** (para ver como o GitHub gera automaticamente o *changelog* a partir dos seus *Conventional Commits* e *Pull Requests*!) e clique em **Publish release**.
+
+-----
+
+## Parte 4: Desafios Autónomos de Consolidação
+
+Para consolidar as suas competências, experimente os seguintes desafios autónomos:
+
+### Desafio A: A "Máquina do Tempo" e o Estado *Detached HEAD*
+1. Consulte o histórico compacto: `git log --oneline`.
+2. Escolha o hash SHA do seu primeiro commit (ex.: `98ca9c2`) e execute:
+   ```bash
+   $ git checkout <HASH_DO_PRIMEIRO_COMMIT>
+   ```
+3. Execute `git status` e verifique que o Git avisa que está em **Detached HEAD** (o ponteiro `HEAD` aponta diretamente para um commit em vez de apontar simbolicamente para um ramo).
+4. Verifique com `ls` que todos os ficheiros criados depois desse commit desapareceram temporariamente do *Working Tree*.
+5. Regresse imediatamente ao presente em segurança com:
+   ```bash
+   $ git switch main
+   ```
+
+### Desafio B: Localização Rápida de Alterações com `git log -S`
+1. Suponha que pretende descobrir exatamente em que commit foi introduzida a expressão `"OAuth2"` no projeto:
+   ```bash
+   $ git log -S "OAuth2" -p
+   ```
+2. Observe como a opção `-S` (*pickaxe*) pesquisa na história os commits que adicionaram ou removeram ocorrências dessa string.
+
+-----
+
+## Síntese dos Comandos Essenciais Abordados
+
+| Comando | Descrição Operacional |
+| :--- | :--- |
+| `git init` | Inicializa um novo repositório Git local (`.git/`). |
+| `git clone <url>` | Clona um repositório remoto completo para a máquina local. |
+| `git status` | Inspeciona o estado dos ficheiros no *Working Tree* e *Staging Area*. |
+| `git add <ficheiro>` | Promove alterações do *Working Tree* para a *Staging Area*. |
+| `git restore --staged <fich>` | Retira um ficheiro da *Staging Area* sem alterar o *Working Tree*. |
+| `git commit -m "<msg>"` | Grava o conteúdo da *Staging Area* num novo snapshot imutável. |
+| `git commit --amend` | Substitui o último commit local corrigindo a mensagem ou conteúdo. |
+| `git log --oneline --graph` | Visualiza o histórico e a topologia de ramos de forma compacta. |
+| `git tag v1.0.0` | Cria uma etiqueta leve (*lightweight tag*) no commit atual (`HEAD`). |
+| `git branch -a` | Lista todos os ramos locais e remotos conhecidos. |
+| `git switch <ramo>` | Comuta para um ramo existente atualizando o *Working Tree*. |
+| `git switch -c <novo-ramo>` | Cria um novo ramo e comuta imediatamente para ele. |
+| `git merge <ramo>` | Integra o ramo especificado no ramo ativo (*Fast-Forward* ou *3-Way*). |
+| `git rebase main` | Lineariza o ramo atual reaplicando os seus commits sobre o topo de `main`. |
+| `git branch -d <ramo>` | Elimina com segurança um ramo local já integrado. |
+| `git remote add origin <url>` | Regista um servidor remoto sob o identificador padrão `origin`. |
+| `git fetch origin` | Descarrega novidades do remoto sem alterar o *Working Tree* local. |
+| `git pull --rebase` | Sincroniza o ramo local linearizando-o sobre o topo do servidor remoto. |
+| `git push -u origin <ramo>` | Publica os commits do ramo local no repositório remoto. |
+| `git push origin v1.0.0` | Publica explicitamente uma etiqueta de versão no servidor remoto. |

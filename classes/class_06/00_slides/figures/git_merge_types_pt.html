@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    width: 1720px;
+    height: 550px;
+    background: transparent;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans", Helvetica, Arial, sans-serif;
+    padding: 10px;
+    display: flex;
+    gap: 18px;
+  }
+  .card {
+    background: #ffffff;
+    border: 2px solid #cbd5e1;
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+    padding: 12px 18px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    height: 100%;
+    justify-content: space-between;
+  }
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 6px;
+    border-bottom: 2px solid #f1f5f9;
+  }
+  .card-title {
+    font-size: 21pt;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .badge-tag {
+    font-size: 17pt;
+    font-weight: 700;
+    padding: 3px 12px;
+    border-radius: 14px;
+  }
+  .badge-ff { background: #dcfce7; color: #166534; border: 1.5px solid #86efac; }
+  .badge-3way { background: #e0f2fe; color: #075985; border: 1.5px solid #7dd3fc; }
+
+  .state-section {
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 9px;
+    padding: 6px 14px;
+    display: flex;
+    flex-direction: column;
+    height: 205px;
+  }
+  .state-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 17pt;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+    margin-bottom: 2px;
+  }
+  .state-header .highlight-green { color: #16a34a; font-weight: 800; }
+  .state-header .highlight-blue { color: #0284c7; font-weight: 800; }
+
+  .transition-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 3px 0;
+  }
+  .merge-cmd {
+    background: #0f172a;
+    color: #ffffff;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 18pt;
+    font-weight: 700;
+    padding: 5px 16px;
+    border-radius: 6px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    white-space: nowrap;
+  }
+  .trans-arrow {
+    font-size: 24pt;
+    color: #92D400;
+    font-weight: 900;
+    line-height: 1;
+  }
+  .trans-desc {
+    font-size: 17pt;
+    font-weight: 700;
+    color: #334155;
+    white-space: nowrap;
+  }
+
+  svg {
+    width: 100%;
+    height: 100%;
+  }
+  svg text {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    user-select: none;
+  }
+</style>
+</head>
+<body>
+
+  <!-- CARD 1: FAST-FORWARD -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <span>1. Fusão <i>Fast-Forward</i></span>
+        <span class="badge-tag badge-ff">Sem divergência</span>
+      </div>
+    </div>
+
+    <!-- ANTES -->
+    <div class="state-section">
+      <div class="state-header">
+        <span>Antes do Merge</span>
+        <span style="font-size:16pt; color:#94a3b8; font-weight:600;">Ramo ativo: main</span>
+      </div>
+      <svg viewBox="0 0 760 165">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1 L 8 5 L 0 9 z" fill="#64748b"/>
+          </marker>
+        </defs>
+        <!-- Horizontal commit line: C1 -> C2 -> C3 -->
+        <line x1="140" y1="102" x2="330" y2="102" stroke="#64748b" stroke-width="3.5" marker-end="url(#arr)"/>
+        <line x1="410" y1="102" x2="600" y2="102" stroke="#64748b" stroke-width="3.5" marker-end="url(#arr)"/>
+
+        <!-- Commits -->
+        <circle cx="100" cy="102" r="32" fill="#f0fdf4" stroke="#16a34a" stroke-width="3.5"/>
+        <text x="100" y="110" font-size="22pt" font-weight="bold" fill="#14532d" text-anchor="middle">C1</text>
+
+        <circle cx="370" cy="102" r="32" fill="#f0fdf4" stroke="#16a34a" stroke-width="3.5"/>
+        <text x="370" y="110" font-size="22pt" font-weight="bold" fill="#14532d" text-anchor="middle">C2</text>
+
+        <circle cx="640" cy="102" r="32" fill="#f0fdf4" stroke="#16a34a" stroke-width="3.5"/>
+        <text x="640" y="110" font-size="22pt" font-weight="bold" fill="#14532d" text-anchor="middle">C3</text>
+
+        <!-- main at C2 -->
+        <rect x="315" y="16" width="110" height="38" rx="7" fill="#e0f2fe" stroke="#0284c7" stroke-width="2.5"/>
+        <text x="370" y="42" font-size="20pt" font-weight="bold" fill="#0369a1" text-anchor="middle">main</text>
+        <line x1="370" y1="54" x2="370" y2="70" stroke="#0284c7" stroke-width="3"/>
+
+        <!-- feature at C3 -->
+        <rect x="575" y="16" width="130" height="38" rx="7" fill="#f3e8ff" stroke="#9333ea" stroke-width="2.5"/>
+        <text x="640" y="42" font-size="20pt" font-weight="bold" fill="#7e22ce" text-anchor="middle">feature</text>
+        <line x1="640" y1="54" x2="640" y2="70" stroke="#9333ea" stroke-width="3"/>
+      </svg>
+    </div>
+
+    <!-- TRANSITION BAR -->
+    <div class="transition-bar">
+      <span class="merge-cmd">git merge feature</span>
+      <span class="trans-arrow">➔</span>
+      <span class="trans-desc">Ponteiro <code>main</code> avança diretamente (O(1))</span>
+    </div>
+
+    <!-- DEPOIS -->
+    <div class="state-section">
+      <div class="state-header">
+        <span>Depois do Merge</span>
+        <span class="highlight-green">0 novos commits!</span>
+      </div>
+      <svg viewBox="0 0 760 165">
+        <line x1="140" y1="102" x2="330" y2="102" stroke="#64748b" stroke-width="3.5" marker-end="url(#arr)"/>
+        <line x1="410" y1="102" x2="600" y2="102" stroke="#64748b" stroke-width="3.5" marker-end="url(#arr)"/>
+
+        <circle cx="100" cy="102" r="32" fill="#f0fdf4" stroke="#16a34a" stroke-width="3.5"/>
+        <text x="100" y="110" font-size="22pt" font-weight="bold" fill="#14532d" text-anchor="middle">C1</text>
+
+        <circle cx="370" cy="102" r="32" fill="#f0fdf4" stroke="#16a34a" stroke-width="3.5"/>
+        <text x="370" y="110" font-size="22pt" font-weight="bold" fill="#14532d" text-anchor="middle">C2</text>
+
+        <circle cx="640" cy="102" r="33" fill="#dcfce7" stroke="#15803d" stroke-width="4.5"/>
+        <text x="640" y="110" font-size="22pt" font-weight="bold" fill="#14532d" text-anchor="middle">C3</text>
+
+        <!-- Both branches at C3 -->
+        <rect x="505" y="16" width="125" height="38" rx="7" fill="#f3e8ff" stroke="#9333ea" stroke-width="2.5"/>
+        <text x="567" y="42" font-size="20pt" font-weight="bold" fill="#7e22ce" text-anchor="middle">feature</text>
+
+        <rect x="645" y="16" width="100" height="38" rx="7" fill="#e0f2fe" stroke="#0284c7" stroke-width="2.5"/>
+        <text x="695" y="42" font-size="20pt" font-weight="bold" fill="#0369a1" text-anchor="middle">main</text>
+
+        <line x1="590" y1="54" x2="620" y2="73" stroke="#9333ea" stroke-width="3"/>
+        <line x1="680" y1="54" x2="660" y2="73" stroke="#0284c7" stroke-width="3"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- CARD 2: 3-WAY MERGE -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <span>2. Fusão <i>3-Way Merge</i></span>
+        <span class="badge-tag badge-3way">Com divergência</span>
+      </div>
+    </div>
+
+    <!-- ANTES -->
+    <div class="state-section">
+      <div class="state-header">
+        <span>Antes do Merge</span>
+        <span style="font-size:16pt; color:#94a3b8; font-weight:600;">Ramos divergentes</span>
+      </div>
+      <svg viewBox="0 0 760 165">
+        <!-- C1 -> C2 -->
+        <line x1="110" y1="82" x2="210" y2="82" stroke="#64748b" stroke-width="3.5" marker-end="url(#arr)"/>
+        <!-- C2 splits to C3 (up) and C4 (down) -->
+        <path d="M 285 70 Q 340 38 430 38" fill="none" stroke="#64748b" stroke-width="3.5" marker-end="url(#arr)"/>
+        <path d="M 285 94 Q 340 126 430 126" fill="none" stroke="#64748b" stroke-width="3.5" marker-end="url(#arr)"/>
+
+        <!-- Commits -->
+        <circle cx="75" cy="82" r="30" fill="#f0fdf4" stroke="#16a34a" stroke-width="3.5"/>
+        <text x="75" y="90" font-size="21pt" font-weight="bold" fill="#14532d" text-anchor="middle">C1</text>
+
+        <circle cx="250" cy="82" r="30" fill="#f0fdf4" stroke="#16a34a" stroke-width="3.5"/>
+        <text x="250" y="90" font-size="21pt" font-weight="bold" fill="#14532d" text-anchor="middle">C2</text>
+        <text x="250" y="132" font-size="16pt" font-weight="bold" fill="#64748b" text-anchor="middle">Ancestral</text>
+
+        <circle cx="475" cy="38" r="30" fill="#f0fdf4" stroke="#16a34a" stroke-width="3.5"/>
+        <text x="475" y="46" font-size="21pt" font-weight="bold" fill="#14532d" text-anchor="middle">C3</text>
+
+        <circle cx="475" cy="126" r="30" fill="#f0fdf4" stroke="#16a34a" stroke-width="3.5"/>
+        <text x="475" y="134" font-size="21pt" font-weight="bold" fill="#14532d" text-anchor="middle">C4</text>
+
+        <!-- Labels -->
+        <rect x="545" y="19" width="110" height="38" rx="7" fill="#e0f2fe" stroke="#0284c7" stroke-width="2.5"/>
+        <text x="600" y="45" font-size="20pt" font-weight="bold" fill="#0369a1" text-anchor="middle">main</text>
+
+        <rect x="545" y="107" width="130" height="38" rx="7" fill="#f3e8ff" stroke="#9333ea" stroke-width="2.5"/>
+        <text x="610" y="133" font-size="20pt" font-weight="bold" fill="#7e22ce" text-anchor="middle">feature</text>
+      </svg>
+    </div>
+
+    <!-- TRANSITION BAR -->
+    <div class="transition-bar">
+      <span class="merge-cmd">git merge feature</span>
+      <span class="trans-arrow">➔</span>
+      <span class="trans-desc">Combina 3 snapshots num novo commit</span>
+    </div>
+
+    <!-- DEPOIS -->
+    <div class="state-section">
+      <div class="state-header">
+        <span>Depois do Merge</span>
+        <span class="highlight-blue">Novo Commit de Fusão!</span>
+      </div>
+      <svg viewBox="0 0 760 165">
+        <!-- C1 -> C2 -->
+        <line x1="85" y1="82" x2="175" y2="82" stroke="#64748b" stroke-width="3.5" marker-end="url(#arr)"/>
+        <!-- C2 splits to C3 (up) and C4 (down) -->
+        <path d="M 235 70 Q 280 40 350 40" fill="none" stroke="#64748b" stroke-width="3.5" marker-end="url(#arr)"/>
+        <path d="M 235 94 Q 280 124 350 124" fill="none" stroke="#64748b" stroke-width="3.5" marker-end="url(#arr)"/>
+
+        <!-- Convergence to C5 -->
+        <path d="M 425 40 Q 480 40 525 65" fill="none" stroke="#0284c7" stroke-width="3.5" marker-end="url(#arr)"/>
+        <path d="M 425 124 Q 480 124 525 99" fill="none" stroke="#9333ea" stroke-width="3.5" marker-end="url(#arr)"/>
+
+        <!-- Commits -->
+        <circle cx="55" cy="82" r="28" fill="#f0fdf4" stroke="#16a34a" stroke-width="3"/>
+        <text x="55" y="89" font-size="19pt" font-weight="bold" fill="#14532d" text-anchor="middle">C1</text>
+
+        <circle cx="205" cy="82" r="28" fill="#f0fdf4" stroke="#16a34a" stroke-width="3"/>
+        <text x="205" y="89" font-size="19pt" font-weight="bold" fill="#14532d" text-anchor="middle">C2</text>
+
+        <circle cx="390" cy="40" r="28" fill="#f0fdf4" stroke="#16a34a" stroke-width="3"/>
+        <text x="390" y="47" font-size="19pt" font-weight="bold" fill="#14532d" text-anchor="middle">C3</text>
+
+        <circle cx="390" cy="124" r="28" fill="#f0fdf4" stroke="#16a34a" stroke-width="3"/>
+        <text x="390" y="131" font-size="19pt" font-weight="bold" fill="#14532d" text-anchor="middle">C4</text>
+
+        <!-- Merge Commit C5 -->
+        <circle cx="565" cy="82" r="33" fill="#e0f2fe" stroke="#0284c7" stroke-width="4.5"/>
+        <text x="565" y="90" font-size="22pt" font-weight="bold" fill="#0369a1" text-anchor="middle">C5</text>
+
+        <!-- main at C5 -->
+        <rect x="620" y="63" width="105" height="38" rx="7" fill="#e0f2fe" stroke="#0284c7" stroke-width="2.5"/>
+        <text x="672" y="89" font-size="20pt" font-weight="bold" fill="#0369a1" text-anchor="middle">main</text>
+        <line x1="620" y1="82" x2="600" y2="82" stroke="#0284c7" stroke-width="3"/>
+      </svg>
+    </div>
+  </div>
+
+</body>
+</html>
