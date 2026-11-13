@@ -1,377 +1,569 @@
 ---
-title: Networks
-subtitle: Introdução Engenharia Informática
-author: Mário Antunes
+title: 47138 - Introduction to Computer Engineering
+subtitle: "Computer Networks: Fundamentals, Configuration & Diagnostics"
 institute: Universidade de Aveiro
-date: November 03, 2025
+date: November 09, 2026
 colorlinks: true
 highlight-style: tango
-toc: true
-toc-title: "Table of Contents"
 mainfont: NotoSans
-mainfontfallback: "NotoColorEmoji:mode=harf"
+fontsize: 9pt
+titlegraphic: "../../../resources/ua_logo2.png"
+titlegraphicoptions: "width=6.5cm"
+mainfontfallback:
+  - "NotoColorEmoji:mode=harf"
+  - "DejaVu Sans:"
 header-includes:
- - \usetheme[sectionpage=none,numbering=fraction,progressbar=frametitle]{metropolis}
+ - \usetheme[sectionpage=none,numbering=fraction,progressbar=none]{metropolis}
+ - \definecolor{uagreen}{HTML}{92D400}
+ - \setbeamercolor{title separator}{fg=uagreen}
+ - \setbeamersize{text margin left=1.5em, text margin right=1.5em}
+ - |
+    \setbeamertemplate{title graphic}{
+      \begin{tikzpicture}[remember picture,overlay]
+        \node[anchor=north west, xshift=0cm, yshift=-0cm] at (current page.north west) {
+          \inserttitlegraphic
+        };
+        \node[anchor=south east, xshift=-0.2cm, yshift=0.6cm, opacity=0.08] at (current page.south east) {
+          \includegraphics[width=4.8cm]{../../../resources/_deti_black.png}
+        };
+      \end{tikzpicture}
+    }
+ - \usepackage{tikz}
+ - \usetikzlibrary{positioning,arrows.meta,calc}
  - \usepackage{longtable,booktabs}
  - \usepackage{etoolbox}
+ - \BeforeBeginEnvironment{Shaded}{\vspace{1.0em}}
+ - \AfterEndEnvironment{Shaded}{\vspace{0.6em}}
  - \AtBeginEnvironment{longtable}{\tiny}
+ - \usepackage{caption}
+ - \captionsetup[longtable]{labelformat=empty,skip=0pt}
  - \AtBeginEnvironment{cslreferences}{\tiny}
  - \AtBeginEnvironment{Shaded}{\tiny}
  - \AtBeginEnvironment{verbatim}{\tiny}
  - \setmonofont[Contextuals={Alternate}]{FiraCodeNerdFontMono-Retina}
 ---
 
-# Why Networking Matters
+## Session Overview
 
-## Why Networking Matters 🌐 {.allowframebreaks}
+  * **Part I — How is a Network Built? (From Laptop to the Internet):**
+      * Network scales (**PAN**, **LAN**, **MAN**, **WAN**), everyday equipment (**Switch**, **Access Point**, **Router**, **ONT**), and the **OSI Model (7 layers)** with encapsulation.
+  * **Part II — Addresses and Ports (Locating the Machine and the Program):**
+      * Physical address (**MAC**) vs. logical address (**IP**), routing (*Switch* vs. *Routers*), **Default Gateway** and **ARP**, **IPv4** and subnet mask (`/24`), special IP ranges, **IPv6**, and **Transport Ports** (including Docker mapping and the *Reverse Proxy* challenge).
+  * **Part III — IP Configuration (DHCP vs. Static) and DNS:**
+      * The 4 essential network parameters, automatic configuration (**DHCP**) vs. manual (**Static IP**), domain name resolution (**DNS**), and the hierarchical DNS tree structure.
+  * **Part IV — Configuration, Diagnostics (Debug), and Remote Access:**
+      * Essential Linux diagnostics (`ip`, `ping`, `traceroute`, `dig`, `ss`, `nmap`, `curl`), **Firewalls** and client isolation in `eduroam`, a **5-Step Network Troubleshooting** methodology, and secure remote operations with **SSH**, **`rsync`**, and **SSH Tunnels**.
 
-Networking is the invisible fabric of the modern world. 
-It's no longer just about computers; it's about *everything*.
+-----
 
-* **Communication:** From email and social media to video calls.
-* **Services:** Cloud computing, streaming (Netflix, Spotify), and online gaming.
-* **Economy:** E-commerce, banking, and global financial systems.
-* **IoT (Internet of Things):** Smart homes, wearable tech, and connected cars.
+\vspace{5em}
 
-Understanding networking is no longer optional; it's a fundamental skill for any technologist.
+\begin{center}
+{\LARGE \textbf{Part I: How is a Network Built? (From Laptop to the Internet)}}
+\end{center}
 
-# Part 1: The Building Blocks 🧱
+-----
 
-## Key Network Equipment {.allowframebreaks}
+## What is a Network? PAN, LAN, MAN, and WAN
 
-First, let's meet the hardware that builds a network.
+A computer network is an interconnected system of devices that communicate and share resources. Classified by geographical scale:
 
-* **Hub:** A "dumb" repeater. Any packet it receives is broadcast to *every* other port. It's slow, inefficient, and creates "collisions." (Rarely used today).
-* **Switch:** A "smart" device for a LAN. It learns which device is on which port (using MAC addresses) and sends packets *only* to the intended recipient.
-* **Router:** A "gateway" that connects *different* networks. Your home router connects your private LAN to your provider's WAN (the Internet).
-* **Access Point (AP):** A "translator" that connects wireless devices (using Wi-Fi) to the wired network (the switch).
-* **ONT (Optical Network Terminal):** Your "modem" for a fiber-optic connection. It translates light signals from the fiber cable into electrical signals for your router (Ethernet).
+\vspace{0.2em}
 
-![Common Network Devices](figures/networkdevices00.png)
+\begin{center}
+\includegraphics[width=0.96\linewidth,height=0.40\textheight,keepaspectratio]{figures/network_scales_lan_man_wan.jpg}
+\end{center}
 
-## Key Network Equipment Connected
+\vspace{-0.4em}
 
-![Network Devices Connected](figures/networkdevices01.png)
+::::: columns
+::: {.column width="50%"}
 
-## The Two-Address System: MAC & IP {.allowframebreaks}
+  * **PAN (*Personal Area*):** Devices centered around a single user (~a few meters; Bluetooth / Wi-Fi Direct).
+  * **LAN (*Local Area*):** Home, lab, building, or Docker (high speed via Ethernet cable and Wi-Fi).
 
-Every device on a network has **two** addresses. 
-Both are crucial.
+:::
+::: {.column width="50%"}
 
-* **MAC Address (Physical Address):**
-  * Example: `00:1A:2B:3C:4D:5E`
-  * A unique, 48-bit serial number burned into the network card by the manufacturer. It is permanent.
-  * **Used for:** Communication *within* the same Local Area Network (LAN).
-* **IP Address (Logical Address):**
-  * Example: `192.168.1.10`
-  * A logical, 32-bit (or 128-bit for IPv6) address assigned to the device by the network (e.g., by your router). It is temporary.
-  * **Used for:** Communication *between* different networks (on the WAN/Internet).
+  * **MAN (*Metropolitan Area*):** Multiple buildings across a city or university campus (fiber-optic rings).
+  * **WAN (*Wide Area*):** Interconnected cities, countries, and continents (the global **Internet** via submarine cables and satellites).
 
-**Analogy:** A MAC address is like your **passport number** (permanent, identifies you). An IP address is like your **home address** (logical, changes if you move).
+:::
+:::::
 
-![From MAC to IP](figures/mac2ip.png)
+-----
 
-## How LANs *Really* Work: ARP {.allowframebreaks}
+## Local Network Equipment: Switch and Access Point
 
-Your computer (192.168.1.10) wants to send a packet to your printer (192.168.1.15) on the same LAN.
+Interconnecting devices within the same LAN:
 
-* The **Router** only understands IP addresses.
-* The **Switch** (which connects them) only understands MAC addresses.
+::::: columns
+::: {.column width="54%"}
 
-How does the computer find the printer's MAC address?
+  * **Switch:**
+      * Connects devices via Ethernet cables.
+      * Delivers packets **only** to the intended recipient's physical port.
+      * *(Replaced the legacy **Hub**, which broadcast to all ports and caused collisions).*
+  * **Access Point (AP):**
+      * Connects wireless devices (Wi-Fi) to the wired infrastructure.
+      * Integrates laptops and mobile devices into the same LAN.
 
-1.  It shouts to the whole LAN: "WHO HAS 192.168.1.15?" This broadcast is the **Address Resolution Protocol (ARP)**.
-2.  The printer (192.168.1.15) replies: "I DO! My MAC is `00:AB:CD:EF:12:34`."
-3.  Your computer stores this `IP -> MAC` pair in its **ARP table** and sends the packet.
+:::
+::: {.column width="46%"}
 
-## The Language: IPv4 & The Subnet Mask {.allowframebreaks}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.68\textheight,keepaspectratio]{figures/network_devices_router_switch_ap.jpg}
 
-An IPv4 address alone isn't enough. It's always paired with a **Subnet Mask**.
+\vspace{0.2em}
+{\tiny \textit{Switches and Access Points interconnect devices within the same LAN.}}
+\end{center}
 
-* **IP Address:** `192.168.1.10`
-* **Subnet Mask:** `255.255.255.0`
+:::
+:::::
 
-The subnet mask's job is to split the IP into two parts:
+-----
 
-1.  **Network Part:** `192.168.1.x` ("What street am I on?")
-2.  **Host Part:** `x.x.x.10` ("What is my house number?")
+## The Frontier with the Internet: Router and ONT
 
-This is how your computer knows if another IP is **local** (on the same network) or **remote** (on a different network).
+Communication beyond the local network boundary:
 
-## Special IPv4 Address Ranges {.allowframebreaks}
+::::: columns
+::: {.column width="54%"}
 
-Not all IPs are equal. 
-They are reserved for specific uses.
+  * **Router:**
+      * Interconnects **distinct networks** (LAN 1, LAN 2, and the Internet).
+      * Forwards packets between networks along the optimal path.
+  * **ONT (*Optical Network Terminal*):**
+      * Converts optical signals (fiber from ISP) into electrical signals (Ethernet).
+  * **The "Home Gateway / Router":**
+      * A **4-in-1** appliance: integrates ONT, Router, Switch, and Access Point in a single physical unit.
 
-* **Loopback Address (localhost):**
-  * `127.0.0.1`
-  * This address always means **"this computer."** It's a virtual interface used for testing applications on your own machine.
-* **Private / LAN Addresses:**
-  * `10.0.0.0` – `10.255.255.255`
-  * `172.16.0.0` – `172.31.255.255`
-  * `192.168.0.0` – `192.168.255.255`
-  * These are for use *inside* a private network (LAN). They are not routable on the public internet.
-* **Public / WAN Addresses:**
-  * Any other address (e.g., `8.8.8.8` or `142.250.184.142`).
-  * These are globally unique and routable on the Internet.
+:::
+::: {.column width="46%"}
 
-## Understanding IPv6 Addresses {.allowframebreaks}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.68\textheight,keepaspectratio]{figures/network_devices_router_switch_ap.jpg}
 
-IPv4 ran out of addresses. 
-IPv6 is the successor and has its own special types.
+\vspace{0.2em}
+{\tiny \textit{The Router interconnects distinct networks (LAN 1, LAN 2, and the Internet).}}
+\end{center}
 
-* **IPv6 (Internet Protocol v6):**
-  * A **128-bit** address (e.g., `2001:0db8:85a3::8a2e:0370:7334`).
-  * Provides a virtually limitless supply of addresses.
-* **Special IPv6 Addresses:**
-  * **Loopback:** `::1` (The equivalent of `127.0.0.1`).
-  * **Link-Local:** `fe80::...` (Automatically assigned for *local* LAN communication. Like ARP for IPv6).
-  * **Unique Local:** `fd00::...` (The equivalent of private IPv4 ranges).
+:::
+:::::
 
-## IPv4 vs. IPv6
+-----
 
-![](figures/ipv4vsipv6.png)
+## How the Network is Structured: The OSI Model (7 Layers)
 
-## Addresses Aren't Enough: Ports {.allowframebreaks}
+The **OSI** (*Open Systems Interconnection*) model standardizes network communication across **7 layers**:
 
-An IP address gets a data packet to the right *computer*. 
-A **Port** gets it to the right *application* on that computer.
+\vspace{0.3em}
 
-  * **Analogy:** If an IP is the building's street address, the port is the apartment or office number.
-  * **Common Ports:**
-    * `80`: **HTTP** (Web)
-    * `443`: **HTTPS** (Secure Web)
-    * `22`: **SSH** (Secure Shell)
+\begin{center}
+\includegraphics[width=\linewidth,keepaspectratio]{figures/network_7_layers_osi_encapsulation.jpg}
+\end{center}
 
-A connection is made to an **IP + Port** (e.g., `172.217.14.228:443`).
+-----
 
-# Part 2: The Wide World (WAN) 🌍 {.allowframebreaks}
+\vspace{5em}
 
-## Leaving the LAN: The Default Gateway {.allowframebreaks}
+\begin{center}
+{\LARGE \textbf{Part II: Addresses and Ports (Locating the Machine and the Program)}}
+\end{center}
 
-1.  Your computer (192.168.1.10) wants to send a packet to Google (8.8.8.8).
-2.  It looks at its subnet mask (`255.255.255.0`).
-3.  It realizes that 8.8.8.8 is **not** on its local network.
-4.  It can't send the packet directly. So, it sends it to the **Default Gateway**.
+-----
 
-The **Default Gateway** is the IP address of the **Router** on the LAN (e.g., `192.168.1.1`). It's the "door" out of your local network, responsible for forwarding all non-local traffic.
+## Two Addresses on Every Device: MAC vs. IP
 
-## Connecting Networks: Routing {.allowframebreaks}
+Each network interface (Ethernet or Wi-Fi) operates with **two distinct addressing schemes**:
 
-Once the packet reaches your router, what's next?
+::::: columns
+::: {.column width="50%"}
 
-* The **WAN (Wide Area Network)** is a network of networks (the Internet!).
-* **Routing** is the process of finding the best path for data packets to travel from their source to their destination, hopping between thousands of different routers across the globe.
+  * **MAC Address (Physical / Layer 2 — Data Link):**
+      * Example: `00:1A:2B:3C:4D:5E` (48 bits in hexadecimal notation).
+      * Burned into hardware during manufacturing (immutable in NIC).
+      * **Purpose:** Identifies the interface within the **immediate local link (*hop-by-hop*)**. The destination MAC changes at every router hop.
+      * **Analogy:** National Identity Card (identifies the device locally).
 
-## The "Receptionist": NAT {.allowframebreaks}
+:::
+::: {.column width="50%"}
 
-**NAT (Network Address Translation)** is the clever workaround for the IPv4 address shortage.
+  * **IP Address (Logical / Layer 3 — Network):**
+      * Example: `192.168.1.10` (IPv4).
+      * Assigned logically by the network topology.
+      * **Purpose:** Identifies the **origin and final destination (*end-to-end*)** across multiple interconnected networks.
+      * **Analogy:** Postal Mailing Address (changes when moving to another network).
 
-  * It allows an entire private network (e.g., all 50 devices in your home with `192.168.1.x` addresses) to "hide" behind **one single public IP address**.
-  * Your router acts as a "receptionist," keeping track of all outgoing requests and ensuring the responses get back to the correct private device.
+:::
+:::::
 
-Try using the [IPinfo](https://ipinfo.io/what-is-my-ip) to identify your public IP.
+\vspace{0.6em}
 
-## The "Phonebook": DNS {.allowframebreaks}
+\begin{center}
+\textbf{The IP defines the global final destination; the MAC defines who receives the frame on the next local hop (whether a router or the target host on the LAN).}
+\end{center}
 
-We remember names (`google.com`), but computers only understand numbers (`142.250.184.142`).
+-----
 
-**DNS (Domain Name System)** is the "phonebook of the Internet." It is a global, distributed system that translates human-readable domain names into machine-readable IP addresses.
+## Routing in Practice: Local Delivery (Switch) vs. Hop-by-Hop (Routers)
 
-## More DNS Magic: mDNS & DDNS {.allowframebreaks}
+\begin{center}
+\includegraphics[width=\linewidth,keepaspectratio]{figures/network_routing_mac_vs_ip.png}
+\end{center}
 
-* **mDNS (Multicast DNS):**
-  * This is "local" DNS. It lets devices on your LAN find each other by name *without* a central DNS server.
-  * This is how `my-laptop.local` or your printer automatically "appears."
+-----
 
-* **DDNS (Dynamic DNS):**
-  * Your home's public IP address can change (it's "dynamic").
-  * DDNS is a service that automatically updates a domain name to point to your new IP address whenever it changes.
-  * This is useful for hosting a server (e.g., Nextcloud) at home.
+## How Routing Works: The Role of the Gateway and ARP
 
-## Keeping the Network Running: NTP & SNMP {.allowframebreaks}
+  * **1. Remote Communication (Different Network):**
+      * **Laptop 4** (`192.168.3.90`) transmits data to **Laptop 1** (`192.168.1.100` on a remote subnet).
+      * The **Destination Network Address (IP: `192.168.1.100`) remains constant (*end-to-end*)** throughout the entire transit.
+      * Because the destination lies outside the local subnet, Laptop 4 forwards the physical frame to its local exit: the **Default Gateway (Router 1)**, setting `Destination MAC = FF:FF:FF:FF:FF:FF`.
+      * **Router 1** decapsulates the frame, consults its routing table, forwards the packet toward `192.168.1.0`, and rewrites the MAC header at each hop (*hop-by-hop*).
+  * **2. Local Communication (Same Network):**
+      * When Laptop 2 (`192.168.1.101`) transmits to Laptop 1 (`192.168.1.100`), the frame travels **directly across the Switch** with `Destination MAC = AA:AA:AA:AA:AA:AA` (without traversing any router).
+  * **3. The Role of ARP (*Address Resolution Protocol*):**
+      * To populate the destination MAC in the Ethernet frame:
+      * **Target host on the same subnet $\rightarrow$** ARP resolves the physical MAC of the destination host directly.
+      * **Target host outside the subnet $\rightarrow$** ARP resolves the physical MAC of the **Default Gateway**.
 
-* **NTP (Network Time Protocol):**
-  * Keeps the clocks on all computers and network devices in sync.
-  * This is **critical** for security (encryption certificates), financial transactions, and accurate log files.
+-----
 
-* **SNMP (Simple Network Management Protocol):**
-  * Used by network administrators to monitor the health, performance, and configuration of routers, switches, and servers.
+## IPv4 Addresses and Subnet Masks (Simplified)
 
-# Part 3: Application Protocols 🗣️
+An IPv4 address consists of 4 octets ranging from `0` to `255` separated by dots, and is **always** paired with a **Subnet Mask**:
 
-## What We *Do* on the Network {.allowframebreaks}
+  * **IP Address:** `192.168.1.10`
+  * **Subnet Mask:** `255.255.255.0` (also written concisely in CIDR notation as **`/24`**).
+  * **Intuitive Interpretation:**
+      * Where the mask contains `255`, the octets identify **the Network Prefix (the Street)**: `192.168.1.x`
+      * Where the mask contains `0`, the octet identifies **the Host Identifier (the House Number)**: `.10` (usable from `.1` to `.254`).
 
-Protocols are the "rules of conversation" for specific tasks.
+\vspace{0.4em}
 
-* **HTTP (HyperText Transfer Protocol):** The fundamental protocol for the World Wide Web. It's how your browser *requests* web pages.
-* **HTTPS (HTTP Secure):** This is just HTTP layered on top of **SSL/TLS** encryption. It ensures your communication is private and secure. **Always look for the 🔒!**
-
-## Email Protocols {.allowframebreaks}
-
-* **SMTP (Simple Mail Transfer Protocol):**
-  * Used for *sending* email.
-* **POP3 (Post Office Protocol):**
-  * Used for *retrieving* email.
-  * It *downloads* mail to your device and (usually) deletes it from the server. This is an older model.
-* **IMAP (Internet Message Access Protocol):**
-  * Used for *retrieving* email.
-  * It *syncs* your mail with the server. This is the modern model. What you do on your phone appears on your laptop.
-
-## System & File Protocols {.allowframebreaks}
-
-* **SSH (Secure Shell):**
-  * The single most important tool for system administrators.
-  * Provides an encrypted command-line connection to a remote server.
-* **FTP (File Transfer Protocol):**
-  * An old, *insecure* (plain text) protocol for transferring files. **Avoid it.**
-  * Use **SFTP** (which runs over SSH) instead.
-* **WebDAV / CalDAV / CardDAV:**
-  * Extensions of HTTP that let you manage files (WebDAV), calendars (CalDAV), and contacts (CardDAV) on a web server. Used by services like Nextcloud.
- 
-## IoT Protocols: MQTT {.allowframebreaks}
-
-* **MQTT (Message Queuing Telemetry Transport):**
-  * A very lightweight and efficient protocol designed for "publish" and "subscribe" messages (a pub/sub model).
-  * Perfect for **IoT (Internet of Things)**: sensors, smart bulbs, and small devices that need to send tiny messages reliably with low power.
-
-# Part 4: Managing & Diagnosing 🩺
-
-## Network Configuration {.allowframebreaks}
-
-How does your device get an IP address?
-
-* **Windows:**
-  * Managed via the **Control Panel** or the Settings app.
-* **Linux (Desktop):**
-  * Almost always managed by **NetworkManager**, a user-friendly service with a graphical front-end (your network icon).
-* **Linux (Server):**
-  * Often managed by **`systemd-networkd`**.
-  * Configuration is done via simple text files in `/etc/systemd/network/`.
-
-## Automatic Configuration: DHCP 🤖 {.allowframebreaks}
-
-In the last slide, we asked: "How does your device get an IP address?" For 99% of devices, the answer is **DHCP (Dynamic Host Configuration Protocol)**.
-
-Manually setting an IP on every phone, laptop, and smart TV (a **static IP**) would be a nightmare. DHCP automates this.
-
-1.  Your device joins a network and shouts a **DHCP Discover** message: "Is there a DHCP server out there? I need an IP!"
-2.  A **DHCP Server** (usually your router) replies with a **DHCP Offer**: "Here, you can *use* `192.168.1.50`."
-3.  Your device accepts with a **DHCP Request**, and the server confirms with a **DHCP ACK** (Acknowledgement).
-
-## DHCP Leases & IP Ranges {.allowframebreaks}
-
-DHCP doesn't give you an IP forever. It gives you a **lease**.
-
-* **Lease Time:** The IP is "rented" to your device for a specific time (e.g., 24 hours). Before it expires, your device must renew the lease. This ensures that IPs from devices that leave the network are eventually returned to the pool.
-* **IP Range (Pool):** The DHCP server is configured to manage a *range* of addresses (e.g., `192.168.1.100` to `192.168.1.200`).
-* **Static Attribution:** By only using a range, the server leaves other IPs free (e.g., `192.168.1.1` to `192.168.1.99`) for **static assignment**. These are manually configured on important devices like servers, printers, and the router itself, so their addresses never change.
-
-## Diagnostic Tool 1: `ping` {.allowframebreaks}
-
-  * **The Question:** "Are you there?"
-  * **The Action:** Sends a small packet (ICMP Echo Request) and waits for a reply.
-  * **The Answer:** Tells you if a host is reachable and how long the round-trip took (this is **latency**).
-  * **Example:** `ping google.com`
-
-## Diagnostic Tool 2: `traceroute` {.allowframebreaks}
-
-  * **The Question:** "What path do my packets take to get to you?"
-  * **The Action:** Sends packets with increasing "Time-To-Live" (TTL) values.
-  * **The Answer:** Shows you every single router (or "hop") your packet passes through on its way to the destination. Great for finding *where* a connection is failing.
-  * **Example:** `traceroute google.com`
-
-## Diagnostic Tool 3: `ip`, `dig`, `nmap` {.allowframebreaks}
-
-* **`ip addr show`**
-  * The modern Linux tool to view your *own* IP configuration and network interfaces. (Replaces the old `ifconfig`).
-* **`dig google.com`**
-  * **The Question:** "What is the IP address for this name?"
-  * **The Action:** Performs a DNS lookup.
-* **`nmap localhost`**
-  * **The Question:** "What doors are open on this machine?"
-  * **The Action:** A powerful port scanner.
-  * **The Answer:** Reports which ports are open and what services are (likely) running on them.
-
-# Part 5: Security & Advanced Topics 🚀 
-
-## Network Monitoring: Wireshark {.allowframebreaks}
-
-* **The Tool:** Wireshark is a "network sniffer" or protocol analyzer.
-* **The Action:** It captures *every single packet* traveling on your network interface and lets you inspect its contents.
-* **Analogy:** It's like a video camera for your network traffic.
-* **Use:** The single most powerful tool for debugging complex network problems.
-
-## Network Security: Firewalls {.allowframebreaks}
-
-A **firewall** is the "security guard" for your network or computer.
-
-* It inspects all incoming and outgoing network traffic.
-* It decides whether to **allow** or **block** each packet based on a set of rules (e.g., "Allow traffic on port 443, block everything else").
-* This is your first line of defense.
-
-## Firewall Examples {.allowframebreaks}
-
-* **iptables:** The classic, powerful, command-line firewall built into the Linux kernel for decades.
-* **nftables:** The modern successor to `iptables` in Linux. It has a simpler syntax and better performance.
-* **pfSense:** A free, open-source **firewall operating system**. You install it on a dedicated computer to turn it into an extremely powerful, enterprise-grade router and firewall for your entire network.
-
-## The Power of SSH: VS Code Remote {.allowframebreaks}
-
-SSH is more than just a remote shell. 
-The "Remote - SSH" extension in VS Code is a game-changer.
-
-* **How it works:** Your editor UI runs locally, but all file editing, terminal commands, and language processing run on the remote server.
-* You get the power of a server with the comfort of your local editor.
-
-## The Power of SSH: Tunnels & X11 {.allowframebreaks}
-
-* **SSH Tunnels (Port Forwarding):**
-  * Lets you securely "wrap" network traffic inside an SSH connection.
-  * **Example:** Access a database running on `localhost:5432` on a remote server as if it were running on *your own* machine's `localhost:5432`.
-* **X11 Forwarding:**
-  * Lets you run a *graphical* application (like `firefox` or a text editor) on a remote Linux server, but see and interact with the window on your local desktop.
-
-## Syncing Files: `rsync` over SSH {.allowframebreaks}
-
-The best way to transfer and sync files. 
-`rsync` is fast, efficient, and versatile.
-
-* **Why it's fast:** It only copies the **differences** (deltas) between files, not the whole file.
-* It works perfectly over an SSH connection.
-* **Command:**
-
-```bash
-# Sync a local folder UP to a remote server
-$ rsync -avzP ./my-project/ user@host:~/projects/
+```text
+IP Address:       192  .  168  .   1   .   10
+Mask (/24):       255  .  255  .  255  .   0
+                [---- NETWORK PREFIX ----] [HOST]
 ```
-## The Modern Web: Reverse Proxy {.allowframebreaks}
 
-A **Reverse Proxy** (like NGINX or Caddy) is a server that sits *in front* of your actual application servers.
+\vspace{0.3em}
 
-* It receives all incoming traffic from the Internet.
-* It then "proxies" (forwards) the request to the correct internal application (e.g., your Python app, your Node.js app).
-* **Uses:**
-  * **Load Balancing:** Distribute traffic across multiple app servers.
-  * **Security:** Hides your application servers from the Internet.
-  * **Hosting:** Host multiple websites on a single IP address.
+  * **Operational Decision:**
+      * Destination `192.168.1.25` $\rightarrow$ Prefix matches `192.168.1.` $\rightarrow$ **Local Subnet (LAN)!** Forward directly through the Switch.
+      * Destination `8.8.8.8` $\rightarrow$ Prefix differs from `192.168.1.` $\rightarrow$ **External Network (Internet)!** Forward to the **Default Gateway**.
 
-## The Modern Web: HTTPS & Let's Encrypt {.allowframebreaks}
+-----
 
-* **HTTPS** is essential. It provides the encryption (SSL/TLS) that keeps user data private and proves your site's identity.
-* **The Problem:** Certificates used to be expensive and difficult to install.
-* **The Solution: Let's Encrypt**
-  * A free, automated, and open **Certificate Authority (CA)**.
-  * It provides free SSL/TLS certificates and tools (like `certbot`) to automatically install and renew them.
-  * It has made the entire web more secure.
+## Special IP Addresses and Address Blocks
 
-# Further Reading & Resources 📚
+  * **`127.0.0.1` (`localhost` / Loopback Interface):**
+      * Designates **"the local host itself"**. Network traffic is processed entirely in memory by the operating system kernel and never transits through physical interfaces.
+      * Crucial for testing local servers and network applications in isolation.
+  * **Reserved Subnet Addresses (e.g., in a `/24` subnet):**
+      * **First Address (`... .0`):** Identifies the **Network ID** itself (cannot be assigned to individual hosts).
+      * **Last Address (`... .255`):** **Subnet Broadcast Address** (packets addressed here are delivered to all active hosts on the LAN).
+  * **Private IP Addresses (RFC 1918 — LAN usage only):**
+      * Reserved blocks: `10.0.0.0/8` (enterprise / campus networks), `172.16.0.0/12` (internal Docker bridges), and `192.168.0.0/16` (home and SOHO networks).
+      * **Non-routable on the public Internet:** Reserved exclusively for local network routing.
+  * **Public IP Addresses:**
+      * Globally unique across the Internet and directly routable worldwide (e.g., Google DNS `8.8.8.8` or UA `193.136.172.10`).
 
-## Further Reading & Resources 📚 {.allowframebreaks}
+-----
 
-* **Wireshark:** [https://www.wireshark.org/](https://www.wireshark.org/)
-* **Nmap:** [https://nmap.org/](https://nmap.org/)
-* **Let's Encrypt:** [https://letsencrypt.org/](https://letsencrypt.org/)
-* **`ip` command guide:** [https://www.geeksforgeeks.org/ip-command-in-linux-with-examples/](https://www.geeksforgeeks.org/ip-command-in-linux-with-examples/)
-* **`rsync` guide:** [https://www.digitalocean.com/community/tutorials/how-to-use-rsync-to-sync-local-and-remote-directories](https://www.digitalocean.com/community/tutorials/how-to-use-rsync-to-sync-local-and-remote-directories)
-* **Mozilla's Guide to HTTP:** [https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview](https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview)
+## What About IPv6?
+
+IPv4 only provides approximately **4.3 billion** addresses — which have been fully exhausted. **IPv6** was designed to provide an virtually inexhaustible address space:
+
+::::: columns
+::: {.column width="56%"}
+
+  * **Address Format and Structure:**
+      * Uses **8 hexadecimal blocks** separated by colons (`:`), spanning 128 bits:
+        `2001:0db8:85a3::8a2e:0370:7334`
+      * *(The notation `::` abbreviates contiguous blocks of zeroes).*
+  * **Key IPv6 Addresses to Recognize:**
+      * **`::1`** $\rightarrow$ IPv6 **`localhost`** (equivalent to `127.0.0.1`).
+      * **`fe80::...`** (*Link-Local*) $\rightarrow$ Autoconfigured by the interface for direct communication on the local link.
+      * **`fd00::...`** (*Unique Local*) $\rightarrow$ IPv6 equivalent of **private addresses** for internal routing.
+
+:::
+::: {.column width="44%"}
+
+\begin{center}
+\includegraphics[width=\linewidth,height=0.68\textheight,keepaspectratio]{figures/ipv4vsipv6.png}
+
+\vspace{0.2em}
+{\tiny \textit{IPv4 (32 bits) vs. IPv6 (128 bits).}}
+\end{center}
+
+:::
+:::::
+
+-----
+
+## The IP Reaches the Computer, the Port Reaches the Application
+
+Multiple applications communicate simultaneously on a single host: the **IP Address** identifies the machine, while the **Port Number (Layer 4)** identifies the destination process.
+
+\vspace{0.2em}
+
+\begin{center}
+\includegraphics[width=\linewidth,height=0.78\textheight,keepaspectratio]{figures/network_ip_port_analogy.png}
+\end{center}
+
+-----
+
+## Well-Known Ports and Port Mapping (Docker)
+
+Network connections are identified by an **`IP:Port`** tuple (transport ports range from `0` to `65535`, e.g., `192.168.1.10:80`):
+
+::::: columns
+::: {.column width="52%"}
+
+  * **Well-Known Ports:**
+      * **`22`:** SSH (Remote terminal and Git over SSH)
+      * **`53`:** DNS (Domain name resolution)
+      * **`80` / `443`:** HTTP / HTTPS (Web traffic and APIs)
+      * **`3000`, `5000`, `8000`, `8080`:** Local development services (Node.js, Flask, FastAPI)
+
+:::
+::: {.column width="48%"}
+
+  * **Docker Port Mapping (`-p`):**
+      * Example:
+        ```bash
+        docker run -p 8080:80 nginx
+        ```
+      * Maps traffic arriving at port `8080` on the host system to port `80` inside the container.
+
+:::
+:::::
+
+-----
+
+## Food for Thought: Multiple Web Services on the Same Port 80?
+
+Given the fundamental transport networking rule *"only one process may listen on a given port at any time"*, a practical architectural question arises:
+
+  * **The Dilemma:**
+      * A single server needs to host multiple distinct Web services (e.g., `ua.pt`, `moodle.ua.pt`, and `mail.ua.pt`).
+      * All of them are public services, and standard browsers connect by default to **port `80` (HTTP)** or **`443` (HTTPS)** without requiring non-standard port numbers in the URL.
+      * **If the host has only one port `80`, how can incoming requests be distinguished and delivered to the correct backend services?**
+
+\vspace{0.8em}
+
+  * **Research Challenge:**
+      * How do production systems and cloud platforms address this challenge?
+      * Investigate the architectural concepts of **Forward Proxy** and **Reverse Proxy** (e.g., *Nginx*, *Traefik*, *HAProxy*, or *Caddy*).
+
+-----
+
+\vspace{5em}
+
+\begin{center}
+{\LARGE \textbf{Part III: IP Configuration (DHCP vs. Static) and DNS}}
+\end{center}
+
+-----
+
+## IP Configuration: Automatic (DHCP) vs. Manual (Static)
+
+To participate in network communications and access the Internet, any device requires **4 configuration parameters**:
+**1. IP Address** | **2. Subnet Mask** | **3. Default Gateway** | **4. DNS Server**.
+
+::::: columns
+::: {.column width="50%"}
+
+  * **Automatic Configuration — DHCP (Clients):**
+      * When connecting to Wi-Fi or Ethernet, a device has no initial IP configuration.
+      * The **DHCP** protocol automatically negotiates all 4 parameters with the router:
+          1. *Client:* "Can any DHCP server assign an IP configuration?" (*Discover*)
+          2. *DHCP Server (Router):* "Use IP `192.168.1.50` with a 24-hour lease!" (*Offer / ACK*)
+
+:::
+::: {.column width="50%"}
+
+  * **Manual Configuration — Static IP (Servers):**
+      * If a **server**, router, or networked printer changed its IP dynamically, clients would fail to locate it.
+      * Administrators allocate a dynamic range for DHCP clients (e.g., `.100` to `.200`) and assign **Static IP** addresses to servers (e.g., `.10`) and default gateways (`.1`).
+
+:::
+:::::
+
+-----
+
+## The Internet's "Phonebook": DNS (*Domain Name System*)
+
+Human users rely on memorable domain names (`ua.pt`, `google.com`), but IP packet routing operates exclusively with numerical addresses (`193.136.172.10`):
+
+  * **What DNS Does:**
+      * A distributed directory service that maps **Domain Names $\rightarrow$ IP Addresses** prior to establishing transport connections.
+      * **Primary Resource Records:**
+          * **`A`:** Resolves domain name to an IPv4 address.
+          * **`AAAA`:** Resolves domain name to an IPv6 address.
+          * **`CNAME`:** Canonical name alias pointing to another domain name.
+  * **Name Resolution Mechanisms:**
+      1. **`/etc/hosts` File:** Local lookup table queried by the operating system **before** consulting external DNS servers.
+      2. **`.local` Names (mDNS):** Multicast DNS enabling zero-configuration host discovery across a local LAN (e.g., `raspberrypi.local`).
+      3. **Docker Embedded DNS:** In Class 04, interconnecting containers by service name (`db`) was enabled by Docker's internal DNS resolver.
+
+-----
+
+## DNS Hierarchy: The Distributed Server "Tree"
+
+No single server maintains all global domain records. The DNS architecture is organized as a **hierarchical distributed tree**, resolved from right to left (e.g., `elearning.ua.pt.`):
+
+\vspace{0.2em}
+
+\begin{center}
+\includegraphics[width=\linewidth,height=0.76\textheight,keepaspectratio]{figures/network_dns_hierarchy_tree.png}
+\end{center}
+
+-----
+
+\vspace{5em}
+
+\begin{center}
+{\LARGE \textbf{Part IV: Configuration, Diagnostics (Debug), and Remote Access}}
+\end{center}
+
+-----
+
+## Where to View and Configure Network Interfaces in Linux
+
+In Linux environments, network settings are typically inspected and configured through three interfaces:
+
+  * **1. Desktop Graphical Interface (NetworkManager):**
+      * The desktop network settings applet (or the CLI tools `nmcli` / `nmtui`) allows toggling between automatic DHCP and static IP / DNS configurations.
+  * **2. Terminal Inspection of Interfaces and Routes (`ip`):**
+      * `ip addr show` (or simply **`ip a`**): Displays all network interfaces, physical MAC addresses (`link/ether`), and assigned IP addresses with masks (`inet`).
+      * `ip route show` (or simply **`ip r`**): Displays the routing table and identifies the active **Default Gateway** (`default via ...`).
+  * **3. Active DNS Server Inspection:**
+      * Inspect `/etc/resolv.conf` or query system resolver status via `resolvectl status`.
+
+-----
+
+## Diagnostic Tools (I): `ping` and `traceroute`
+
+When connectivity fails, these are the primary baseline command-line diagnostic utilities:
+
+::::: columns
+::: {.column width="50%"}
+
+  * **`ping` — Verifying Reachability & Latency:**
+      * Transmits ICMP Echo Request packets and measures Round-Trip Time (**latency** in milliseconds, `ms`).
+      * Usage tip: In Linux, pass `-c 4` to transmit exactly 4 probes and exit automatically:
+      ```bash
+      $ ping -c 4 8.8.8.8
+      64 bytes from 8.8.8.8: time=8.2 ms
+      ```
+
+:::
+::: {.column width="50%"}
+
+  * **`traceroute` — Tracing Intermediary Hops:**
+      * Discloses every router (**hop**) traversed by packets from the local host to the destination.
+      * Useful for pinpointing whether communication stalls at the local gateway (Hop 1) or further upstream:
+      ```bash
+      $ traceroute 8.8.8.8
+       1  192.168.1.1 (Router)  1.2 ms
+       2  10.254.0.1 (ISP)     6.4 ms
+      ```
+
+:::
+:::::
+
+-----
+
+## Diagnostic Tools (II): `dig`, `ss`, `nmap`, and `curl`
+
+For diagnosing name resolution failures, inspecting port bindings, or debugging unresponsive services:
+
+  * **`dig` (DNS Query Tool):**
+      * Queries DNS servers directly for resource records: `dig ua.pt +short` (or reverse lookup via `dig -x 8.8.8.8 +short`).
+  * **`ss -tuln` (Inspecting Listening Sockets on the Local Host):**
+      * Lists all processes currently bound and listening on TCP (`-t`) or UDP (`-u`) ports in numeric format (`-n`).
+  * **`nmap` (Network Exploration and Port Scanning):**
+      * Probes target hosts to discover open transport ports (e.g., `nmap localhost`). *(Note: Must only be executed on systems you own or authorized targets such as `scanme.nmap.org`).*
+  * **`curl -I` (Command-Line HTTP Inspection):**
+      * Issues HTTP HEAD requests to verify status codes (e.g., `200 OK`, `404 Not Found`, or `500 Server Error`): `curl -I http://localhost:8000`.
+
+-----
+
+## Firewalls and Client Isolation (The `eduroam` Case)
+
+Even when an IP address is valid and a service is running, connections may be rejected due to **security filtering policies**:
+
+  * **Firewalls (Host-Based or Network Perimeter):**
+      * Enforce packet filtering by **port**, **protocol**, and **direction** (e.g., `ufw` on Linux, macOS Packet Filter, or Windows Firewall).
+      * Default configuration typically permits outbound connections (e.g., port `443` HTTPS), but **blocks unsolicited inbound connections** on non-whitelisted ports (e.g., port `8000`).
+
+  * **Client Isolation on Enterprise Wi-Fi (`eduroam`):**
+      * Public and university wireless networks frequently enforce **Client Isolation** at the Access Point / Controller level.
+      * **Practical Consequence:** Two laptops connected to `eduroam` can communicate outward with the Internet, but **cannot establish direct peer-to-peer connections with each other**.
+
+-----
+
+## Survival Guide: Network Troubleshooting in 5 Steps
+
+When diagnosing network connectivity failures, follow this structured *bottom-up* methodology:
+
+\vspace{0.15em}
+
+\begin{center}
+\begin{tikzpicture}[
+    stepbox/.style={rectangle, draw=black!75, rounded corners=3pt, thick, text width=11.2cm, minimum height=0.76cm, inner sep=3.5pt, align=left, font=\scriptsize},
+    arr/.style={-{Latex[length=1.6mm]}, thick, color=uagreen!80!black}
+]
+\node[stepbox, fill=black!5]    (s1) at (0, 4.08) {\textbf{Step 1 — Is the network interface active with an assigned IP?}\\Run \texttt{ip a}. If unconfigured, verify physical cable/Wi-Fi or the DHCP service.};
+\node[stepbox, fill=uagreen!12] (s2) at (0, 3.06) {\textbf{Step 2 — Can I reach the Default Gateway (Router)?}\\Identify gateway via \texttt{ip r} and test LAN connectivity with \texttt{ping -c 4 <Gateway\_IP>}.};
+\node[stepbox, fill=blue!10]    (s3) at (0, 2.04) {\textbf{Step 3 — Is there outbound Internet connectivity (by IP)?}\\Execute \texttt{ping -c 4 8.8.8.8} (or \texttt{traceroute}). If it fails, external routing is impaired.};
+\node[stepbox, fill=orange!12]  (s4) at (0, 1.02) {\textbf{Step 4 — Is the DNS server properly resolving names?}\\If \texttt{ping 8.8.8.8} works but \texttt{ping ua.pt} fails $\rightarrow$ DNS failure (test via \texttt{dig ua.pt}).};
+\node[stepbox, fill=red!10]     (s5) at (0, 0.00) {\textbf{Step 5 — Is the service listening on the port without Firewall drops?}\\Verify with \texttt{ss -tuln} (local), \texttt{nmap}/\texttt{curl -I} (remote), and inspect Firewall rules.};
+
+\draw[arr] (s1.south) -- (s2.north);
+\draw[arr] (s2.south) -- (s3.north);
+\draw[arr] (s3.south) -- (s4.north);
+\draw[arr] (s4.south) -- (s5.north);
+\end{tikzpicture}
+\end{center}
+
+\vspace{0.15em}
+
+  * **Deep Packet Inspection:** When detailed packet analysis is required, engineers rely on packet capture analyzers such as **Wireshark** (graphical) or **`tcpdump`** (command line).
+
+-----
+
+## Secure Remote Work (I): SSH and Synchronization with `rsync`
+
+In modern computing, Linux servers typically operate in cloud environments without physical displays or input peripherals. How do we manage them remotely?
+
+  * **1. Secure Terminal Access with `ssh` (*Secure Shell* — Port 22):**
+      * Establishes an encrypted remote session over the network (using asymmetric `ed25519` key pairs):
+      ```bash
+      # Connect as user 'student' to the remote host (on port 2222)
+      $ ssh student@localhost -p 2222
+      ```
+  * **2. Incremental File Synchronization with `rsync` (over SSH):**
+      * Replaces legacy insecure protocols like FTP. **`rsync`** analyzes differences between local and remote directories and **transmits only modified byte deltas**:
+      ```bash
+      # -a: archive mode; -v: verbose; -z: compression; -P: progress bar
+      $ rsync -avzP -e "ssh -p 2222" ./my-project/ student@server:~/projects/
+      ```
+
+-----
+
+## Secure Remote Work (II): SSH Tunnels and VS Code Remote
+
+What if an internal service runs on a remote server at `localhost:8000`, but port `8000` is blocked by a firewall against public access?
+
+  * **Local Port Forwarding via SSH Tunnel (`-L`):**
+      * Creates an encrypted forwarding channel inside the SSH connection, binding local port `8080` to remote port `8000`:
+      ```bash
+      $ ssh -N -L 8080:localhost:8000 student@server -p 2222
+      ```
+      * Opening **`http://localhost:8080`** in a local browser transparently accesses the internal remote service.
+  * **VS Code Remote - SSH:**
+      * The official *Remote - SSH* extension builds on this exact mechanism: the GUI runs locally, while editing, debugging, and terminal execution occur natively on the remote server.

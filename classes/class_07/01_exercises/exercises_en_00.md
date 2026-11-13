@@ -1,15 +1,15 @@
 ---
-title: Networks
-subtitle: Introdução Engenharia Informática
-author: Mário Antunes
+title: 47138 - Introduction to Computer Engineering
+subtitle: "Computer Networks: Fundamentals, Configuration & Diagnostics"
 institute: Universidade de Aveiro
-date: November 03, 2025
+date: November 09, 2026
 colorlinks: true
 highlight-style: tango
 geometry: a4paper,margin=2cm
 mainfont: NotoSans
 mainfontfallback:
   - "NotoColorEmoji:mode=harf"
+  - "DejaVu Sans:"
 header-includes:
  - \usepackage{longtable,booktabs}
  - \usepackage{etoolbox}
@@ -20,272 +20,532 @@ header-includes:
  - \setmonofont[Contextuals={Alternate}]{FiraCodeNerdFontMono-Retina}
 ---
 
-# Exercises
+# Practical Laboratory Guide
 
-## Practical Lab: Exploring and Using the Network
+**Educational Context & Objectives:**
+In previous sessions, various networking mechanisms were employed — such as executing HTTP requests via `curl`, port mapping in Docker containers (`-p 8080:80`), and authenticating remotely with Git via SSH. In this **3-hour** laboratory session, the goal is to inspect network interface configurations, understand packet routing towards the Internet, and **execute systematic diagnostic procedures (*troubleshooting*) when an application or server encounters connectivity failures** (a critical competency for course projects and for **Class 08**, which is dedicated to network programming in Python):
 
-**Objective:** This lab will guide you through the practical fundamentals of networking. You will inspect your local network, explore the wider internet, scan for services, and use professional tools like SSH and `rsync`.
+* **Part 0 — Environment Setup & Test Server (Docker SSH):** Installation of network diagnostic utilities (Linux and macOS), generation of an SSH asymmetric cryptographic key pair (`ed25519`), and instantiation of an isolated OpenSSH server container for remote administration exercises.
+* **Part 1 — Inspecting the Local Machine and the Local Area Network (LAN):** Identification of network interfaces, physical address (**MAC**), logical address (**IPv4**), and subnet mask (`/24`) using `ip a` / `ifconfig`, verification of the loopback interface (`127.0.0.1`), discovery of the local router (*Default Gateway* with `ip r` / `netstat -rn`), and inspection of the **ARP** table (`ip neigh` / `arp -an`).
+* **Part 2 — From Local Area Network to the Internet (WAN, NAT, and DNS):** Connectivity and latency verification by IP address vs. domain name (`ping`), analysis of intermediate routing hops (`traceroute`), domain name resolution queries in the **DNS** system (`dig` and `/etc/hosts`), and determination of the **Public IP Address** and the role of **NAT** (`curl`).
+* **Part 3 — Ports, Services, and Socket Diagnostics (`ss` / `lsof`, `nmap`, `127.0.0.1` vs. `0.0.0.0`):** Inspection of active listening sockets (*LISTEN*) on the host system (`ss -tuln` / `lsof`), experimental analysis of the critical distinction between binding to `127.0.0.1` vs. `0.0.0.0` (direct preparation for Class 08), and port scanning with `nmap`.
+* **Part 4 — Secure Remote Administration (SSH, `rsync`, and SSH Port Forwarding):** Remote session establishment via `ssh`, incremental file synchronization with `rsync`, and configuration of an **SSH Tunnel (`ssh -L` — *Local Port Forwarding*)** to access internal web services securely.
+* **Part 5 — Optional Consolidation Challenges:** Real-time packet capture and inspection with `tcpdump` and geographic route visualization (Geo-Traceroute).
 
-### Part 0: Setup & Preparation
+\vspace{0.5em}
 
-Before you begin, you must set up your environment with the necessary tools and a target to work with.
+### Working Directory Setup
 
-#### 1. Install Networking Tools (Linux)
-
-Open your terminal and install the following packages, which contain the tools for our exercises:
-
-```bash
-$ sudo apt update
-$ sudo apt install -y nmap traceroute dnsutils curl python3-pip python3-tk
-```
-
-#### 2. Create an SSH Keypair
-
-We will use key-based authentication, the most secure method for logging into remote servers.
+Before starting the exercises, create and navigate to the dedicated working directory for this session:
 
 ```bash
-$ ssh-keygen -t ed25519 -N ""
+$ mkdir -p ~/IEI/aula07
+$ cd ~/IEI/aula07
 ```
 
-This creates a **private key** (`~/.ssh/id_ed25519`) and a **public key** (`~/.ssh/id_ed25519.pub`). **NEVER** share your private key.
+All files created during the laboratory session must remain organized inside this directory.
 
-#### 3. Launch a Secure Target (SSH Server)
-
-We need a "remote" server to connect to. We will use Docker to launch a simple, pre-configured SSH server container.
-
-1.  Create a folder named `ssh-server` and `cd` into it.
-2.  Create a file named `custom-openssh-server.Dockerfile`:
-
-    ```yaml
-    FROM lscr.io/linuxserver/openssh-server:latest
-    RUN apk update && apk add rsync && rm -rf /var/cache/apk/*
-    ```
-2.  Create a file named `compose.yml`:
-
-    ```yaml
-    services:
-      ssh:
-        build:
-          context: .
-          dockerfile: custom-openssh-server.Dockerfile
-        container_name: ssh
-        environment:
-          - PUID=1000
-          - PGID=1000
-          - TZ=Europe/Lisbon
-          - USER_NAME=student
-          - PUBLIC_KEY_FILE=/config/authorized_keys/student.pub
-        volumes:
-          - ./authorized_keys:/config/authorized_keys
-        ports:
-          - "2222:2222" # Map Host port 2222 to Container port 2222
-        restart: unless-stopped
-    ```
-3.  Create a folder for your public key: `mkdir authorized_keys`
-4.  Copy your public key (from step 2) into this folder so the server will trust you:
-
-    ```bash
-    $ cp ~/.ssh/id_ed25519.pub ./authorized_keys/student.pub
-    ```
-5.  Start the server:
-
-    ```bash
-    $ docker compose up -d
-    ```
-    You now have an SSH server running on `localhost` at port `2222`.
+> **Note on file paths:**
+> The commands throughout this guide assume that your terminal session is positioned in `~/IEI/aula07`.
 
 -----
 
-### Part 1: Local Network Exploration (LAN)
+## Part 0: Environment Setup & Test Server (Docker SSH)
 
-#### Exercise 1: Find Your IP Address
+Before exploring network operations, install the required diagnostic tools on your operating system (Linux or macOS) and instantiate an OpenSSH server inside a Docker container, which will serve as our isolated remote test machine.
 
-Use the `ip` command to find your computer's logical address.
+### Step 1: Install Network Diagnostic Utilities
 
-```bash
-$ ip addr show
-```
+Open your terminal and install the required utility packages:
 
-  * Identify your main network interface (e.g., `eth0` or `wlan0`).
-  * Find your **IPv4 address** (e.g., `192.168.1.50/24`). The `/24` is your **subnet mask**.
-  * Find your **MAC address** (e.g., `link/ether 0a:1b:2c:3d:4e:5f`).
+* **On Linux (Ubuntu / Debian):**
+  ```bash
+  $ sudo apt update
+  $ sudo apt install -y iproute2 net-tools dnsutils traceroute nmap curl python3-pip python3-venv python3-tk
+  ```
+* **On macOS (via Homebrew):**
+  The utilities `ping`, `traceroute`, `dig`, `curl`, `arp`, `lsof`, `netstat`, `ssh`, `rsync`, and `tcpdump` are natively installed on macOS. Install `nmap` (and optionally `iproute2mac` to enable the Linux `ip a` and `ip r` command syntax on macOS):
+  ```bash
+  $ brew install nmap iproute2mac
+  ```
 
-#### Exercise 2: Check the Loopback Interface
+Summary of tools:
+  * `ip` / `ifconfig` / `arp` / `ss` / `lsof`: Commands to inspect network interfaces, IP addresses, routing tables, ARP cache, and transport sockets.
+  * `dig`: Tool to query DNS name servers directly.
+  * `traceroute`: Tool to identify intermediate routers (*hops*) towards a destination host.
+  * `nmap`: Security scanner to probe open transport ports and services on a target system.
+  * `curl`: Utility to transfer data and execute HTTP/HTTPS requests from the command line.
 
-Test that your computer's internal network stack is working. The "loopback" interface (`127.0.0.1` or `localhost`) is a virtual interface that points to your own machine.
+### Step 2: Verify or Generate an SSH Key Pair
 
-```bash
-$ ping 127.0.0.1 -c 4
-```
+Secure remote authentication relies on asymmetric cryptography via an SSH key pair (**Private Key**, kept confidential on your client computer, and **Public Key**, installed on the target server).
 
-You should get an instant reply. This confirms your system's networking service is active.
+1. Check whether an `ed25519` key pair already exists in `~/.ssh`:
+   ```bash
+   $ ls -la ~/.ssh/id_ed25519*
+   ```
+2. **If it does not exist**, generate a new key pair without a passphrase:
+   ```bash
+   $ ssh-keygen -t ed25519 -N "" -f ~/.ssh/id_ed25519
+   ```
+   *(Security notice: `~/.ssh/id_ed25519.pub` is your public key and can be distributed freely; `~/.ssh/id_ed25519` contains your private key and **must never** be shared or copied to other machines).*
 
-#### Exercise 3: Find Your Default Gateway
+### Step 3: Instantiate the Test SSH Server (Docker Compose)
 
-The "Default Gateway" is your router's IP address—the "door" from your LAN to the internet.
+Use Docker Compose to instantiate an OpenSSH Linux server listening on host port **`2222`**:
 
-```bash
-$ ip route show default
-```
+1. Create a dedicated subfolder named `ssh-server` and enter it:
+   ```bash
+   $ mkdir -p ~/IEI/aula07/ssh-server
+   $ cd ~/IEI/aula07/ssh-server
+   ```
 
-  * The output will be something like `default via 192.168.1.1 dev eth0`.
-  * Now, `ping` that address to confirm you can reach your router.
+2. Create the file `custom-openssh-server.Dockerfile`, which extends a lightweight OpenSSH image with `rsync` and `python3`:
+   ```dockerfile
+   FROM lscr.io/linuxserver/openssh-server:latest
+   RUN apk update && apk add rsync python3 && rm -rf /var/cache/apk/*
+   ```
 
-    ```bash
-    $ ping 192.168.1.1 -c 4
-    ```
+3. Create the `compose.yml` file to configure the container and map port `2222`:
+   ```yaml
+   services:
+     ssh:
+       build:
+         context: .
+         dockerfile: custom-openssh-server.Dockerfile
+       container_name: iei-ssh-server
+       environment:
+         - PUID=1000
+         - PGID=1000
+         - TZ=Europe/Lisbon
+         - USER_NAME=student
+         - PUBLIC_KEY_FILE=/config/authorized_keys/student.pub
+       volumes:
+         - ./authorized_keys:/config/authorized_keys
+       ports:
+         - "2222:2222" # Maps host port 2222 to container port 2222
+       restart: unless-stopped
+   ```
 
-#### Exercise 4: View the ARP Table
+4. Create the `authorized_keys` directory and copy your **public key** into it, granting access to the `student` user:
+   ```bash
+   $ mkdir -p authorized_keys
+   $ cp ~/.ssh/id_ed25519.pub ./authorized_keys/student.pub
+   ```
 
-Now that you've pinged your gateway, your computer knows its physical MAC address. Use the **Address Resolution Protocol (ARP)** table to see this mapping.
+5. Build and launch the container in the background (*detached mode*), then verify its execution status:
+   ```bash
+   $ docker compose up -d --build
+   $ docker compose ps
+   ```
 
-```bash
-$ arp -n
-```
-
-You will see a list of local IPs and their corresponding MAC addresses. This is how your switch knows where to send local packets.
+6. Return to the session working directory:
+   ```bash
+   $ cd ~/IEI/aula07
+   ```
 
 -----
 
-### Part 2: Exploring the Wide Area Network (WAN)
+## Part 1: Inspecting the Local Machine and the Local Area Network (LAN)
 
-#### Exercise 5: Test External Connectivity (`ping`)
+When diagnosing network connectivity issues, the first diagnostic step involves inspecting the configuration of the local host's network interfaces.
 
-Check if you can reach a server on the internet and measure your **latency** (the round-trip time).
+### Exercise 1: Identify MAC Address, IP Address, and Subnet Mask (`ip a` / `ifconfig`)
+
+List the network interfaces configured on your host system:
+
+* **On Linux** (or on macOS with `iproute2mac`):
+  ```bash
+  $ ip a
+  ```
+* **On macOS (native):**
+  ```bash
+  $ ifconfig
+  ```
+
+Inspect the output and locate the following components:
+1. **The `lo` (Linux) or `lo0` (macOS) Interface — Loopback:** Notice the assigned addresses `inet 127.0.0.1` and `inet6 ::1`. This is the virtual internal interface routing traffic within the host itself (`localhost`).
+2. **Your Primary Network Interface** (typically named `eth0`, `enp0s3`, or `wlan0` on Linux, and **`en0`** on macOS):
+   * **MAC Address (Layer 2 — Data Link):** Identify the line `link/ether` (with `ip a`) or `ether` (with `ifconfig` on macOS), e.g., `08:00:27:1a:2b:3c`. This is the 48-bit physical identifier of your network card on the local link.
+   * **IPv4 Address and Subnet Mask (Layer 3 — Network):** Identify the `inet` line (e.g., `192.168.1.50/24` on Linux, or `inet 192.168.1.50 netmask 0xffffff00` on macOS `ifconfig`, where hexadecimal `0xffffff00` corresponds to `255.255.255.0` or `/24`).
+     * The `/24` prefix (`255.255.255.0`) indicates that the first 3 octets define the **network prefix**, while the final octet identifies the **specific host within that subnet** (usable range `.1` to `.254`).
+   * **IPv6 Link-Local Address:** Locate the `inet6 fe80::...` address, which is automatically assigned for communication strictly within the local link.
+3. **The `docker0` / `br-...` Interface (on Linux):** On native Linux installations, Docker creates a dedicated virtual bridge interface with a private IP range (typically `172.17.0.1/16`) to interconnect containers *(on macOS, Docker Desktop runs within an underlying lightweight Linux virtual machine, so that interface resides within the VM)*.
+
+### Exercise 2: Verify the Local TCP/IP Stack (`localhost` / Loopback)
+
+Before testing physical link connectivity (Ethernet or Wi-Fi), verify that the operating system's internal TCP/IP network stack is operating properly. Send 4 ICMP Echo Request packets (`-c 4`) to the loopback addresses:
 
 ```bash
-$ ping google.com -c 4
+# Test Loopback interface in IPv4 (Linux and macOS)
+$ ping -c 4 127.0.0.1
+
+# Test Loopback interface in IPv6 (on Linux)
+$ ping -c 4 ::1
+
+# Test Loopback interface in IPv6 (on macOS ping6 is used)
+$ ping6 -c 4 ::1
 ```
 
-  * Note the `time=...` value (e.g., `time=15.2 ms`). This is your latency to Google's servers.
+Examine the response time (`time=... ms`) and packet loss rate (`0% packet loss`). Because packets are handled entirely in memory by the operating system kernel without traversing any physical medium, latency is virtually instantaneous (typically below `0.1 ms`).
 
-#### Exercise 6: Trace the Path (`traceroute`)
+### Exercise 3: Identify the Default Gateway and Test LAN Connectivity
 
-Find out the exact path your data takes to reach a server. `traceroute` shows every "hop" (router) along the way.
+To route packets destined for external networks (such as the Internet), the local host must identify the IP address of the local network router — known as the **Default Gateway**.
+
+1. Query the operating system routing table to discover the default route:
+   * **On Linux** (or on macOS with `iproute2mac`):
+     ```bash
+     $ ip route show default
+     ```
+     *(Or simply `ip r`).* The output format is `default via 192.168.1.1 dev eth0`, where the IP following **`via`** is your **Default Gateway**.
+   * **On macOS (native):**
+     ```bash
+     $ netstat -rn -f inet | grep default
+     # or:
+     $ route -n get default
+     ```
+     The address listed under `Gateway` (or the `gateway:` field) indicates your **Default Gateway**.
+
+2. Test network connectivity to your router using `ping` (replace with the IP obtained above):
+   ```bash
+   $ ping -c 4 <DEFAULT_GATEWAY_IP>
+   ```
+   Receiving replies with `0% packet loss` confirms that your physical link (cable or Wi-Fi) and Layer 2/3 connectivity to the local router are fully functional.
+
+### Exercise 4: Inspect Address Resolution in the ARP Table (`ip neigh` / `arp -an`)
+
+To encapsulate an IP packet destined for the Default Gateway within an Ethernet frame (Layer 2), the operating system uses the **ARP (*Address Resolution Protocol*)** to discover the **physical MAC address** corresponding to that router's IPv4 address.
+
+Inspect the ARP cache stored in your operating system:
+
+* **On Linux:**
+  ```bash
+  $ ip neigh
+  ```
+* **On macOS (and also supported on Linux):**
+  ```bash
+  $ arp -an
+  ```
+
+Find the entry corresponding to your Default Gateway's IP: you will see its physical MAC address alongside. This translation allows the network interface to properly address Layer 2 Ethernet frames on the local link.
+
+-----
+
+## Part 2: From Local Area Network to the Internet (WAN, NAT, and DNS)
+
+Having verified local connectivity to the Default Gateway, we now trace traffic forwarded across the wide-area boundary (WAN / Internet) and analyze domain name resolution.
+
+### Exercise 5: Test External Connectivity by IP Address vs. Domain Name (`ping`)
+
+Connectivity failures can stem either from a lack of IP routing to external networks or exclusively from failures within the Domain Name System (**DNS**). To differentiate between the two, perform two separate checks:
+
+1. Test raw IP reachability directly against a well-known public external IP address (e.g., Google's public DNS at `8.8.8.8`):
+   ```bash
+   $ ping -c 4 8.8.8.8
+   ```
+   *Successful responses verify end-to-end IP routing to the Internet.* Observe the Round-Trip Time (`time=... ms`): because packets traverse physical fiber-optic lines across multiple autonomous systems and datacenters, latency will typically range between `8 ms` and `30 ms`.
+
+2. Now test reachability using a **domain name**:
+   ```bash
+   $ ping -c 4 ua.pt
+   ```
+   Notice the first line of output: the operating system first queried the **DNS** service to resolve `ua.pt` to its corresponding IPv4 address (e.g., `193.136.172.10`) before dispatching ICMP packets.
+
+> **Diagnostic Principle:** If `ping 8.8.8.8` succeeds but `ping ua.pt` returns a resolution error (*"Temporary failure in name resolution"* or *"cannot resolve...: Unknown host"*), IP connectivity is fully functional; the failure is isolated to your **DNS** configuration.
+
+### Exercise 6: Trace Intermediate Network Hops (`traceroute`)
+
+To identify each intermediate router traversed by an IP packet from your machine to a destination, run `traceroute`:
 
 ```bash
 $ traceroute 8.8.8.8
 ```
 
-You will see a list of IP addresses, starting with your own router, then your ISP's routers, and finally Google's.
+Examine the ordered sequence of hops:
+* **Hop 1** is always your local Default Gateway.
+* Subsequent hops correspond to upstream routers belonging to your Internet Service Provider (ISP), the national academic backbone (RCTS / FCCN), and transit providers until reaching Google's network edge.
+* *(Technical note: Lines displaying asterisks `* * *` indicate that an intermediate router is configured to discard or rate-limit ICMP Time Exceeded diagnostic messages, which does not necessarily impede packet forwarding to subsequent hops).*
 
-#### Exercise 7: Query the "Phonebook" (`dig`)
-
-Use **DNS** to translate a domain name into an IP address.
-
+Execute a trace towards the University of Aveiro web server:
 ```bash
-$ dig google.com
+$ traceroute ua.pt
 ```
 
-  * Look in the "ANSWER SECTION" to find the `A` record (the IPv4 address).
-  * **Bonus:** Find the mail servers for `google.com` by querying the `MX` record.
+### Exercise 7: Domain Name Resolution (`dig` and `/etc/hosts`)
 
-    ```bash
-    $ dig google.com MX
-    ```
+Inspect the process of resolving human-readable domain names into IP addresses:
+
+1. Use `dig` to query the IPv4 host address (Type **`A`** record) for `ua.pt`:
+   ```bash
+   $ dig ua.pt A
+   ```
+   Under `;; ANSWER SECTION:`, locate the resolved IPv4 address along with its Time-to-Live (*TTL*). To obtain a concise numerical answer, append `+short`:
+   ```bash
+   $ dig ua.pt A +short
+   ```
+
+2. Perform a reverse DNS lookup using the `-x` parameter to discover the hostname associated with a public IP address:
+   ```bash
+   $ dig -x 8.8.8.8 +short
+   ```
+
+3. Inspect your local static resolution file `/etc/hosts` (which the operating system checks **prior** to sending DNS requests across the network):
+   ```bash
+   $ cat /etc/hosts
+   ```
+   Notice the standard entry `127.0.0.1 localhost`, which maps `localhost` directly to the loopback IP address without requiring network DNS queries.
+
+### Exercise 8: Determine Your Public IP Address and Understand NAT (`curl`)
+
+> **The Concept of NAT (*Network Address Translation*):**
+> As observed in Exercise 1, host network interfaces are assigned **Private IP Addresses** (belonging to RFC 1918 ranges such as `10.0.0.0/8`, `172.16.0.0/12`, or `192.168.0.0/16`), which are valid strictly within the LAN and cannot be routed across the public Internet. To allow multiple devices within a private network to access the Internet concurrently while sharing a single **Public IP Address**, the border router performs **NAT**: when forwarding an outbound packet from the LAN to the WAN, the router translates the private source IP to its own **Public IP** and records this mapping in an internal state table; when response packets return from the Internet, the router inspects the table, restores the destination IP to the appropriate private host address, and delivers the packet.
+
+To discover the **Public IP Address** through which your host is viewed by external servers on the Internet, query the public `ipinfo.io` API via `curl`:
+
+```bash
+$ curl -s https://ipinfo.io/json
+```
+
+Analyze the JSON response:
+* `ip`: The **Public IP Address** currently assigned to your network's border router (shared via NAT among all hosts on your local network).
+* `city` / `region` / `org`: Approximate geographical location and the Autonomous System / ISP providing network connectivity.
 
 -----
 
-### Part 3: Service Discovery (`nmap`)
+## Part 3: Ports, Services, and Socket Diagnostics (`ss` / `lsof`, `nmap`, `127.0.0.1` vs. `0.0.0.0`)
 
-#### Exercise 8: Scan Yourself
+In container orchestration (**Docker**) and distributed application development (**Class 08 — Network Programming**), it is essential to determine which transport ports are in a listening state (*LISTEN*) and understand how socket binding parameters control service accessibility.
 
-Use **Nmap** (Network Mapper) to scan your own computer for open ports.
+### Exercise 9: Inspect Listening Ports on the Local Host (`ss` / `lsof` and `nmap`)
 
-```bash
-$ nmap localhost
-```
+In Part 0, an OpenSSH container was launched with port `2222` mapped to the host system. Verify at the operating system level that this port is open and actively awaiting connections:
 
-You will likely see port `2222` open because of the SSH server you started in Part 0.
+1. List all network sockets in a listening state (*LISTEN*) on your machine:
+   * **On Linux (`ss -tuln` — numeric TCP/UDP listening sockets):**
+     ```bash
+     $ ss -tuln
+     ```
+   * **On macOS (`lsof` — lists TCP sockets in state `LISTEN` without hostname/port resolution):**
+     ```bash
+     $ lsof -nP -iTCP -sTCP:LISTEN
+     ```
+   Locate the entry ending in **`:2222`** (e.g., `0.0.0.0:2222` on Linux or `*:2222 (LISTEN)` on macOS). This confirms that a process on your host is actively accepting TCP connections on port `2222`.
 
-#### Exercise 9: Scan a Public Server
+2. Execute a port scan against your local machine (`localhost`) using **`nmap`** (syntax is identical on Linux and macOS):
+   ```bash
+   $ nmap localhost
+   ```
+   Verify in the `PORT / STATE / SERVICE` table that port `2222/tcp` is reported as **`open`**.
 
-Let's see what ports are open on a public website. `scanme.nmap.org` is a server *specifically* for practicing Nmap.
+### Exercise 10: Binding Services to Network Interfaces (`127.0.0.1` vs. `0.0.0.0`)
+
+> **The Meaning of `0.0.0.0` in Server Socket Binding:**
+> Unlike `127.0.0.1` (which binds exclusively to the virtual loopback interface), the address `0.0.0.0` is not an individual host interface, but rather a **meta-constant convention (`INADDR_ANY`)**. When a server binds to `0.0.0.0`, it instructs the operating system kernel to accept incoming connections destined for that port across **all network interfaces available on the system** (including `localhost`, physical Ethernet/Wi-Fi adapters, and virtual Docker bridge networks).
+
+To observe experimentally the critical difference between binding a server to **`127.0.0.1`** vs. **`0.0.0.0`**, execute the following steps:
+
+1. Create a temporary testing directory containing a simple HTML document:
+   ```bash
+   $ mkdir -p ~/IEI/aula07/teste-web && cd ~/IEI/aula07/teste-web
+   $ echo "<h1>Servidor de Teste IEI</h1>" > index.html
+   ```
+
+2. **Scenario A — Binding Exclusively to `127.0.0.1` (Loopback Only):**
+   Launch Python's built-in HTTP server on port `8000` bound strictly to `127.0.0.1`:
+   ```bash
+   $ python3 -m http.server 8000 --bind 127.0.0.1
+   ```
+   *(Keep this terminal open with the server running, and **open a second terminal window**).*
+
+3. In the **second terminal window**, inspect the listening socket for port `8000`:
+   * **On Linux:**
+     ```bash
+     $ ss -tuln | grep 8000
+     ```
+   * **On macOS:**
+     ```bash
+     $ lsof -nP -iTCP -sTCP:LISTEN | grep 8000
+     ```
+   Notice that the socket is bound to **`127.0.0.1:8000`**:
+   * A request from the local machine (`curl -I http://127.0.0.1:8000`) succeeds with **`HTTP/1.0 200 OK`**.
+   * However, any connection attempt from another computer on the LAN (or from the host into a Docker container configured this way) **will be refused (`Connection refused`)**, because the process does not listen on external network interfaces.
+
+4. In the first terminal, terminate the server with **`Ctrl+C`**, and restart it bound to **`0.0.0.0`** (all network interfaces):
+   ```bash
+   $ python3 -m http.server 8000 --bind 0.0.0.0
+   ```
+
+5. In the second terminal, rerun the diagnostic command (`ss -tuln | grep 8000` on Linux, or `lsof -nP -iTCP -sTCP:LISTEN | grep 8000` on macOS):
+   The socket now shows **`0.0.0.0:8000`** (Linux) or **`*:8000`** (macOS), accepting connections across all network interfaces. Test reachability with `curl -I http://localhost:8000`, close the second terminal, and stop the Python server in the first terminal with **`Ctrl+C`**.
+
+   Return to the session working directory:
+   ```bash
+   $ cd ~/IEI/aula07
+   ```
+
+### Exercise 11: Port Scanning on an Authorized Public Test Server (`nmap`)
+
+> **Legal and Ethical Notice:** Performing port scans against systems or networks without explicit authorization is strictly prohibited. For educational exploration, the Nmap project maintains the officially authorized test server **`scanme.nmap.org`**.
+
+Scan the open ports on this public test host:
 
 ```bash
 $ nmap scanme.nmap.org
 ```
 
-  * What services are running? This output shows you why ports `80` (HTTP) and `22` (SSH) are important.
+Review the detected services in the output table, identifying standard open ports such as **`22/tcp` (`ssh`)** for remote administration and **`80/tcp` (`http`)** for web services.
 
 -----
 
-### Part 4: Secure Remote Operations (SSH & `rsync`)
+## Part 4: Secure Remote Administration (SSH, `rsync`, and SSH Port Forwarding)
 
-#### Exercise 10: Connect to Your Server (`ssh`)
+We now utilize the OpenSSH Linux server container instantiated in Part 0 (listening on port `2222`) to execute three fundamental system administration workflows: remote shell access, incremental file synchronization, and secure port forwarding.
 
-It's time to log in to the SSH server you launched in Part 0. Your public key is already authorized.
+### Exercise 12: Establish a Remote Shell Session via `ssh`
+
+Connect as user `student` to the server running on `localhost` at port `2222`:
 
 ```bash
-# Connect to user 'student' on localhost at port 2222
 $ ssh student@localhost -p 2222
 ```
 
-  * You are now *inside* the Docker container.
-  * Run commands like `whoami`, `ls -l`, or `pwd` to prove you are in a different environment.
-  * Type `exit` to log out.
+*(On your first connection to a new host, SSH prompts you to accept its host key fingerprint: `Are you sure you want to continue connecting (yes/no/[fingerprint])?` — type **`yes`** and press Enter).*
 
-#### Exercise 11: Sync Files Securely (`rsync`)
+Notice that the shell prompt changes, indicating that commands are executing **inside the remote container** (authenticated automatically via the SSH key pair configured in Part 0):
 
-`rsync` is the best way to copy files over SSH. It's smart and only copies the differences.
+```bash
+# Commands executed INSIDE the remote server:
+$ whoami
+$ pwd
+$ ls -la
+```
 
-1.  On your **host machine**, create a new folder and a file.
+To disconnect from the remote session and return to your local machine:
+```bash
+$ exit
+```
 
-    ```bash
-    $ mkdir my-project
-    $ echo "This is a test file" > ./my-project/README.md
-    ```
-2.  Use `rsync` to "push" this folder to the server's home directory.
+### Exercise 13: Incremental Directory Synchronization with `rsync`
 
-    ```bash
-    # Note the -e flag to specify the SSH port
-    $ rsync -avzP -e "ssh -p 2222" ./my-project student@localhost:~/
-    ```
-3.  Log back into the SSH server (`ssh student@localhost -p 2222`) and run `ls`. You will see `my-project` has been copied.
+To synchronize project files between your local machine and a remote server over an encrypted SSH connection, use **`rsync`**:
+
+1. On your local machine (in `~/IEI/aula07`), create a directory named `meu-projeto` with two sample files:
+   ```bash
+   $ mkdir -p ~/IEI/aula07/meu-projeto
+   $ echo "# Projeto de Redes IEI" > ~/IEI/aula07/meu-projeto/README.md
+   $ echo "print('Running on remote server')" > ~/IEI/aula07/meu-projeto/app.py
+   ```
+
+2. Synchronize this directory to the remote server using `rsync`:
+   ```bash
+   # -a: archive mode (preserves permissions and timestamps); -v: verbose;
+   # -z: in-transit compression; -P: progress indicator;
+   # -e "ssh -p 2222": specifies SSH protocol on port 2222.
+   $ rsync -avzP -e "ssh -p 2222" ~/IEI/aula07/meu-projeto student@localhost:~/
+   ```
+
+3. To observe `rsync`'s differential transfer algorithm (*delta-transfer*), append a single line to `README.md` and execute the exact same command again:
+   ```bash
+   $ echo "Incremental update in file" >> ~/IEI/aula07/meu-projeto/README.md
+   $ rsync -avzP -e "ssh -p 2222" ~/IEI/aula07/meu-projeto student@localhost:~/
+   ```
+   Notice in the command output that `rsync` **transferred only the modified file (`README.md`)**, skipping `app.py` because its contents remained identical.
+
+### Exercise 14: Local Port Forwarding via SSH Tunnel (*SSH Local Port Forwarding*)
+
+Consider the following common systems engineering scenario:
+An internal web service runs on port **`8000`** inside a remote server, but that port **is not exposed to external networks** (in our `compose.yml` from Part 0, only port `2222` was mapped). **SSH Local Port Forwarding** allows a local client to securely access that internal service through the established SSH connection.
+
+> **Technical Notice — Enabling TCP Forwarding on the SSH Server:**
+> For security reasons, several OpenSSH server distributions (including the Alpine Linux image used in the `iei-ssh-server` container and certain default Linux/macOS server installations) disable TCP port forwarding by default (`AllowTcpForwarding no`), which triggers the error `channel X: open failed: administratively prohibited` when attempting to use the tunnel.
+> Before starting the exercise, enable `AllowTcpForwarding yes` on the server by executing on your **host machine**:
+> ```bash
+> # On the iei-ssh-server Docker container:
+> $ docker exec iei-ssh-server sed -i 's/AllowTcpForwarding no/AllowTcpForwarding yes/g' /config/sshd/sshd_config /etc/ssh/sshd_config
+> $ docker restart iei-ssh-server
+> ```
+> *(Note: On a native Linux/macOS SSH server, this directive is located in `/etc/ssh/sshd_config` and requires restarting the `sshd` daemon after modification).*
+
+1. Open an SSH session to the remote server:
+   ```bash
+   $ ssh student@localhost -p 2222
+   ```
+
+2. **Inside the remote server session**, create a test web page and start a Python HTTP server on port **`8000`**:
+   ```bash
+   $ mkdir -p ~/servico-interno && cd ~/servico-interno
+   $ echo "<h1>Internal Web Service accessed via SSH Tunnel (Port Forwarding)</h1>" > index.html
+   $ python3 -m http.server 8000
+   ```
+   *(Keep this terminal open with the server running inside the container).*
+
+3. Open a **new terminal window on your local machine** and attempt to connect directly to port `8000`:
+   ```bash
+   $ curl http://localhost:8000
+   ```
+   The connection fails with **`Connection refused`**, because port `8000` is internal to the container and unexposed on the host.
+
+4. In that second local terminal window, establish an **SSH Tunnel**, forwarding local port **`8080`** to port **`8000`** on the remote server via the SSH connection on port `2222`:
+   ```bash
+   $ ssh -N -L 8080:localhost:8000 student@localhost -p 2222
+   ```
+   *(The `-N` option specifies that no remote commands should be executed, dedicating the session solely to port forwarding; leave this command running).*
+
+5. In your local machine's **Web Browser**, navigate to:
+   **[http://localhost:8080](http://localhost:8080)**
+
+   The browser renders the web page served by the internal Python process. HTTP traffic directed to local port `8080` is encapsulated and encrypted across the SSH connection (port `2222`) and delivered directly to internal port `8000` on the server.
+
+6. Once verified, close the tunnel by pressing **`Ctrl+C`** in the second terminal, and stop the Python HTTP server in the first terminal (`Ctrl+C`, followed by `exit` to close the SSH session).
 
 -----
 
-### Part 5: Project - Geo-Traceroute
+## Part 5: Optional Consolidation Challenges
 
-#### Exercise 12: Build a Visual Traceroute
+If you complete the preceding exercises before the end of the lab session, undertake these advanced challenges:
 
-In this project, you will combine `traceroute`, a public API, and a mapping library to visualize the physical path your data takes across the world. Download the code from [here](https://github.com/mariolpantunes/geotraceroute/archive/refs/tags/v1.0.tar.gz).
+### Challenge A: Real-Time Packet Capture and Inspection with `tcpdump`
 
-The code does the following:
+To monitor packet transmission and reception directly at the network interface level:
+1. In a terminal window, launch `tcpdump` with a filter for `icmp` traffic (used by `ping`) and disable numeric name resolution (`-n`):
+   ```bash
+   $ sudo tcpdump -i any icmp -n
+   ```
+2. In a second terminal window, send 2 ICMP Echo Request packets to `8.8.8.8`:
+   ```bash
+   $ ping -c 2 8.8.8.8
+   ```
+3. Observe in the first terminal the paired `ICMP echo request` (dispatched from your local IP) and `ICMP echo reply` (returned from `8.8.8.8`). Press `Ctrl+C` to terminate the capture.
 
-1.  Runs `traceroute` and parses the IP addresses of each hop.
-2.  Looks up the geographic location of each IP using the `ip-api.com` API.
-3.  Caches results in a `cache.json` file to avoid re-querying and hitting rate limits.
-4.  Plots all the points and the path on an interactive.
+### Challenge B: Geographic Route Mapping (Geo-Traceroute)
 
-Try it, follow the [`README.md`](https://github.com/mariolpantunes/geotraceroute) instructions to setup the project.
+Use the Python `geotraceroute` utility to combine hop tracing with geolocation data, rendering packet routes on an interactive map:
+```bash
+$ cd ~/IEI/aula07
+$ git clone https://github.com/mariolpantunes/geotraceroute.git
+$ cd geotraceroute
+$ python3 -m venv .venv
+$ source .venv/bin/activate
+$ pip install -r requirements.txt
+$ python3 geotraceroute.py google.com
+```
 
 -----
 
-### Bonus Exercise: SSH Tunneling
+## Summary of Diagnostic and Administration Commands
 
-Let's use advanced SSH port forwarding to securely access a "hidden" web server.
-
-1.  Log into your SSH container:
-
-    ```bash
-    $ ssh student@localhost -p 2222
-    ```
-2.  **Inside the container,** run a simple web server on port 8000. This port is *not* exposed in your `docker-compose.yml`, so it's inaccessible from your host.
-
-    ```bash
-    # Inside the SSH container
-    $ cd ~
-    $ echo "Hello from inside the tunnel!" > index.html
-    $ python3 -m http.server 8000
-    ```
-3.  Open a **new host terminal** (leave the server running).
-4.  Create an SSH tunnel. This command says "forward *my* local port 8080 to `localhost:8000` *on the remote server*."
-
-    ```bash
-    # In a NEW host terminal
-    $ ssh -N -L 8080:localhost:8000 student@localhost -p 2222
-    ```
-    (The `-N` flag just opens the tunnel without starting a shell).
-5.  Open your **host's** web browser and go to `http://localhost:8080`.
-6.  You should see the "Hello from inside the tunnel\!" message. You have successfully accessed a hidden port through a secure SSH tunnel.
+| Command (Linux / macOS) | Technical Purpose (Diagnostics & Administration) | Practical Example |
+| :--- | :--- | :--- |
+| `ip a` (Linux) / `ifconfig` (macOS) | List network interfaces, physical MAC address, IPv4/IPv6 addresses, and subnet mask (`/24`). | `ip a` / `ifconfig` |
+| `ip r` (Linux) / `netstat -rn -f inet` (macOS) | Inspect routing table and identify the *Default Gateway*. | `ip r` / `route -n get default` |
+| `ip neigh` (Linux) / `arp -an` (macOS) | Inspect ARP cache (mapping between local IPv4 addresses and MAC addresses). | `ip neigh` / `arp -an` |
+| `ping -c 4` (`ping6 -c 4` for IPv6 on macOS) | Test end-to-end IP reachability (ICMP) and measure Round-Trip latency (`ms`). | `ping -c 4 8.8.8.8` |
+| `traceroute <destination>` | Identify intermediate routing hops to destination host. | `traceroute ua.pt` |
+| `dig <domain> +short` | Query DNS servers to resolve domain names to IP addresses. | `dig ua.pt +short` |
+| `curl <url>` | Issue HTTP/HTTPS requests to web servers or APIs from the terminal. | `curl -I http://localhost:8000` |
+| `ss -tuln` (Linux) / `lsof -nP -iTCP -sTCP:LISTEN` (macOS) | List listening transport sockets (*LISTEN*) on the local host. | `ss -tuln` |
+| `nmap <target>` | Probe open transport ports to identify active services on a target system. | `nmap localhost` |
+| `ssh <user>@<host>` | Establish an encrypted remote shell session on an SSH server. | `ssh student@localhost -p 2222` |
+| `rsync -avzP` | Synchronize directories incrementally over an encrypted SSH connection. | `rsync -avzP ./dir student@host:~/` |
+| `ssh -N -L <p1>:localhost:<p2>` | Configure an SSH Local Port Forwarding tunnel between local port `p1` and remote port `p2`. | `ssh -N -L 8080:localhost:8000 user@host` |
