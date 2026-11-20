@@ -1,489 +1,363 @@
 ---
-title: Network programing
-subtitle: Introdução Engenharia Informática
-author: Mário Antunes
+title: 47138 - Introduction to Computer Engineering
+subtitle: "Network Programming: Sockets, REST APIs & MQTT"
 institute: Universidade de Aveiro
-date: November 10, 2025
+date: November 16, 2026
 colorlinks: true
 highlight-style: tango
 geometry: a4paper,margin=2cm
 mainfont: NotoSans
 mainfontfallback:
   - "NotoColorEmoji:mode=harf"
+  - "DejaVu Sans:"
 header-includes:
  - \usepackage{longtable,booktabs}
  - \usepackage{etoolbox}
- - \AtBeginEnvironment{longtable}{\normalsize}
+ - \AtBeginEnvironment{longtable}{\footnotesize}
  - \AtBeginEnvironment{cslreferences}{\tiny}
  - \AtBeginEnvironment{Shaded}{\normalsize}
  - \AtBeginEnvironment{verbatim}{\normalsize}
  - \setmonofont[Contextuals={Alternate}]{FiraCodeNerdFontMono-Retina}
 ---
 
-# Exercises
+# Practical Laboratory Guide
 
-## Step 0: Setup
+**Educational Context & Objectives:**
+In **Class 07**, we inspected network interfaces, diagnosed connections using `ss`/`lsof`, `curl`, and `nc`, and observed why networks such as `eduroam` block direct connections between student devices (*Client Isolation*). In this **3-hour** laboratory session — designed to run **100% in software** on your laptop (Linux, macOS, or WSL) without requiring dedicated hardware or special Wi-Fi networks — we move from observation to **building networked applications in Python** across two core blocks:
 
-Before you begin, let's set up your system with all the necessary tools for these exercises.
+* **Part 0 — Environment Setup & Python Best Practices:** Installing required utilities, configuring virtual environments (`venv`), using the `logging` module properly, and understanding local communication vs. MQTT brokers on `eduroam`.
+* **Block 1 — Direct Client-Server Communication (*Request/Response*):**
+  * **Exercise 1.1:** Implementing and testing a TCP/UDP Echo Server and Client using **Raw Sockets** in Python (`socket`), testing with `nc` (`netcat`), and inspecting listening ports (`ss` / `lsof`).
+  * **Exercise 1.2:** Demystifying **HTTP** by inspecting the raw HTTP request text sent by `curl` directly inside your TCP socket server.
+  * **Exercise 1.3:** Running and testing a **REST API** with **FastAPI** and local caching (`ex03`), acting simultaneously as a local REST server (`127.0.0.1:8000` and `/docs`) and a client of an external API.
+* **Block 2 — Decoupled Real-Time Communication (*Publish/Subscribe* with MQTT):**
+  * **Exercise 2.1:** Running an **Eclipse Mosquitto** broker in Docker alongside a **Serverless Web Chat over WebSockets** (`ex04`), testing *Last Will and Testament (LWT)* and classroom-wide communication over `eduroam` via a public broker.
+  * **Exercise 2.2:** Building a **Real-Time Telemetry** pipeline in Python (`paho-mqtt` and `psutil`) with a live Plotly web dashboard (`ex05`), supporting both **simulated environmental data** (`--mode env`), **real laptop CPU/RAM telemetry** (`--mode system`), and a terminal alert subscriber (`subscriber.py`).
 
-### 1. System Tools and Python
+\vspace{0.5em}
 
-First, update your package lists and install the core utilities: `curl` and `wget` for testing web services,
-and Python's package manager (`pip`) and virtual environment module (`venv`).
+### Working Directory Setup
 
-```bash
-# 1. Update your package lists
-sudo apt update; sudo apt full-upgrade -y; \
-sudo apt autoremove -y; sudo apt autoclean
-
-# 2. Install general tools, flatpak, and Python essentials
-sudo apt install -y udisks2 curl wget \
-flatpak python3-pip python3-venv
-
-# 3. Add the Flathub repository
-flatpak --user remote-add --if-not-exists \
-flathub https://flathub.org/repo/flathub.flatpakrepo
-```
-
-### 2. Thonny IDE (for Exercise 5)
-
-Thonny is a simple IDE for MicroPython.
-We'll install it using Flatpak to get the latest version.
+Before starting the exercises, create and navigate into a dedicated working directory for this session:
 
 ```bash
-# 1. Install Thonny
-flatpak --user install flathub org.thonny.Thonny
-
-# 2. Add user to dialout group
-sudo usermod -a -G dialout $USER
+$ mkdir -p ~/IEI/aula08
+$ cd ~/IEI/aula08
 ```
 
-The `dialout` group provides full and direct access to serial ports.
-Members of this group can connect to serial devices (through serial connections or USB).
+> **Note on file paths:**
+> Commands in this guide assume your terminal session is positioned inside `~/IEI/aula08` (or the corresponding exercise subfolder).
 
-You can then run Thonny from your application menu or with `flatpak run org.thonny.Thonny`.
+-----
 
-For native Linux users, no more steps are needed.
-For WSL and virtualized OSs, however, a few additional steps are required.
-Check Sections [5.1](#wsl-usb-passthrough) and [5.2](#virtualbox-usb-passthrough) respectively.
+## Part 0: Environment Setup & Python Best Practices
 
-### 3. 🐍 Python Best Practices
+### Step 1: Install System Utilities and Python Tools
 
-For each Python exercise, please follow these steps:
+Ensure that **Docker** (with Docker Compose), **`curl`**, **`netcat` (`nc`)**, and Python 3's **`pip`** and **`venv`** modules are installed:
 
-1.  Create a new directory for the project (e.g., `mkdir ex01 && cd ex01`).
-2.  Create an isolated virtual environment:
+* **On Linux (Ubuntu / Debian / WSL):**
+  ```bash
+  $ sudo apt update
+  $ sudo apt install -y curl wget netcat-openbsd python3-pip python3-venv
+  ```
+* **On macOS:**
+  The `curl`, `nc`, and `python3` utilities are available natively (or via *Xcode Command Line Tools*). If you manage Python through Homebrew, run only if needed:
+  ```bash
+  $ brew install python3
+  ```
 
-    ```bash
-    python3 -m venv venv
-    ```
-
-3.  Activate the environment:
-
-    ```bash
-    source venv/bin/activate
-    ```
-
-4.  Create a `requirements.txt` file (as specified in each exercise) and install from it:
-
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-5.  **Use the `logging` module** instead of `print()` for all your status messages.
-
-    ```python
-    import logging
-    logging.basicConfig(level=logging.INFO, format='%(message)s')
-    logger = logging.GoogletLogger(__name__)
-
-    logger.info("This is an info message.")
-    ```
-
-### 4. Network architecture
-
-You will typically use Eduroam to access the internet during classes.
-For most activities, this is sufficient; however, this network (managed by the university) blocks communication between student **equipment**.
-
-As such, we provide a separate wireless network named `TheOffice` that can be used to connect user applications **to each other**.
-This is **optional** (but recommended) for **exercises** 1-4 but **required** for exercise 5.
-
-📶 Wi-Fi Network Details:
-
-| SSID (Network Name) | Password |
-| :--- | :--- |
-| `TheOffice` | `8006002030` |
-| `TheOffice5G` | `8006002030` |
-
-![Network architecture](figures/class_network.drawio.pdf){ width=50% }
-
-## Exercise 1: UDP File Transfer
-
-**Goal:** Explore the provided `file_transfer.py` script.
-Understand how it uses `asyncio` to create a persistent server that can handle multiple file uploads from clients.
-
-**Details:**
-
-  * **Server:** The server is persistent. It uses a `dict` to manage file transfers from different clients, keyed by their IP and port (`addr`).
-  * **Client:** The client sends the file metadata (filename, size) first, then sends the data chunks, showing a progress bar using `tqdm`.
-  * **Protocol:** The script uses a simple newline-based protocol:
-      * `START:<total_chunks>:<total_size>:<filename>`
-      * `DATA:<chunk_num>:<data_chunk>`
-      * `END`
-      * The server responds with `ACK_ALL` or `ACK_FAIL`.
-
-**Instructions:**
-
-1.  Create a new directory `ex01` and move into it `cd ex01`.
-2.  Download the solution [code](https://github.com/detiuaveiro/iei/tree/master/classes/class_08/02_support/ex01) into this directory.
-3.  Activate a `venv` and install the requirements:
-
-    ```bash
-    python3 -m venv venv
-    source venv/bin/activate
-    pip install -r requirements.txt
-    ```
-
-4.  Create a file to send, e.g., `echo "This is a UDP test file." > test.txt`.
-5.  **Run the Server (Terminal 1):**
-
-    ```bash
-    python file_transfer.py receive --port 9999
-    ```
-
-6.  **Run the Client (Terminal 2):**
-
-    ```bash
-    python file_transfer.py send test.txt --host 127.0.0.1 --port 9999
-    ```
-
-## Exercise 2: Remote Tic-Tac-Toe
-
-**Goal:** Analyze the provided `main.py` script to see how `asyncio` can be integrated with a GUI library like Pygame to create a networked application.
-
-**Details:**
-
-  * **GUI Menus:** The script uses Pygame to draw all its own menus. It does not use `argparse`.
-  * **Async Game Loop:** The main `while running:` loop is `async`. It yields control to the `asyncio` event loop by calling `await asyncio.sleep(1/FPS)`.
-  * **Networking:** The script uses `asyncio.start_server` (for the host) and `asyncio.open_connection` (for the client) to create reliable TCP streams.
-  * **Error Handling:** The `run()` and `close_connection()` functions use `try...finally` and handle `asyncio.CancelledError` to ensure the application shuts down cleanly.
-
-**Instructions:**
-
-1.  Create a new directory `ex02` and move into it `cd ex02`.
-2.  Download the solution [code](https://github.com/mariolpantunes/tictactoe/archive/refs/tags/tictactoe-2.0.tar.gz) into this directory.
-3.  Activate a `venv` and install the requirements:
-
-    ```bash
-    python3 -m venv venv
-    source venv/bin/activate
-    pip install -r requirements.txt
-    ```
-
-4.  **Run the Host (Player X):**
-
-    ```bash
-    python main.py
-    ```
-
-      * In the GUI, click "Host Game" -> enter a port (e.g., `8888`) -> Press Enter.
-5.  **Run the Client (Player O):**
-
-    ```bash
-    python main.py
-    ```
-
-    * In the GUI, click "Join Game" -> enter the host's IP (`127.0.0.1` if on the same machine) -> Press Enter -> enter the port (`8888`) -> Press Enter.
-
-## Exercise 3: FastAPI Caching Service
-
-**Goal:** Run and test the provided `main.py` script to understand how to build a high-performance, caching API endpoint.
-
-**Details:**
-
-  * **Endpoint:** The script provides a `GET /ip/{ip_address}` endpoint.
-  * **Cache:** It uses a local `ip_cache.json` file.
-  * **Logic:** It checks the `timestamp` of a cached entry against a `CACHE_DEADLINE_SECONDS`.
-  * **External API:** If the cache is stale or missing, it uses the `requests` library to fetch live data.
-
-**Instructions:**
-
-1.  Create a new directory `ex03` and move into it `cd ex03`.
-2.  Download the solution [code](https://github.com/detiuaveiro/iei/tree/master/classes/class_08/02_support/ex03) into this directory.
-3.  Activate a `venv` and install the requirements:
-
-    ```bash
-    python3 -m venv venv
-    source venv/bin/activate
-    pip install -r requirements.txt
-    ```
-
-3.  **Run the Server:**
-
-    ```bash
-    uvicorn main:app --reload
-    ```
-
-5.  **Test the Service (in a new terminal):**
-      * **Test 1 (Cache Miss):**
-
-        ```bash
-        # Private IP (has to fail)
-        curl http://127.0.0.1:8000/ip/192.168.132.132
-
-        # Google DNS
-        curl http://127.0.0.1:8000/ip/8.8.8.8
-
-        # Public IP from MEO
-        curl http://127.0.0.1:8000/ip/144.64.3.83
-
-        # UA
-        curl http://127.0.0.1:8000/ip/193.137.169.135
-
-        # Static IP from São Tomé
-        curl http://127.0.0.1:8000/ip/197.159.166.30
-        ```
-
-        *(Check the server logs; it should say "Querying external API".)*
-      * **Test 2 (Cache Hit):**
-
-        ```bash
-        # Private IP (has to fail)
-        curl http://127.0.0.1:8000/ip/192.168.132.132
-
-        # Google DNS
-        curl http://127.0.0.1:8000/ip/8.8.8.8
-
-        # Public IP from MEO
-        curl http://127.0.0.1:8000/ip/144.64.3.83
-
-        # UA
-        curl http://127.0.0.1:8000/ip/193.137.169.135
-
-        # Static IP from São Tomé
-        curl http://127.0.0.1:8000/ip/197.159.166.30
-        ```
-
-        *(Check the server logs; it should say "Returning cached data".)*
-
-## Exercise 4: Pub/Sub Chat
-
-**Goal:** Use Docker to run an MQTT broker and connect to it with a pure JavaScript client to create a "serverless" chat application.
-
-**Details:**
-
-  * **No Python Server:** You will not write *any* server code. The Mosquitto broker *is* the server.
-  * **Broker:** The `docker-compose.yml` file starts Mosquitto and loads `mosquitto.conf`.
-  * **Configuration:** The `.conf` file enables anonymous access and opens port `9001` for **MQTT-over-WebSockets**.
-  * **Client:** The `chat_client.html` file uses the **MQTT.js** library (loaded from a CDN) to connect to `ws://localhost:9001`. It implements a Pub/Sub chat.
-
-**Instructions:**
-
-1.  Create a new directory `ex04` and move into it `cd ex04`.
-
-2.  Download the [code](https://github.com/detiuaveiro/iei/tree/master/classes/class_08/02_support/ex04) into the same directory.
-
-3.  **Start the Broker:**
-
-    ```bash
-    docker-compose up -d
-    ```
-
-4.  **Test the Client:**
-
-      * Open `http://localhost:8080/` in your web browser.
-      * Open `http://localhost:8080/` in a *second* browser tab or window.
-      * Enter different usernames and connect. Messages sent in one window should appear in the other.
-      * You can use the `TheOffice` network to let chat with other students.
-
-## Exercise 5: RPi Pico MQTT Sensor
-
-As stated at the beginning, native Linux users can skip these steps (skip to Section [5.3](#build-the-sensor)).
-For WSL and virtualized OSs follow the steps bellow.
-**Important** you need to turn off the Firewall for this exercise.
-
-### 5.1 WSL USB Passthrough
-
-The steps in this section are based on the original Microsoft [guide](https://learn.microsoft.com/en-us/windows/wsl/connect-usb).
-
-In a **PowerShell** terminal, run the following commands:
-
-```powershell
-# 1. Update the WSL version
-wsl --update
-
-# 2. Shutdown the WSL lightweight VM
-wsl --shutdown
-
-# 3. Update the network options of WSL
-$wslConfig = @'
-[wsl2]
-networkingMode=mirrored
-'@
-
-Add-Content -Path ($env:UserProfile + "\.wslconfig") -Value $wslConfig
-
-# 4. Install the USBIPD application
-winget install --interactive --exact dorssel.usbipd-win
-```
-
-After these steps, you can restart the WSL lightweight VM. Simply open the corresponding terminal.
-
-To attach a USB device to the WSL lightweight VM, use the following instructions in a PowerShell terminal with administration privileges. **Remember** to have the WSL terminal already running.
-
-```powershell
-# 1. List the USB devices
-usbipd list
-
-# 2. Find one with a name similar to "USB Serial Device (COM4)"
-# And bind it using its BUSID (example 2-7)
-usbipd bind --force --busid <BUSID>
-
-# 3. Attach it into the WSL lightweight VM
-usbipd attach --wsl --busid <BUSID>
-```
-
-The device should now be available in the WSL lightweight VM.
-After completing the exercise, please run the following command to detach the device.
-
-```powershell
-usbipd detach --busid <BUSID>
-```
-
-### 5.2 VirtualBox USB Passthrough
-
-For Debian (or other Linux) guests running in VirtualBox, you need to configure VirtualBox on your **host machine** to "pass" the USB device directly to the **guest VM**.
-These steps are performed on the **host machine** (the computer running VirtualBox).
-
-#### 1. Install the VirtualBox Extension Pack (On Host)
-
-This is **required** for USB 2.0 and 3.0 support, which most modern serial devices use.
-
-1.  Go to the [VirtualBox download page](https://www.virtualbox.org/wiki/Downloads).
-2.  Find the **VirtualBox Extension Pack** and download it.
-3.  **Ensure the Extension Pack version matches your installed VirtualBox version.**
-4.  Double-click the downloaded file (`.vbox-extpack`) and follow the prompts in the VirtualBox manager to install it.
-
-#### 2. Add Host User to `vboxusers` Group (On Linux/macOS Hosts)
-
-On **Linux or macOS host machines**, your user account must be in the `vboxusers` group to grant VirtualBox permission to access USB hardware.
+Verify that Python and Docker Compose are working:
 
 ```bash
-# This command is for Linux hosts
-sudo usermod -a -G vboxusers $USER
-
-# On macOS, the installer for the Extension Pack should handle this.
+$ python3 --version
+$ docker compose version
 ```
 
-> **Important:** After running this command, you **must fully log out and log back in** to your host machine for the group change to take effect. (This step is not required if your host machine is running Windows).
+### Step 2: Python Best Practices (`venv` and `logging`)
 
-#### 3. Configure VM USB Settings (On Host)
+For every Python exercise in this session, follow this clean dependency isolation workflow:
 
-1. **Shut down** your Debian VM completely (do not just "Save State").
-2. Open the VirtualBox manager, select your Debian VM, and click **Settings**.
-3. Go to the **USB** tab.
-4. Select the **USB 3.0 (xHCI) Controller**.
-5. **Plug your MicroPython device** (e.g., Raspberry Pi Pico, ESP32) into your host computer.
-6. Click the **"Add new USB filter"** icon (the small USB plug with a green `+`).
-7. Select your device from the list. It might be named "USB Serial Device", "CP210x", "CH340", "Raspberry Pi Pico", or similar.
-  - This creates a filter that will automatically pass this *specific* device to your VM when it's plugged in.
-8. Click **OK** to save the settings.
+1. Create and enter the exercise directory (e.g., `mkdir -p ~/IEI/aula08/ex01 && cd ~/IEI/aula08/ex01`).
+2. Create and activate an isolated virtual environment:
+   ```bash
+   $ python3 -m venv .venv
+   $ source .venv/bin/activate
+   ```
+3. Whenever a `requirements.txt` file is provided, install dependencies inside the active environment:
+   ```bash
+   $ pip install -r requirements.txt
+   ```
+4. Use Python's **`logging`** module instead of `print()` to record network events, connections, and errors cleanly:
+   ```python
+   import logging
 
-#### 4. Attach and Verify (In Guest VM)
+   logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+   logger = logging.getLogger(__name__)
 
-1.  **Start** your Debian VM.
-2.  If the filter was set up correctly, the device should be automatically captured by the guest VM.
-3.  Open a terminal *inside the Debian VM*.
-4.  First, re-confirm your user is in the `dialout` group (from the main **Step 2** of this guide).
-5.  Next, check if the device is present:
+   logger.info("Server started successfully.")
+   ```
 
-    ```bash
-    ls /dev/tty*
-    ```
-You should see a new device, typically named `/dev/ttyACM0` (for Picos) or `/dev/ttyUSB0` (for ESP-based boards).
-Thonny will now be able to find and connect to this port.
+### Step 3: Classroom Network Architecture (No Dedicated Wi-Fi Required)
 
-### 5.3 Build the sensor
+In **Class 07**, you saw that the university `eduroam` network enforces **Client Isolation**, preventing two student laptops from opening direct connections to each other's private IP addresses.
 
-In this exercise, we will explore the RPI Pico W with a DHT11 temperature and humidity sensor.
-Before assembling the circuit, take some time to check the pinout of both the board and the sensor.
+In this **100% software** guide, we handle this cleanly:
 
-![RPI Pico Pinout](figures/pico-pinout.pdf){ width=100% }
+* **For local Client-Server tests (Block 1 and the start of Block 2):** All servers and clients run on your own laptop, communicating over the *loopback* interface (`127.0.0.1` / `localhost`) and local Docker containers.
+* **For classroom-wide collaboration over `eduroam` (Block 2 — Exercise 2.1):** Because every laptop can open **outbound** connections to the Internet, the **Publish/Subscribe (MQTT)** pattern enables all students to exchange messages in real time through an external **MQTT Broker** without knowing each other's IP addresses or switching Wi-Fi networks.
 
-![DHT11 and DHT22 Pinout](figures/dht-pinout.png){ width=45% }
+-----
 
-The wiring diagram for the circuit is presented in the figure below.
+## Block 1: Direct Client-Server Communication (*Request/Response*)
 
-![DHT11 and DHT22 Pinout](figures/dht11-pico2_bb.pdf){ width=65% }
+In this first block, we explore the classic **Client-Server** model, starting at **Layer 4 (Transport — TCP and UDP)** with raw Python *sockets* and moving up to **Layer 7 (Application — HTTP / REST API)**.
 
-### 5.4 Code deployment
+### Exercise 1.1: The Classic Echo Server with Raw Sockets (TCP vs. UDP)
 
-**Goal:** Deploy the provided MicroPython code to a Raspberry Pi Pico W to publish its internal temperature to your MQTT broker.
+**Goal:** Understand how an application opens a *socket* on the operating system to listen on an `IP:Port` endpoint, and compare **TCP** (connection-oriented, reliable) with **UDP** (connectionless, datagrams).
 
-**Details:**
+**Support Files:** Download `ex01.zip` from the `"resources"` folder associated with this class on the course eLearning platform (`echo_server.py` and `echo_client.py`).
 
-  * **Hardware:** This exercise requires a **Raspberry Pi Pico W**.
-  * **Sensor:** The code uses the Pico's built-in internal temperature sensor, so **no external hardware is needed**.
-  * **Secrets:** Best practice is to store WiFi credentials in a separate `config.py` file, which is not checked into version control.
-  * **MQTT Library:** MicroPython requires a special lightweight MQTT library, `umqtt.simple`.
+#### Part A — Prepare the Support Files (`echo_server.py` and `echo_client.py`)
+
+Create the exercise directory and extract `ex01.zip` into it:
+
+```bash
+$ mkdir -p ~/IEI/aula08/ex01
+$ cd ~/IEI/aula08/ex01
+# (Extract ex01.zip from eLearning here: unzip ex01.zip)
+```
+
+Before running it, briefly inspect `echo_server.py`: notice that it uses Python's built-in `socket` module (blocking I/O, without `asyncio`) and implements two separate functions — `run_tcp_server` (`SOCK_STREAM`, with `listen()` and `accept()`) and `run_udp_server` (`SOCK_DGRAM`, directly using `recvfrom()` and `sendto()`).
+
+#### Part B — Test TCP Mode with `nc` and Inspect the Listening Socket
+
+1. **Terminal 1 (TCP Server):** Start the server on port `9000`:
+   ```bash
+   $ python3 echo_server.py tcp --port 9000
+   ```
+2. **Terminal 2 (Network Inspection — Class 07 review):** Verify that the Python process opened a TCP socket in **`LISTEN`** state:
+   * **On Linux:** `ss -tulnp | grep 9000`
+   * **On macOS:** `lsof -nP -iTCP:9000 -sTCP:LISTEN`
+3. **Terminal 2 (`netcat` Client):** Connect via TCP and send messages:
+   ```bash
+   $ nc 127.0.0.1 9000
+   ```
+   Type `Hello TCP` and press Enter; the server echoes `Hello TCP` back.
+   * **Blocking I/O Experiment:** Without closing this first client in Terminal 2, open a **Terminal 3** and run `nc 127.0.0.1 9000`, typing `Second client`. Notice that the second client receives no reply yet because the TCP server is **blocked** inside `conn.recv()` for the first client!
+   * Close the Terminal 2 client with **`Ctrl+C`** (or `Ctrl+D`) and watch Terminal 1 log the disconnection and immediately serve the second client. Close Terminal 3's client and stop the server (`Ctrl+C`).
+
+#### Part C — Test UDP Mode and Compare with the Python Client
+
+1. **Terminal 1 (UDP Server):**
+   ```bash
+   $ python3 echo_server.py udp --port 9000
+   ```
+2. **Terminal 2 (Inspection):** Run `ss -uln | grep 9000` (Linux) or `lsof -nP -iUDP:9000` (macOS). Notice that **UDP has no `LISTEN` state or `accept()`** because it is connectionless (*stateless*).
+3. **Terminal 2 (`nc` or `echo_client.py`):**
+   ```bash
+   $ nc -u 127.0.0.1 9000
+   ```
+   Type `Hello UDP` and press Enter (exit with `Ctrl+C`).
+   Optionally, download and test with the support client `echo_client.py`:
+   ```bash
+   $ python3 echo_client.py udp --port 9000 --message "Python UDP test"
+   ```
+   Before moving on, stop the UDP server (`Ctrl+C`) and restart it in **TCP** mode for the next exercise.
+
+-----
+
+### Exercise 1.2: Demystifying HTTP over a TCP Socket
+
+**Goal:** Verify experimentally that **HTTP** (used by web browsers and REST APIs) is simply **structured plain text sent over a TCP socket**.
+
+1. **Terminal 1:** Ensure your echo server is running in **TCP** mode:
+   ```bash
+   $ python3 echo_server.py tcp --port 9000
+   ```
+2. **Terminal 2:** Instead of `nc`, send an HTTP request using **`curl`**:
+   ```bash
+   $ curl -v http://127.0.0.1:9000/hello
+   ```
+3. **Inspect what happened in both terminals:**
+   * In **Terminal 1 (`echo_server.py`)**, the server received and logged the raw HTTP request sent by `curl`:
+     ```text
+     GET /hello HTTP/1.1
+     Host: 127.0.0.1:9000
+     User-Agent: curl/...
+     Accept: */*
+     ```
+   * In **Terminal 2 (`curl`)**, the command failed (e.g., `Unsupported HTTP version` or `Received HTTP/0.9 when not allowed`). **Why?** Because `echo_server.py` echoed the raw `GET /hello HTTP/1.1...` request back instead of returning a valid HTTP response (`HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n...`).
+4. Stop the TCP server in Terminal 1 (`Ctrl+C`).
+
+> **Takeaway:** You *could* manually parse HTTP methods (`GET`, `POST`), paths (`/hello`), headers, and status codes (`200`, `404`) over raw TCP sockets — but you would be reinventing an HTTP server. Frameworks like **FastAPI** handle all of that for you.
+
+-----
+
+### Exercise 1.3: FastAPI IP Geolocation Caching Service (REST API)
+
+**Goal:** Run and test a Python **REST API** built with **FastAPI** that automates the IP geolocation lookup (performed manually with `curl` in Class 07) and implements a **local disk cache** (`ip_cache.json`).
+
+**Architecture Details (`ex03/main.py`):**
+
+* **Local REST Server:** Exposes `GET /ip/{ip_address}` on port `8000` and automatically generates interactive documentation at `/docs`.
+* **External REST Client:** On a *Cache Miss* (or after `CACHE_DEADLINE_SECONDS`), the service uses `requests` to query `http://ip-api.com/json/{ip_address}`.
+* **HTTP Status Codes:** Private IP addresses (RFC 1918, such as `192.168.x.x`) are not routable on the public Internet, so the external lookup fails and FastAPI returns **`404 Not Found`**.
 
 **Instructions:**
 
-1. Create a new directory named `ex05` and enter it:
+1. Create the `ex03` directory, download and extract `ex03.zip` (from the `"resources"` folder associated with this class on the course eLearning platform — `main.py`, `requirements.txt`, `ip-address.png`), activate a virtual environment, and install dependencies:
+   ```bash
+   $ mkdir -p ~/IEI/aula08/ex03 && cd ~/IEI/aula08/ex03
+   # (Extract ex03.zip from eLearning here: unzip ex03.zip)
+   $ python3 -m venv .venv
+   $ source .venv/bin/activate
+   $ pip install -r requirements.txt
+   ```
+2. **Start the FastAPI server using Uvicorn (Terminal 1):**
+   ```bash
+   $ uvicorn main:app --reload
+   ```
+3. **Test the API from a second terminal (`curl`):**
+   * **Test 1 — *Cache Miss* (queries external API):**
+     ```bash
+     # Private IP (expected HTTP 404)
+     $ curl -i http://127.0.0.1:8000/ip/192.168.132.132
 
-  ```bash
-  mkdir ex05 && cd ex05
-  ```
+     # Google DNS, MEO, and University of Aveiro
+     $ curl -s http://127.0.0.1:8000/ip/8.8.8.8
+     $ curl -s http://127.0.0.1:8000/ip/144.64.3.83
+     $ curl -s http://127.0.0.1:8000/ip/193.137.169.135
+     ```
+     Check Terminal 1 logs: you should see `"Querying external API for ..."`.
+   * **Test 2 — *Cache Hit* (served from local cache):**
+     Repeat the requests for `8.8.8.8` and `193.137.169.135`. Check the logs (`"Returning cached data for ..."`) and inspect the generated cache file (`cat ip_cache.json`).
+4. **Inspect the Code (`main.py`):**
+   Open `main.py` and locate:
+   * How and where the IP lookup REST endpoint is implemented;
+   * Which library and external API URL are called on a *Cache Miss*;
+   * How responses are stored and reused via `ip_cache.json`.
+5. **Explore Interactive Documentation (Swagger UI):**
+   Open **`http://127.0.0.1:8000/docs`** in your web browser and test an endpoint directly from the web UI (*Try it out*).
+6. Stop `uvicorn` in Terminal 1 (`Ctrl+C`) and exit the virtual environment (`deactivate`).
 
-2. Download the [code](https://github.com/detiuaveiro/iei/blob/master/classes/class_08/02_support/ex05/ex05.tar.xz) into the same directory.
+-----
 
-3. **Start the Broker:**
+## Block 2: Decoupled Real-Time Communication (MQTT)
 
-  ```bash
-  docker-compose up -d
-  ```
+In **Block 1**, every client needed to know the server's exact **IP and Port**, and direct peer-to-peer connections between laptops are blocked on `eduroam`.
+In **Block 2**, we switch to the **Publish/Subscribe** pattern using an **MQTT Broker**: clients only connect outbound to the *broker* and publish/subscribe to hierarchical **topics**, completely decoupling senders from receivers.
 
-4. **Use Thonny**
-  * Open Thonny.
-  * Connect to your Pico (click the bottom-right interpreter menu and select "MicroPython (Raspberry Pi Pico)").
-5. **Run the code**
-  * Open the `main.py` provided in the editor.
-  * Edit the IP address for the MQTT broker (`mqtt_host`) and the client id (`mqtt_host`). These should be the only changes required.
-  * Run the script (click the "Run" button) to execute the code on the board.
-6. **Open the Webpage**
-  * Open `http://localhost:8080/` in your web browser.
-  * Fill in the IP of the broker (if running in the same machine use `localhost`) and the topic (default: `deti/pico/dht11`).
-  * Watch the graph showing real time information.
-7. **MQTT5 Explorer**
-  * MQTT5 Explorer can be used to debug the MQTT connection.
-  * Install using the command:
+### Exercise 2.1: Docker MQTT Broker & Serverless WebSocket Chat
 
-  ```bash
-  flatpak --user install flathub io.github.Omniaevo.mqtt5-explorer
-  ```
-  * Open the application and fill in the requested information.
+**Goal:** Run an **Eclipse Mosquitto** broker in Docker and connect a pure JavaScript web client (`MQTT.js` over WebSockets) to build a real-time chat application **without writing any server code**.
 
-## 🌟 Bonus Exercise: The Classic Echo Server
+**Architecture Details (`ex04`):**
 
-**Goal:** Write a simple Echo Server in Python using the built-in `socket` module. This is the "Hello, World!" of network programming.
+* **Broker (`mosquitto`):** `compose.yml` launches `eclipse-mosquitto` configured via `mqtt/mosquitto.conf` with anonymous access and two listeners: **`1883`** (standard MQTT over TCP) and **`9001`** (MQTT over **WebSockets**, required by browsers).
+* **Frontend (`nginx`):** `nginx:alpine` serves `html/index.html` on port **`8080`**.
+* **Last Will and Testament (LWT):** Upon connecting, each client registers a "last will" message with the broker; if a browser tab closes abruptly, the broker automatically publishes the leave notification.
 
-**Task:**
-This is the only exercise where you **must write the code yourself.**
+**Instructions:**
 
-Create a single Python script `echo_server.py`. The script should be able to run in one of two modes using `argparse`:
+1. Create the `ex04` directory, download and extract `ex04.zip` (from the `"resources"` folder associated with this class on the course eLearning platform — `compose.yml`, `mqtt/mosquitto.conf`, `html/index.html`), and start the containers:
+   ```bash
+   $ mkdir -p ~/IEI/aula08/ex04 && cd ~/IEI/aula08/ex04
+   # (Extract ex04.zip from eLearning here: unzip ex04.zip)
+   $ docker compose up -d
+   $ docker compose ps
+   ```
+2. **Local Multi-Tab Test:**
+   * Open **`http://localhost:8080/`** in **two separate browser tabs**.
+   * Keep the *Broker URL* as `ws://localhost:9001` and the topic as `class/chat/main_room`.
+   * Enter different usernames (e.g., `alice` and `bob`), click **Connect**, and exchange messages between tabs.
+   * **LWT Test:** Abruptly close `alice`'s browser tab and observe `"alice left the chat."` appear automatically in `bob`'s tab after a few seconds.
+3. **Classroom Collaboration over `eduroam` (No Special Wi-Fi Needed):**
+   * Reload `http://localhost:8080/`.
+   * While staying on `eduroam`, change the *Broker URL* from `ws://localhost:9001` to a public WebSocket-enabled MQTT broker:
+     * `ws://broker.hivemq.com:8000/mqtt` *(or `ws://test.mosquitto.org:8080`)*
+   * Set a shared classroom topic (e.g., **`ua/iei/aula08/chat`**), enter your username, and click **Connect**.
+   * Chat with the rest of the class! *(Notice how isolated laptops on `eduroam` communicate in real time because all connections are outbound to the shared broker).*
+4. **Inspect the Implementation (`compose.yml`, `mqtt/mosquitto.conf`, and `html/index.html`):**
+   Open the project files and identify, in broad terms, how the application is put together:
+   * **Infrastructure (`compose.yml` and `mqtt/mosquitto.conf`):** which containers are started, which ports separate standard MQTT from WebSockets, and what access rules are configured on the broker;
+   * **Web Client (`html/index.html`):** which JavaScript library connects to the broker, how `subscribe` and `publish` are handled (including the message payload structure), and where the *Last Will and Testament (LWT)* message is configured.
+5. **Mandatory Cleanup:** Stop the containers before starting Exercise 2.2 so ports `1883`, `9001`, and `8080` are freed:
+   ```bash
+   $ docker compose down
+   ```
 
-1.  `python echo_server.py tcp --port <num>`
-2.  `python echo_server.py udp --port <num>`
+-----
 
-**Requirements:**
+### Exercise 2.2: Real-Time Telemetry with `paho-mqtt`, `psutil`, and Plotly
 
-  * **TCP Mode:** The server must listen on the given port, accept a client connection, and `recv` data from the client. It must then `sendall` the *exact same data* back. It must handle clients disconnecting gracefully.
-  * **UDP Mode:** The server must bind to the given port, `recvfrom` a datagram, and `sendto` the *exact same data* back to the address it came from.
-  * You must write this code from scratch. **Do not use `asyncio` for this exercise.**
-  * Test your TCP server with `netcat`: `nc 127.0.0.1 <port>`.
-  * Test your UDP server with `netcat`: `nc -u 127.0.0.1 <port>`.
+**Goal:** Build a **100% software** IoT/system telemetry pipeline: a Python publisher (`paho-mqtt`) streams JSON measurements to the Mosquitto broker, feeding both a **live browser chart** (Plotly.js) and a **CLI alert subscriber** simultaneously.
 
-**Helpful Documentation:**
+The publisher (`main.py`) supports **two telemetry modes**:
+* **`--mode env` (Simulated Environmental Data):** Simulates a temperature (`°C`) and humidity (`%`) sensor using a smooth random walk.
+* **`--mode system` (Real Laptop Telemetry):** Reads your computer's live **CPU (%)** and **RAM (%)** utilization using `psutil`.
 
-  * **Python `socket` Module:** [https://docs.python.org/3/library/socket.html](https://docs.python.org/3/library/socket.html)
-  * **Python Socket Programming HOWTO Guide:** [https://docs.python.org/3/howto/sockets.html](https://docs.python.org/3/howto/sockets.html)
+**Instructions:**
+
+1. Create the `ex05` directory, download and extract `ex05.zip` (from the `"resources"` folder associated with this class on the course eLearning platform):
+   ```bash
+   $ mkdir -p ~/IEI/aula08/ex05 && cd ~/IEI/aula08/ex05
+   # (Extract ex05.zip from eLearning here: unzip ex05.zip)
+   ```
+2. **Start the Docker infrastructure (`mosquitto` + `nginx`):**
+   ```bash
+   $ docker compose up -d
+   ```
+3. **Set up the Python virtual environment:**
+   ```bash
+   $ python3 -m venv .venv
+   $ source .venv/bin/activate
+   $ pip install -r requirements.txt
+   ```
+4. **Open the Web Dashboard:**
+   * Navigate to **`http://localhost:8080/`** in your browser.
+   * Verify *Broker Host* is **`localhost`** and *Topic* is **`deti/pico/dht11`**.
+   * Click **Connect** (status should change to `Status: Connected`).
+5. **Scenario A — Publish Simulated Environmental Data (`--mode env`):**
+   In **Terminal 1** (with `.venv` active), start the publisher in environmental mode:
+   ```bash
+   $ python main.py --mode env
+   ```
+   Watch the Temperature (`°C`) and Humidity (`%`) traces update every 2 seconds in real time on the web chart.
+6. **Scenario B — Run a Second CLI Alert Subscriber (`subscriber.py`):**
+   Open **Terminal 2**, activate the virtual environment, and launch the subscriber using an MQTT single-level wildcard (`+`) and a threshold:
+   ```bash
+   $ cd ~/IEI/aula08/ex05
+   $ source .venv/bin/activate
+   $ python subscriber.py --topic "deti/pico/+" --threshold 24.0
+   ```
+   Observe that **both the web dashboard and the Python terminal receive every message simultaneously** (*broker fan-out*), and `[WARNING] ALERT ...` logs appear whenever the threshold is exceeded.
+7. **Scenario C — Publish Real Laptop Telemetry (`--mode system`):**
+   In **Terminal 1**, stop `--mode env` (`Ctrl+C`) and start system telemetry mode:
+   ```bash
+   $ python main.py --mode system
+   ```
+   * Notice in the browser that the chart axes automatically switch to **CPU Usage (%)** and **RAM Usage (%)**.
+   * Open a heavy web page or run a CPU-intensive command to observe live CPU spikes both on the Plotly chart and in Terminal 2's alerts!
+8. **Inspect and Modify the Code (`main.py`, `subscriber.py`, and `html/index.html`):**
+   * **Inspect the Implementation:** locate in `main.py` how metrics are collected with `psutil` and how the JSON payload is structured; then compare with `subscriber.py` and `html/index.html` to see how both subscribers distinguish between environmental and system modes and update their alerts/charts accordingly.
+   * **Try a Modification:** test changing the publish rate using `main.py`'s `--interval` option, and try modifying `subscriber.py` so it also logs an alert whenever the secondary metric (humidity or RAM) exceeds a threshold of your choice.
+9. **Optional Challenge (Class-wide Telemetry over `eduroam`):**
+   Pass `--host test.mosquitto.org` to `main.py` and `subscriber.py` (and set *Broker Host* in the browser to `test.mosquitto.org`) using a unique topic such as `--topic "ua/iei/aula08/<student_id>"`, then subscribe to a classmate's topic to visualize their machine's telemetry live.
+10. **Cleanup:** Stop the Python scripts (`Ctrl+C`) and tear down the Docker stack:
+   ```bash
+   $ docker compose down
+   ```
+
+-----
+
+## Comparative Summary: Block 1 vs. Block 2
+
+| Dimension | Block 1: Raw Sockets & REST API | Block 2: MQTT (Publish/Subscribe) |
+| :--- | :--- | :--- |
+| **Paradigm** | **Request / Response** (Direct Client-Server) | **Publish / Subscribe** (Event-driven via Broker) |
+| **Protocols** | TCP / UDP (`socket`) and HTTP (`FastAPI`) | MQTT over TCP (`1883`) and WebSockets (`9001`) |
+| **Coupling** | Client must know the server's exact `IP:Port` | Decoupled: clients only know the Broker and **Topic** |
+| **Over `eduroam`** | Blocked between students (*Client Isolation*) | Works across students via an external Broker |
+| **Typical Use Cases** | Web services, public APIs, direct transfers, games | IoT telemetry, real-time monitoring, chat, notifications |

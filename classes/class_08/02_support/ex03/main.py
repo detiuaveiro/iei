@@ -43,6 +43,8 @@ def save_cache(cache_data):
 
 @app.get('/favicon.ico', include_in_schema=False)
 async def favicon():
+    if not os.path.exists(FAVICON_PATH):
+        raise HTTPException(status_code=404, detail="Favicon not found")
     return FileResponse(FAVICON_PATH)
 
 @app.get("/ip/{ip_address}")

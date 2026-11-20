@@ -24,8 +24,8 @@
 <body>
 
   <div id="controls">
-    <label for="ip">Broker IP:</label>
-    <input type="text" id="ip" value="192.168.1.6">
+    <label for="ip">Broker Host:</label>
+    <input type="text" id="ip" value="localhost">
     
     <label for="topic">Topic:</label>
     <input type="text" id="topic" value="deti/pico/dht11">
@@ -38,6 +38,7 @@
 
   <script>
     let mqtt;
+    let currentMode = null;
     const statusEl = document.getElementById('status');
     const connectBtn = document.getElementById('connectBtn');
     const ipInput = document.getElementById('ip');
@@ -148,12 +149,32 @@
 
       console.log("onMessageArrived(" + message.destinationName + "):", data);
 
-      // 3. Update the plot's X-axis range
+      // 3. Adapt chart labels/axes if telemetry mode changes ('env' vs 'system')
       let olderTime = new Date(messageTime.getTime() - 30000); // 30 seconds before
       let futureTime = new Date(messageTime.getTime() + 30000); // 30 seconds after
 
-      let minuteView = {xaxis: { type: 'date', range: [olderTime, futureTime] }};
-      Plotly.relayout('plot', minuteView);
+      let layoutUpdate = {xaxis: { type: 'date', range: [olderTime, futureTime] }};
+      if (data.mode && data.mode !== currentMode) {
+        currentMode = data.mode;
+        if (currentMode === 'system') {
+          layoutUpdate['title.text'] = 'System Telemetry (CPU & RAM)';
+          layoutUpdate['yaxis.title.text'] = 'CPU Usage (%)';
+          layoutUpdate['yaxis.range'] = [0, 100];
+          layoutUpdate['yaxis2.title.text'] = 'RAM Usage (%)';
+          layoutUpdate['yaxis2.range'] = [0, 100];
+          Plotly.restyle('plot', {name: 'CPU (%)'}, [0]);
+          Plotly.restyle('plot', {name: 'RAM (%)'}, [1]);
+        } else {
+          layoutUpdate['title.text'] = 'Environmental Telemetry (Simulated DHT)';
+          layoutUpdate['yaxis.title.text'] = 'Temperature (°C)';
+          layoutUpdate['yaxis.range'] = [10, 35];
+          layoutUpdate['yaxis2.title.text'] = 'Humidity (%)';
+          layoutUpdate['yaxis2.range'] = [0, 100];
+          Plotly.restyle('plot', {name: 'Temperature (°C)'}, [0]);
+          Plotly.restyle('plot', {name: 'Humidity (%)'}, [1]);
+        }
+      }
+      Plotly.relayout('plot', layoutUpdate);
 
       // 4. Prepare the data update
       let update;

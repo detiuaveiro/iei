@@ -1,717 +1,687 @@
 ---
-title: Network programing
-subtitle: Introdução Engenharia Informática
-author: Mário Antunes
+title: 47138 - Introduction to Computer Engineering
+subtitle: "Network Programming: Sockets, REST APIs & MQTT"
 institute: Universidade de Aveiro
-date: November 10, 2025
+date: November 16, 2026
 colorlinks: true
 highlight-style: tango
-toc: true
-toc-title: "Table of Contents"
 mainfont: NotoSans
-mainfontfallback: "NotoColorEmoji:mode=harf"
+fontsize: 9pt
+titlegraphic: "../../../resources/ua_logo2.png"
+titlegraphicoptions: "width=6.5cm"
+mainfontfallback:
+  - "NotoColorEmoji:mode=harf"
+  - "DejaVu Sans:"
 header-includes:
- - \usetheme[sectionpage=none,numbering=fraction,progressbar=frametitle]{metropolis}
+ - \usetheme[sectionpage=none,numbering=fraction,progressbar=none]{metropolis}
+ - \definecolor{uagreen}{HTML}{92D400}
+ - \setbeamercolor{title separator}{fg=uagreen}
+ - \setbeamersize{text margin left=1.5em, text margin right=1.5em}
+ - |
+    \setbeamertemplate{title graphic}{
+      \begin{tikzpicture}[remember picture,overlay]
+        \node[anchor=north west, xshift=0cm, yshift=-0cm] at (current page.north west) {
+          \inserttitlegraphic
+        };
+        \node[anchor=south east, xshift=-0.2cm, yshift=0.6cm, opacity=0.08] at (current page.south east) {
+          \includegraphics[width=4.8cm]{../../../resources/_deti_black.png}
+        };
+      \end{tikzpicture}
+    }
+ - \usepackage{tikz}
+ - \usetikzlibrary{positioning,arrows.meta,calc}
  - \usepackage{longtable,booktabs}
  - \usepackage{etoolbox}
+ - \BeforeBeginEnvironment{Shaded}{\vspace{0.8em}}
+ - \AfterEndEnvironment{Shaded}{\vspace{0.5em}}
  - \AtBeginEnvironment{longtable}{\tiny}
+ - \usepackage{caption}
+ - \captionsetup[longtable]{labelformat=empty,skip=0pt}
  - \AtBeginEnvironment{cslreferences}{\tiny}
  - \AtBeginEnvironment{Shaded}{\tiny}
  - \AtBeginEnvironment{verbatim}{\tiny}
  - \setmonofont[Contextuals={Alternate}]{FiraCodeNerdFontMono-Retina}
 ---
 
-## 🚀 Programming in Networks: From Sockets to the Cloud
+## Session Overview
 
-**A journey through modern communication protocols**
+  * **Part I — Network Programming Foundations: Raw Sockets (TCP vs. UDP) and Concurrency:**
+      * Bridging from Class 07 (`IP:Port`, `127.0.0.1` vs. `0.0.0.0`, `ss`/`lsof`), **TCP vs. UDP**, 3-way handshake vs. datagrams, Python `socket` programming, **Blocking I/O**, and concurrency with **`asyncio`**.
+  * **Part II — From Transport to Application Layer: HTTP and REST APIs:**
+      * What travels inside a TCP socket when using `curl`, **REST API** principles, **JSON**, building services with **FastAPI**, and automatic interactive docs (*Swagger UI*).
+  * **Part III — The Publish/Subscribe Paradigm and MQTT (IoT & Real-Time):**
+      * *Request/Response* vs. *Publish/Subscribe*, decoupling and *fan-out*, **Eclipse Mosquitto** broker architecture (TCP `1883` + WebSockets `9001`), **Topics**, *Wildcards*, **QoS**, **LWT**, and Python telemetry (`paho-mqtt` + `psutil`).
+  * **Architectural Summary & Resources:**
+      * Comparison of the architectures covered in this session and reference documentation.
 
-# Sockets: The Foundation
+-----
 
-## Sockets: The Foundation {.allowframebreaks}
+\vspace{5em}
 
-A **socket** is an endpoint for communication. It's an abstraction (represented as a file descriptor) that your program can write to and read from.
+\begin{center}
+{\LARGE \textbf{Part I: Raw Sockets (TCP vs. UDP) and Concurrency}}
+\end{center}
 
-  * **Analogy:** A socket is like a "door" in your application. You give it a **port number** (the door number) on your machine's **IP address** (the street address).
+-----
 
-Two main types for internet communication: **TCP** and **UDP**.
+## From Class 07 to Code: What Is a *Socket*?
 
+In Class 07, we used `ss -tuln` / `lsof`, `curl`, and `nc` to inspect running services. How does an application open a port on the operating system?
 
+  * **The *Socket* (Layer 4 — Transport):**
+      * A bidirectional communication endpoint managed by the OS kernel and exposed to programs as a file descriptor.
+      * Every listening socket is bound to an **`IP:Port`** pair (e.g., `127.0.0.1:9000` or `0.0.0.0:8000`).
+  * **Recalling Class 07 (`bind address`):**
+      * **`127.0.0.1` (*Loopback*):** Accepts connections only from the local machine (ideal for local development).
+      * **`0.0.0.0` (`INADDR_ANY`):** Accepts connections on all network interfaces of the machine (LAN, Docker, Wi-Fi).
+  * **Two core Internet transport protocols:**
+      * **TCP** (*Transmission Control Protocol* $\rightarrow$ `socket.SOCK_STREAM`)
+      * **UDP** (*User Datagram Protocol* $\rightarrow$ `socket.SOCK_DGRAM`)
 
-## TCP vs. UDP: The Two Pillars {.allowframebreaks}
+-----
 
-| Feature | TCP (Transmission Control Protocol) | UDP (User Datagram Protocol) |
+## TCP vs. UDP: The Two Pillars of Transport
+
+| Feature | TCP (*Transmission Control Protocol*) | UDP (*User Datagram Protocol*) |
 | :--- | :--- | :--- |
-| **Connection** | Connection-oriented (establishes a session) | Connectionless (fire and forget) |
-| **Reliability** | **Reliable:** Guarantees delivery & order. | **Unreliable:** No guarantee of delivery or order. |
-| **Overhead** | High (3-way handshake, ACKs, flow control) | Low (just a small header) |
-| **Speed** | Slower, due to reliability checks | Faster, no connection setup or ACKs |
-| **Use Cases** | Web (HTTP), Email (SMTP), File Transfer (FTP) | Streaming video, online gaming, DNS, VoIP |
-| **Python Module** | `socket.SOCK_STREAM` | `socket.SOCK_DGRAM` |
+| **Connection** | Connection-oriented (establishes a session) | Connectionless (*stateless*, fire and forget) |
+| **Reliability** | **Reliable:** Guarantees delivery, order, and retries | **Unreliable:** No delivery or ordering guarantees |
+| **Overhead** | High (3-way handshake, ACKs, flow control) | Minimal (only an 8-byte header) |
+| **Latency** | Higher due to acknowledgments and ordering | Lower, no connection setup overhead |
+| **Python Constant** | `socket.SOCK_STREAM` (continuous byte stream) | `socket.SOCK_DGRAM` (discrete datagrams) |
+| **Use Cases** | Web (HTTP/REST), SSH, Email, File Transfer | Audio/video streaming, Online gaming, DNS, VoIP |
 
+\vspace{0.5em}
 
+  * **Practical note:** With TCP we read a continuous byte stream; with UDP we receive individual datagrams along with the sender's address on every packet.
 
-## TCP Communication Pattern (Req/Rep)
+-----
 
-TCP uses a **3-way handshake** to establish a reliable connection.
+## Communication Patterns: TCP (*Handshake*) vs. UDP (Datagrams)
 
-![TCP 3-way handshake](figures/tcp.svg){ width=33% }
+\vspace{0.2em}
 
+\begin{center}
+\begin{tikzpicture}[
+    actor/.style={rectangle, draw=black!75, fill=black!5, rounded corners=2pt, thick, font=\scriptsize\bfseries, minimum width=1.6cm, minimum height=0.50cm},
+    lifeline/.style={dashed, color=black!45, thick},
+    msg/.style={-{Latex[length=1.5mm]}, thick, color=uagreen!75!black},
+    datamsg/.style={-{Latex[length=1.5mm]}, thick, color=black!80},
+    lostmsg/.style={-{Latex[length=1.5mm]}, dashed, thick, color=red!75!black},
+    udpmsg/.style={-{Latex[length=1.5mm]}, thick, color=blue!70!black},
+    note/.style={rectangle, draw=orange!70!black, fill=orange!10, rounded corners=2pt, font=\tiny, align=center, inner sep=3pt}
+]
+% --- Left Side: TCP ---
+\node[font=\footnotesize\bfseries] at (2.2, 5.2) {TCP (Connection-Oriented)};
+\node[actor] (tc) at (0.7, 4.65) {Client};
+\node[actor] (ts) at (3.7, 4.65) {Server};
+\draw[lifeline] (tc.south) -- (0.7, 0.40);
+\draw[lifeline] (ts.south) -- (3.7, 0.40);
 
+% 3-way handshake
+\draw[msg] (0.7, 4.20) -- node[above, sloped, font=\tiny\ttfamily] {1. SYN} (3.7, 4.02);
+\draw[msg] (3.7, 3.84) -- node[above, sloped, font=\tiny\ttfamily] {2. SYN-ACK} (0.7, 3.66);
+\draw[msg] (0.7, 3.48) -- node[above, sloped, font=\tiny\ttfamily] {3. ACK} (3.7, 3.30);
 
-## Python TCP Server (Echo) {.allowframebreaks}
+% Normal delivery + ACK
+\draw[datamsg] (0.7, 2.98) -- node[above, sloped, font=\tiny\ttfamily] {Data 1 ("Hello")} (3.7, 2.80);
+\draw[msg] (3.7, 2.62) -- node[above, sloped, font=\tiny\ttfamily] {ACK 1} (0.7, 2.44);
+
+% Loss + Timeout + Retransmission + ACK
+\draw[lostmsg] (0.7, 2.12) -- node[above, sloped, font=\tiny\ttfamily] {Data 2 ("IEI")} (2.35, 2.00);
+\node[font=\tiny\bfseries, color=red!75!black] at (2.55, 2.00) {X};
+\node[font=\tiny\itshape, color=orange!80!black, anchor=east] at (0.65, 1.72) {Timeout};
+\draw[datamsg, color=orange!80!black] (0.7, 1.66) -- node[above, sloped, font=\tiny\ttfamily] {Retransm. Data 2} (3.7, 1.48);
+\draw[msg] (3.7, 1.30) -- node[above, sloped, font=\tiny\ttfamily] {ACK 2} (0.7, 1.12);
+
+% Teardown
+\draw[msg, color=red!70!black] (0.7, 0.78) -- node[above, sloped, font=\tiny\ttfamily] {FIN / ACK} (3.7, 0.60);
+\node[note] at (2.2, 0.15) {Server receives: \textbf{"Hello IEI"} (complete \& ordered)};
+
+% Center divider
+\draw[dotted, thick, color=black!35] (5.3, 5.3) -- (5.3, 0.05);
+
+% --- Right Side: UDP ---
+\node[font=\footnotesize\bfseries] at (8.2, 5.2) {UDP (Connectionless Datagrams)};
+\node[actor] (uc) at (6.7, 4.65) {Client};
+\node[actor] (us) at (9.7, 4.65) {Server};
+\draw[lifeline] (uc.south) -- (6.7, 0.40);
+\draw[lifeline] (us.south) -- (9.7, 0.40);
+
+\draw[udpmsg] (6.7, 4.00) -- node[above, sloped, font=\tiny\ttfamily] {Datagram 1 ("Hello")} (9.7, 3.76);
+\draw[lostmsg] (6.7, 3.15) -- node[above, sloped, font=\tiny\ttfamily] {Datagram 2 ("IEI")} (8.35, 3.00);
+\node[font=\tiny\bfseries, color=red!75!black] at (8.80, 3.00) {X (lost)};
+\draw[udpmsg] (9.7, 2.25) -- node[above, sloped, font=\tiny\ttfamily] {Reply Datagram} (6.7, 2.01);
+\node[note] at (8.2, 0.90) {Server receives only: \textbf{"Hello"}\\(no ACK, no retransmission, lower latency).};
+\end{tikzpicture}
+\end{center}
+
+-----
+
+## TCP Socket Lifecycle in Python (Server & Client)
+
+::::: columns
+::: {.column width="56%"}
+
+  * **TCP Server (`echo_server.py`):**
 
 ```python
-# tcp_server.py
 import socket
 
-HOST = '127.0.0.1'  # Standard loopback interface
-PORT = 65432        # Port to listen on
-
-# Use 'with' for automatic resource management
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-    s.bind((HOST, PORT))
-    s.listen()
-    print(f"TCP server listening on {HOST}:{PORT}")
-    # conn is a new socket object usable to send/recv data
-    # addr is the address bound to the client
-    conn, addr = s.accept()
-    with conn:
-        print(f"Connected by {addr}")
-        while True:
-            data = conn.recv(1024) # 1KB buffer
-            if not data:
-                break # Client closed connection
-            print(f"Received: {data.decode()}")
-            conn.sendall(data) # Echo back
-```
-
-
-
-## Python TCP Client {.allowframebreaks}
-
-```python
-# tcp_client.py
-import socket
-
-HOST = '127.0.0.1'  # The server's hostname or IP
-PORT = 65432        # The port used by the server
-
-with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-    s.connect((HOST, PORT))
-    s.sendall(b'Hello, world') # Send as bytes
-    data = s.recv(1024)
-    print(f"Received echo: {data.decode()}")
-```
-
-
-
-## UDP Communication Pattern (Datagram)
-
-UDP is "fire and forget." No connection is established.
-
-![UDP - does not use session concepts](figures/udp.svg){ width=65% }
-
-## Python UDP Server (Echo) {.allowframebreaks}
-
-```python
-# udp_server.py
-import socket
-
-HOST = '127.0.0.1'
-PORT = 65432
-
-with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-    s.bind((HOST, PORT))
-    print(f"UDP server listening on {HOST}:{PORT}")
-
+    s.bind(("127.0.0.1", 9000))
+    s.listen() # Put socket in LISTEN state
     while True:
-        # recvfrom returns data AND the address of the sender
-        data, addr = s.recvfrom(1024)
-        print(f"Received {data.decode()} from {addr}")
-
-        if not data:
-            break
-
-        s.sendto(data, addr) # Echo back to the sender
+        conn, addr = s.accept() # Blocks until client connects
+        with conn:
+            while True:
+                data = conn.recv(1024)
+                if not data:
+                    break # Client closed connection
+                conn.sendall(data) # Echo back
 ```
 
+:::
+::: {.column width="44%"}
 
-
-## Python UDP Client {.allowframebreaks}
+  * **TCP Client (`echo_client.py`):**
 
 ```python
-# udp_client.py
 import socket
 
-HOST = '127.0.0.1'
-PORT = 65432
-MESSAGE = b'Hello, UDP!'
-
-with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-    s.sendto(MESSAGE, (HOST, PORT))
-
-    data, addr = s.recvfrom(1024)
-    print(f"Received echo: {data.decode()} from {addr}")
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+    s.connect(("127.0.0.1", 9000))
+    s.sendall(b"Hello, IEI!")
+    reply = s.recv(1024)
+    print(reply.decode())
 ```
 
+:::
+:::::
 
+\vspace{0.3em}
 
-## The Problem: Blocking I/O {.allowframebreaks}
+  * **Typical flow:**
+      1. `bind()` attaches the socket to `IP:Port` and `listen()` opens the connection queue.
+      2. `accept()` returns a **new socket** (`conn`) dedicated to each client connecting via `connect()`.
+      3. Testable with `nc 127.0.0.1 9000` and observable with `ss -tuln` / `lsof`.
 
-Traditional sockets are **blocking**.
+-----
 
-  * `s.accept()` **blocks** until a client connects.
-  * `conn.recv(1024)` **blocks** until data arrives.
+## Connectionless Sockets in Python: UDP Server & Client
 
-If you are handling one client, all other clients must wait\!
+::::: columns
+::: {.column width="54%"}
 
-**Traditional Solution: Multi-threading**
-
-  * Creates one thread per client.
-  * **Complex:** Thread safety (locks, race conditions).
-  * **High Resource Use:** RAM, OS-level context switching.
-  * **Python Issue (GIL):** The Global Interpreter Lock (GIL) in CPython prevents true parallel execution of Python code, limiting this approach.
-
-
-
-## The Solution: Async IO {.allowframebreaks}
-
-**Asynchronous I/O (`asyncio` in Python)** allows a single thread to manage many connections.
-
-  * It works for both **TCP** and **UDP** using an **event loop** to monitor sockets.
-  * When a socket is "ready" (e.g., has data), the loop runs the corresponding code.
-  * The `async` and `await` keywords "pause" a function, allowing the loop to work on other things, instead of blocking the whole thread.
-
-> This is **concurrency**, not parallelism. It's about *waiting* efficiently.
-
-
-
-## Python `asyncio` TCP Server {.allowframebreaks}
-
-This server can handle thousands of clients concurrently.
+  * **UDP Server (`echo_server.py`):**
 
 ```python
-# asyncio_server.py
+import socket
+
+with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+    s.bind(("127.0.0.1", 9000))
+    # No listen() or accept()!
+    while True:
+        data, addr = s.recvfrom(1024)
+        s.sendto(data, addr) # Reply to sender
+```
+
+:::
+::: {.column width="46%"}
+
+  * **UDP Client (`echo_client.py`):**
+
+```python
+import socket
+
+with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+    s.sendto(b"Hello UDP!", ("127.0.0.1", 9000))
+    reply, addr = s.recvfrom(1024)
+    print(reply.decode())
+```
+
+:::
+:::::
+
+\vspace{0.3em}
+
+  * **Key differences vs. TCP:**
+      1. Does not show up as `LISTEN` in `ss`/`lsof` (there is no `listen()` or `accept()`).
+      2. `recvfrom()` returns both the payload **and** the sender's `(ip, port)` tuple on every packet.
+      3. Testable with `nc -u 127.0.0.1 9000`.
+
+-----
+
+## The Problem of Blocking I/O
+
+Standard Python sockets are **blocking** by default:
+
+  * `s.accept()` **pauses the program** until a client connects.
+  * `conn.recv(1024)` **pauses the program** until bytes arrive from the network or the client closes.
+  * **Practical consequence (Lab Block 1):** While the server handles Client A inside its `recv()` loop, Client B stays queued and receives no echo!
+
+\vspace{0.4em}
+
+  * **Traditional Approach — *Multi-threading*:**
+      * Spawn one OS thread per connected client.
+      * **Drawbacks:** Synchronization complexity (*locks*, *race conditions*), high memory overhead at scale, and CPython's **GIL (*Global Interpreter Lock*)** prevents true parallel CPU execution in Python code.
+
+-----
+
+## The Modern Solution: Concurrency with Async I/O (`asyncio`)
+
+Python's **`asyncio`** module lets **a single thread** manage thousands of concurrent connections using an **Event Loop**:
+
+::::: columns
+::: {.column width="44%"}
+
+  * **How it works:**
+      * `async` and `await` pause a task while waiting for network I/O, allowing the event loop to serve other clients in the meantime.
+      * *Note:* This is **concurrency** (waiting efficiently for I/O), not CPU parallelism.
+      * Powers modern frameworks such as **FastAPI** and **`websockets`**.
+
+:::
+::: {.column width="56%"}
+
+```python
 import asyncio
 
 async def handle_client(reader, writer):
-    """Callback for each new client connection"""
-    addr = writer.get_extra_info('peername')
-    print(f"Connected by {addr}")
-
-    try:
-        while True:
-            data = await reader.read(1024)
-            if not data:
-                break
-
-            message = data.decode()
-            print(f"Received from {addr}: {message}")
-
-            # Echo back
-            writer.write(data)
-            await writer.drain() # Wait until buffer is flushed
-
-    except asyncio.CancelledError:
-        print(f"Connection with {addr} cancelled.")
-    finally:
-        print(f"Closing connection with {addr}")
-        writer.close()
-        await writer.wait_closed()
+    while data := await reader.read(1024):
+        writer.write(data)
+        await writer.drain()
+    writer.close()
+    await writer.wait_closed()
 
 async def main():
     server = await asyncio.start_server(
-        handle_client, '127.0.0.1', 65432)
-
-    addr = server.sockets[0].getsockname()
-    print(f'Serving on {addr}')
-
+        handle_client, "127.0.0.1", 9000
+    )
     async with server:
         await server.serve_forever()
 
 asyncio.run(main())
 ```
 
+:::
+:::::
 
+-----
 
-## Python `asyncio` UDP Server {.allowframebreaks}
+\vspace{5em}
 
-AsyncIO also works for UDP, using a slightly different "Protocol" based approach.
+\begin{center}
+{\LARGE \textbf{Part II: HTTP and REST APIs}}
+\end{center}
 
-```python
-# asyncio_udp_server.py
-import asyncio
+-----
 
-class EchoServerProtocol(asyncio.DatagramProtocol):
-    def connection_made(self, transport):
-        self.transport = transport
-        print("UDP Server (asyncio) started")
+## Demystifying HTTP: What Travels Inside a TCP Socket?
 
-    def datagram_received(self, data, addr):
-        message = data.decode()
-        print(f"Received {message} from {addr}")
-        self.transport.sendto(data, addr) # Echo back
+**HTTP** (*HyperText Transfer Protocol*) is not magic: it is simply **structured plain text transmitted over a TCP socket**!
 
-async def main():
-    loop = asyncio.get_running_loop()
-    print("Starting UDP server on 127.0.0.1:65432")
+::::: columns
+::: {.column width="50%"}
 
-    # Create the datagram endpoint
-    transport, protocol = await loop.create_datagram_endpoint(
-        lambda: EchoServerProtocol(),
-        local_addr=('127.0.0.1', 65432))
+  * **When you run in the terminal:**
+    ```bash
+    $ curl http://127.0.0.1:9000/hello
+    ```
+  * **Your TCP server (`echo_server.py`) receives:**
+    ```http
+    GET /hello HTTP/1.1
+    Host: 127.0.0.1:9000
+    User-Agent: curl/8.5.0
+    Accept: */*
+    ```
 
-    try:
-        await asyncio.sleep(3600)  # Serve for 1 hour
-    finally:
-        transport.close()
+:::
+::: {.column width="50%"}
 
-asyncio.run(main())
-```
+  * **What `curl` expects back:**
+    ```http
+    HTTP/1.1 200 OK
+    Content-Type: application/json
 
-# REST APIs: The Language of the Web
+    {"message": "Hello, IEI!"}
+    ```
+  * **Why don't we build APIs on raw sockets?** We would have to manually parse routes, headers, status codes, and JSON. Frameworks like **FastAPI** handle this for us.
 
-## REST APIs: The Language of the Web {.allowframebreaks}
+:::
+:::::
 
-Sockets are powerful but low-level. Most modern web services don't expose sockets directly. They use **APIs** (Application Programming Interfaces).
+-----
 
-**REST** (REpresentational State Transfer) is the most common architectural style for web APIs.
+## REST APIs: The Standard Language of the Web
 
-  * It's **not a protocol**, but a set of rules.
-  * It builds *on top of* HTTP (which builds on top of TCP).
-  * It's **stateless**: Every request must contain all info needed to process it.
+**REST** (*REpresentational State Transfer*) is the dominant architectural style for web APIs over HTTP:
 
-## REST Communication Pattern (Req/Rep) i
+::::: columns
+::: {.column width="48%"}
 
-Client-server communication over HTTP.
+  * **Core Principles:**
+      * **Stateless:** Every request contains all information required to process it.
+      * **Resources:** Identified by URIs (e.g., `/ip/8.8.8.8`, `/users/42`).
+      * **HTTP Verbs:** `GET` (read), `POST` (create), `PUT` (update), `DELETE` (delete).
+      * **Status Codes:** `200 OK`, `201 Created`, `404 Not Found`, `502 Bad Gateway`.
 
-  * **Resource:** An entity (e.g., `/users`, `/products/123`).
-  * **Verbs:** HTTP methods (GET, POST, PUT, DELETE).
-  * **Data:** Usually sent/received as **JSON**.
+:::
+::: {.column width="52%"}
 
-## REST Communication Pattern (Req/Rep) ii
+\begin{center}
+\begin{tikzpicture}[
+    actor/.style={rectangle, draw=black!75, fill=black!5, rounded corners=2pt, thick, font=\scriptsize\bfseries, minimum width=1.6cm, minimum height=0.55cm},
+    lifeline/.style={dashed, color=black!45, thick},
+    req/.style={-{Latex[length=1.6mm]}, thick, color=blue!70!black},
+    res/.style={-{Latex[length=1.6mm]}, thick, color=uagreen!75!black}
+]
+\node[actor] (c) at (0.6, 3.6) {Client};
+\node[actor] (s) at (4.4, 3.6) {REST API};
+\draw[lifeline] (c.south) -- (0.6, 0.2);
+\draw[lifeline] (s.south) -- (4.4, 0.2);
 
-![HTTP comunication](figures/rest.svg){ width=45% }
+\draw[req] (0.6, 2.9) -- node[above, font=\tiny\ttfamily] {GET /ip/8.8.8.8} (4.4, 2.9);
+\draw[res] (4.4, 2.3) -- node[above, font=\tiny\ttfamily] {200 OK (JSON)} (0.6, 2.3);
 
-## Data Format: JSON {.allowframebreaks}
+\draw[req] (0.6, 1.4) -- node[above, font=\tiny\ttfamily] {GET /ip/192.168.1.1} (4.4, 1.4);
+\draw[res, color=red!70!black] (4.4, 0.8) -- node[above, font=\tiny\ttfamily] {404 Not Found} (0.6, 0.8);
+\end{tikzpicture}
+\end{center}
 
-**JSON** (JavaScript Object Notation) is the *de facto* standard for data exchange in REST APIs.
+:::
+:::::
 
-  * Lightweight and human-readable.
-  * Easy for machines to parse and generate.
-  * Based on JavaScript object syntax.
+-----
 
-**Example:**
+## Data Format: JSON (*JavaScript Object Notation*)
+
+**JSON** is the *de facto* standard for structured data exchange in REST APIs (and MQTT payloads):
+
+::::: columns
+::: {.column width="50%"}
+
+  * **Characteristics:**
+      * Lightweight, text-based, and human-readable.
+      * Key-value pairs supporting strings, numbers, booleans, arrays (`[]`), and nested objects (`{}`).
+  * **In Python (`import json`):**
+      * `json.dumps(py_dict)` $\rightarrow$ serializes a dictionary to a JSON string.
+      * `json.loads(json_str)` $\rightarrow$ parses a JSON string into a dictionary.
+
+:::
+::: {.column width="50%"}
 
 ```json
 {
-  "id": 123,
-  "username": "api_user",
-  "isActive": true,
-  "roles": ["admin", "editor"],
-  "lastLogin": {
-    "date": "2025-11-07",
-    "ip": "192.0.2.1"
-  }
+  "query": "193.137.169.135",
+  "status": "success",
+  "country": "Portugal",
+  "city": "Aveiro",
+  "isp": "FCCN - FCT"
 }
 ```
 
+:::
+:::::
 
+-----
 
-## Example: FastAPI (Python) {.allowframebreaks}
+## Building REST APIs in Python with FastAPI
 
-**FastAPI** is a
-modern, high-performance Python web framework for building APIs. It's built on `asyncio`.
-
-1.  Install: `pip install fastapi "uvicorn[standard]"`
-2.  Save as `main.py`:
+**FastAPI** is a modern `asyncio`-based framework (served with **`uvicorn`**) that validates types and generates interactive documentation at **`/docs`** (*Swagger UI*):
 
 ```python
-# main.py
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+import requests
 
-app = FastAPI()
-
-# In-memory "database"
-items = {
-    1: {"name": "Laptop", "price": 1200},
-    2: {"name": "Mouse", "price": 50}
-}
+app = FastAPI(title="IEI Geolocation API")
 
 @app.get("/")
 def read_root():
-    return {"message": "Hello, API!"}
+    return {"message": "Welcome to the IP API"}
 
-@app.get("/items/{item_id}")
-def read_item(item_id: int):
-    if item_id in items:
-        return items[item_id]
-    return {"error": "Item not found"}
+@app.get("/ip/{ip_address}")
+def get_ip_info(ip_address: str):
+    resp = requests.get(f"http://ip-api.com/json/{ip_address}")
+    data = resp.json()
+    if data.get("status") == "fail":
+        raise HTTPException(status_code=404, detail=data.get("message"))
+    return data
 ```
 
-3.  Run: `uvicorn main:app --reload`
-4.  Access in browser: `http://127.0.0.1:8000/items/1`
+\vspace{0.2em}
 
+  * **Accessing the API endpoints (`uvicorn main:app --reload`):**
+      * Root (`/`): `curl http://127.0.0.1:8000/` | IP Lookup: `curl http://127.0.0.1:8000/ip/8.8.8.8`
+      * Interactive documentation (Swagger UI): `http://127.0.0.1:8000/docs`
 
+-----
 
-## Sockets vs. REST APIs {.allowframebreaks}
+## Automatic Documentation in FastAPI (*Swagger UI*)
 
-| Feature | Raw Sockets | REST APIs |
+\begin{center}
+\includegraphics[width=\linewidth,height=0.76\textheight,keepaspectratio]{figures/fastapi_swagger_docs.jpg}
+\end{center}
+
+-----
+
+## Raw Sockets vs. REST APIs: When to Use Each?
+
+| Feature | Raw Sockets (TCP / UDP) | REST APIs (HTTP + JSON) |
 | :--- | :--- | :--- |
-| **Level** | **Low-level** (OS-level) | **High-level** (Application-level) |
-| **Protocol** | TCP, UDP (custom protocol) | HTTP/HTTPS (standardized) |
-| **State** | Can be stateful | **Stateless** by design |
-| **Data Format** | Anything (binary, custom text) | Usually JSON |
-| **Use When...** | Custom protocol, high-speed, games, persistent connection. | Web services, mobile apps, public APIs, interoperability. |
+| **Abstraction Level** | **Low-level** (Layer 4 — Transport) | **High-level** (Layer 7 — Application) |
+| **Protocol** | TCP / UDP with custom message format | Standardized HTTP/HTTPS |
+| **State** | Can keep an open session (*stateful*) | **Stateless** by design |
+| **Data Format** | Anything (binary or plain text) | Typically **JSON** |
+| **Tooling** | `nc`, `ss`/`lsof`, `socket` code | `curl`, browsers, Swagger (`/docs`), FastAPI |
+| **Best Used For** | Custom protocols, games, low latency | Web services, public APIs, mobile backends |
 
-> **Key takeaway:** You *could* build a REST API on raw sockets... but you'd just be re-inventing HTTP. REST gives you a massive head start with standardization, security (HTTPS), and tooling.
+\vspace{0.5em}
 
+  * **Shared limitation in Block 1:** In both raw sockets and REST APIs, the **client must initiate the request** (*client-pull*) and know the server's exact **`IP:Port`**.
 
+-----
 
-# WebSockets: The Real-Time Channel
+\vspace{5em}
 
-## WebSockets: The Real-Time Channel {.allowframebreaks}
+\begin{center}
+{\LARGE \textbf{Part III: The Publish/Subscribe Paradigm and MQTT}}
+\end{center}
 
-What if REST is too slow? What if the server needs to push data to the client *without* being asked?
+-----
 
-  * HTTP is a client-pull (Req/Rep) model.
-  * Inefficient "polling" (asking "any updates?" every 2 seconds) is a common, bad workaround.
+## Why a New Paradigm? *Request/Response* vs. *Publish/Subscribe*
 
-**Solution: WebSockets**
+In the **Request/Response** model, client and server are tightly coupled: the sender must know each destination's exact **`IP:Port`**.
 
-  * A **persistent, full-duplex** (bidirectional) connection.
-  * Starts as a standard HTTP "Upgrade" request.
-  * Once established, it's a "raw" TCP-like channel for sending messages.
+  * **Limitations of direct coupling:**
+      * Hard to scale in *1-to-N* or *N-to-M* scenarios.
+      * Requires direct inbound reachability (often blocked by **NAT/Firewalls**) and the receiver to be online at send time.
+  * **Solution — *Publish/Subscribe* Pattern (MQTT):**
+      * **Publisher:** Publishes messages to a **Topic** (e.g., `sensors/room1/temp`), without knowing *who* listens.
+      * **Subscriber:** Subscribes only to **Topics** of interest, without knowing *who* published.
+      * **Broker:** Intermediary that receives messages and routes them only to interested subscribers.
 
-![](figures/http_vs_ws.jpg)
+\vspace{0.2em}
 
+  * **Key advantages of this paradigm:**
+      * **Selective Subscription:** Each receiver chooses exactly which information it wants, with no recipient lists on the sender.
+      * **Scalability:** The *Publisher* sends once to the *Broker* (for 1 or 10,000 *Subscribers*), allowing clients to be added or removed dynamically.
 
+-----
 
-## WebSocket Communication Pattern
+## Publish/Subscribe Architecture in MQTT
 
-![WebSocket Communication](figures/ws.svg){ width=45% }
+\vspace{0.2em}
 
-## WebSocket Example: JavaScript Client {.allowframebreaks}
+\begin{center}
+\begin{tikzpicture}[
+    nodebox/.style={rectangle, draw=black!75, fill=black!4, rounded corners=3pt, thick, font=\scriptsize, align=center, inner sep=4pt, minimum width=2.7cm, minimum height=0.85cm},
+    broker/.style={rectangle, draw=uagreen!80!black, fill=uagreen!15, rounded corners=4pt, thick, font=\scriptsize\bfseries, align=center, inner sep=6pt, minimum width=2.8cm, minimum height=2.6cm},
+    pubt/.style={-{Latex[length=1.7mm]}, thick, color=blue!75!black},
+    pubf/.style={-{Latex[length=1.7mm]}, thick, color=orange!80!black}
+]
+% Publishers on the left
+\node[nodebox] (p1) at (0, 2.3) {\textbf{Temperature Sensor}\\{\tiny Publishes: \texttt{home/living/temp}}};
+\node[nodebox] (p2) at (0, 0.3) {\textbf{Smoke Sensor}\\{\tiny Publishes: \texttt{home/kitchen/smoke}}};
 
-The browser is the *native* platform for WebSockets.
+% Broker in the center
+\node[broker] (b) at (4.8, 1.3) {\textbf{MQTT Broker}\\[0.2em]{\tiny Routes messages}\\{\tiny by \textbf{Topic}}};
 
-```html
-<!DOCTYPE html>
-<html>
-<head><title>WebSocket Chat</title></head>
-<body>
-    <ul id="messages"></ul>
-    <input id="messageBox" type="text" />
-    <button id="sendButton">Send</button>
+% Subscribers on the right
+\node[nodebox] (s1) at (9.7, 2.6) {\textbf{Mobile App}\\{\tiny Subscribes: \texttt{home/living/temp}}};
+\node[nodebox] (s2) at (9.7, 1.3) {\textbf{Central Dashboard}\\{\tiny Subscribes: \texttt{home/\#}}};
+\node[nodebox] (s3) at (9.7, 0.0) {\textbf{Alarm System}\\{\tiny Subscribes: \texttt{home/+/smoke}}};
 
-    <script>
-        const ws = new WebSocket("ws://localhost:8765"); // Connect
-        const messages = document.getElementById("messages");
-        const messageBox = document.getElementById("messageBox");
-        const sendButton = document.getElementById("sendButton");
+% Connections
+\draw[pubt] (p1.east) -- node[above, sloped, font=\tiny\ttfamily] {22.5 C} (b.north west);
+\draw[pubf] (p2.east) -- node[below, sloped, font=\tiny\ttfamily] {OK} (b.south west);
 
-        // Listen for messages from server
-        ws.onmessage = (event) => {
-            const li = document.createElement("li");
-            li.textContent = `Server: ${event.data}`;
-            messages.appendChild(li);
-        };
+\draw[pubt] (b.north east) -- node[above, sloped, font=\tiny\ttfamily] {temp} (s1.west);
+\draw[pubt] ($(b.east)+(0,0.12)$) -- node[above, font=\tiny\ttfamily] {temp} ($(s2.west)+(0,0.12)$);
+\draw[pubf] ($(b.east)-(0,0.12)$) -- node[below, font=\tiny\ttfamily] {smoke} ($(s2.west)-(0,0.12)$);
+\draw[pubf] (b.south east) -- node[below, sloped, font=\tiny\ttfamily] {smoke} (s3.west);
+\end{tikzpicture}
+\end{center}
 
-        // Send message to server
-        sendButton.onclick = () => {
-            const message = messageBox.value;
-            ws.send(message);
-            const li = document.createElement("li");
-            li.textContent = `Client: ${message}`;
-            messages.appendChild(li);
-            messageBox.value = "";
-        };
+\vspace{0.2em}
 
-        ws.onopen = () => console.log("Connected to server");
-        ws.onclose = () => console.log("Disconnected");
-    </script>
-</body>
-</html>
-```
+  * **Decoupling:** Sensors do not know how many subscribers exist (and vice versa); only the *Broker* tracks connected clients.
+  * **Selective *Fan-out*:** Each message is published **once** and delivered simultaneously only to subscribers matching that topic.
 
-## WebSocket Example: Python Server {.allowframebreaks}
+-----
 
-Using the `websockets` library: `pip install websockets`
+## Core MQTT Concepts: Topics, *Wildcards*, QoS, and LWT
 
-```python
-# ws_server.py
-import asyncio
-import websockets
-
-connected_clients = set()
-
-async def chat_handler(websocket, path):
-    # Register new client
-    connected_clients.add(websocket)
-    print(f"Client connected: {websocket.remote_address}")
-
-    try:
-        # Iterate over messages
-        async for message in websocket:
-            print(f"Received from {websocket.remote_address}: {message}")
-
-            # Broadcast message to all other clients
-            for client in connected_clients:
-                if client != websocket:
-                    await client.send(f"[{websocket.remote_address[1]}]: {message}")
-
-    except websockets.ConnectionClosed:
-        print(f"Client disconnected: {websocket.remote_address}")
-    finally:
-        # Unregister client
-        connected_clients.remove(websocket)
-
-async def main():
-    print("Starting WebSocket server on ws://localhost:8765")
-    async with websockets.serve(chat_handler, "localhost", 8765):
-        await asyncio.Future()  # Run forever
-
-if __name__ == "__main__":
-    asyncio.run(main())
-```
-
-
-
-## Advantages & When to Use {.allowframebreaks}
-
-### Why WebSockets?
-
-  * **Low Latency:** No HTTP overhead for each message.
-  * **Real-Time:** Server can push data *instantly*.
-  * **Efficient:** Replaces constant polling, saving bandwidth and server load.
-
-### When to Use?
-
-  * Real-time chat applications
-  * Live sports tickers or stock feeds
-  * Multiplayer online games
-  * Collaborative editing (like Google Docs)
-
-### Advantage of Browser as Platform
-
-  * **Rich UI:** HTML & CSS provide a powerful rendering engine.
-  * **Powerful Logic:** JavaScript is a mature, high-performance language.
-  * **Ubiquity:** Runs on every desktop, laptop, and phone.
-  * **Integrated APIs:** Access to graphics (WebGL), audio, storage, and more.
-
-
-
-# MQTT: The IoT Protocol
-
-## MQTT: The IoT Protocol {.allowframebreaks}
-
-What if you have thousands of tiny, battery-powered devices on an unreliable network?
-
-  * TCP is too heavy.
-  * HTTP is *way* too heavy.
-  * They might not even have a stable IP address.
-
-**MQTT (Message Queuing Telemetry Transport)**
-
-  * A lightweight, **publish/subscribe** protocol.
-  * Designed for constrained devices (IoT) and low-bandwidth networks.
-  * Minimal overhead (can be a 2-byte header).
-
-## Communication Pattern: Publish/Subscribe {.allowframebreaks}
-
-This is a fundamental shift from Request/Response.
-
-  * **Publisher:** Sends messages on a **Topic** (e.g., `home/livingroom/temp`). It doesn't know *who* is listening.
-  * **Subscriber:** Listens to one or more **Topics**. It doesn't know *who* published the message.
-  * **Broker:** The central server that receives *all* messages and routes them to the correct subscribers.
-
-**This fully decouples clients from each other.**
-
-## MQTT (Pub/Sub)
-
-![MQTT Pub/Sub pattern](figures/mqtt.svg){ width=60% }
-
-## MQTT Protocol Details {.allowframebreaks}
-
-  * **Topics:** Hierarchical strings (e.g., `building/floor1/room102/light`).
-      * Subscribers can use wildcards:
-          * `+`: Single-level (e.g., `building/+/room102/light`)
-          * `#`: Multi-level (e.g., `building/floor1/#`)
+  * **Hierarchical Topics and *Wildcards*:**
+      * Slash-separated strings (e.g., `deti/pico/dht11`, `ua/iei/aula08/chat`).
+      * **`+` (single level):** `deti/+/dht11` matches `deti/pico/dht11` and `deti/room1/dht11`.
+      * **`#` (multi-level):** `deti/#` subscribes to every subtopic beneath `deti/`.
   * **Quality of Service (QoS):**
-      * **QoS 0:** At most once. (Fire and forget, like UDP)
-      * **QoS 1:** At least once. (Guarantees delivery, may have duplicates)
-      * **QoS 2:** Exactly once. (Guarantees delivery, no duplicates. Slowest)
-  * **Last Will & Testament (LWT):** A message the broker sends *on behalf of* a client if it disconnects ungracefully. (e.g., `device/123/status` -\> "offline")
+      * **`QoS 0`:** At most once (*fire and forget*, lowest overhead).
+      * **`QoS 1`:** At least once (guaranteed delivery, duplicates possible).
+      * **`QoS 2`:** Exactly once (guaranteed single delivery, slowest).
+  * ***Last Will & Testament* (LWT):**
+      * A message pre-registered by the client upon connecting; if the connection drops unexpectedly (e.g., closing a browser tab), the **Broker** publishes it on the client's behalf (e.g., `"alice left the chat"`).
 
+-----
 
+## MQTT in Practice (I): The *Broker* & Transports (TCP vs. WebSockets)
 
-## Python Publisher Example {.allowframebreaks}
+Standard MQTT runs over **TCP (port `1883`)**, but web browsers cannot open raw TCP sockets from JavaScript:
 
-Using the `paho-mqtt` library: `pip install paho-mqtt`
+::::: columns
+::: {.column width="45%"}
+
+  * **Broker Configuration (`mosquitto.conf`):**
+    ```text
+    allow_anonymous true
+
+    listener 1883
+    protocol mqtt          # Native clients
+
+    listener 9001
+    protocol websockets    # Web browsers
+    ```
+
+:::
+::: {.column width="55%"}
+
+\begin{center}
+\begin{tikzpicture}[
+    client/.style={rectangle, draw=black!75, fill=black!4, rounded corners=3pt, thick, font=\tiny, align=center, inner sep=4pt, minimum width=1.9cm, minimum height=0.8cm},
+    port/.style={rectangle, draw=uagreen!80!black, fill=white, rounded corners=2pt, thick, font=\tiny\ttfamily\bfseries, align=center, inner sep=3pt, minimum width=1.6cm, minimum height=0.55cm},
+    brokerbox/.style={rectangle, draw=uagreen!80!black, fill=uagreen!12, rounded corners=4pt, thick},
+    arr1/.style={<->, >=Latex, thick, color=blue!75!black},
+    arr2/.style={<->, >=Latex, thick, color=orange!80!black}
+]
+% Broker container box
+\draw[brokerbox] (2.65, -0.35) rectangle (4.75, 2.85);
+\node[font=\scriptsize\bfseries] at (3.70, 2.58) {MQTT Broker};
+\node[font=\tiny, color=black!65] at (3.70, -0.12) {Docker / Public};
+
+% Listeners
+\node[port] (p1) at (3.70, 1.85) {:1883 (TCP)};
+\node[port] (p2) at (3.70, 0.55) {:9001 (WS)};
+
+% Clients
+\node[client] (c1) at (0.0, 1.85) {\textbf{Native Clients}\\{\tiny Python / CLI / IoT}};
+\node[client] (c2) at (0.0, 0.55) {\textbf{Web Clients}\\{\tiny Browser (JS)}};
+
+% Connections
+\draw[arr1] (c1.east) -- node[above, font=\tiny\ttfamily] {mqtt://} (p1.west);
+\draw[arr2] (c2.east) -- node[above, font=\tiny\ttfamily] {ws://} (p2.west);
+\end{tikzpicture}
+\end{center}
+
+:::
+:::::
+
+-----
+
+## MQTT in Practice (II): Python Telemetry Publisher (`paho-mqtt`)
+
+Using **`paho-mqtt`** and **`psutil`**, we can stream simulated environmental data or live machine metrics as **JSON**:
 
 ```python
-# publisher.py
+import json, time
 import paho.mqtt.client as mqtt
-import time
-import random
+import psutil
 
-def on_connect(client, userdata, flags, rc):
-    print(f"Connected with result code {rc}")
+client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id="iei_pub_01")
+client.connect("localhost", 1883, keepalive=60)
+client.loop_start()  # Handles network I/O in a background thread
 
-client = mqtt.Client()
-client.on_connect = on_connect
-
-# Connect to a public broker (test.mosquitto.org)
-client.connect("test.mosquitto.org", 1883, 60)
-client.loop_start() # Start a background thread for handling network
-
-try:
-    while True:
-        temperature = round(random.uniform(20.0, 25.0), 2)
-        print(f"Publishing: {temperature}")
-
-        # Publish message
-        client.publish("myhome/livingroom/temperature", payload=temperature, qos=0)
-
-        time.sleep(5)
-except KeyboardInterrupt:
-    print("Publishing stopped")
-    client.loop_stop()
+while True:
+    payload = {
+        "ts": time.time(),
+        "t": round(psutil.cpu_percent(interval=None), 1),        # CPU (%) or Temp
+        "h": round(psutil.virtual_memory().percent, 1),          # RAM (%) or Humidity
+        "mode": "system",
+    }
+    client.publish("deti/pico/dht11", json.dumps(payload), qos=0)
+    time.sleep(2)
 ```
 
+-----
 
+## MQTT in Practice (III): Python Alert Subscriber
 
-## Python Subscriber Example {.allowframebreaks}
+The subscriber follows an **event-driven** model using callback functions (`on_connect` and `on_message`):
 
 ```python
-# subscriber.py
+import json
 import paho.mqtt.client as mqtt
 
-# Callback when connecting
-def on_connect(client, userdata, flags, rc):
-    print(f"Connected with result code {rc}")
-    # Subscribe to the topic once connected
-    client.subscribe("myhome/livingroom/temperature")
-    print("Subscribed to 'myhome/livingroom/temperature'")
+def on_connect(client, userdata, flags, reason_code, properties=None):
+    client.subscribe("deti/pico/+")  # Subscribe using '+' wildcard
 
-# Callback when a message is received
 def on_message(client, userdata, msg):
-    print(f"Topic: {msg.topic} | Message: {msg.payload.decode()}")
+    data = json.loads(msg.payload.decode())
+    if data["t"] >= 28.0:
+        print(f"ALERT on {msg.topic}: value={data['t']}")
 
-client = mqtt.Client()
+client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 client.on_connect = on_connect
 client.on_message = on_message
-
-client.connect("test.mosquitto.org", 1883, 60)
-
-# Blocking call that processes network traffic, dispatches callbacks,
-# and handles reconnecting.
-client.loop_forever()
+client.connect("localhost", 1883, keepalive=60)
+client.loop_forever()  # Blocks while processing traffic & reconnects
 ```
 
-# Other Communication Patterns
+-----
 
-## Other Communication Patterns {.allowframebreaks}
+## Architectural Summary & Resources
 
-Sockets, REST, WebSockets, and MQTT cover most cases, but other powerful patterns exist.
+| Architecture / Technology | Paradigm | Key Strength | Typical Use Cases |
+| :--- | :--- | :--- | :--- |
+| **Raw Sockets (TCP/UDP)** | Request/Response or custom | Full control (Layer 4) | Custom protocols, gaming, learning |
+| **Async Sockets (`asyncio`)** | Concurrent (*Event Loop*) | Thousands of clients without threads | Scalable TCP/UDP servers |
+| **REST API (FastAPI)** | Request/Response (HTTP) | Standardization, JSON, `/docs` | Web services, public APIs, backends |
+| **MQTT (TCP & WebSockets)** | Publish/Subscribe (Broker) | Decoupled, *fan-out*, lightweight | Live telemetry, alerts, IoT |
 
-We'll look at two major examples:
+\vspace{0.5em}
 
-  * **Message Brokers (e.g., RabbitMQ):**
-
-      * **Smart server, dumb clients.**
-      * Manages complex routing, persistence, and delivery guarantees.
-
-  * **Brokerless Sockets (e.g., ZeroMQ):**
-
-      * **Smart clients, no server.**
-      * A library that provides high-level patterns (Pub/Sub, Push/Pull) over raw sockets.
-
-
-
-## Pattern: Message Broker (RabbitMQ) {.allowframebreaks}
-
-Uses the **AMQP** protocol (or others). It's a server that acts as a post office.
-
-  * **Producer:** Sends a message to an `Exchange`.
-  * **Exchange:** Routes the message to one or more `Queues` based on rules ("routing key").
-  * **Queue:** A durable buffer that holds messages.
-  * **Consumer:** Pulls messages from a `Queue`.
-
-**Advantages:**
-
-  * **Reliability:** Queues can persist messages to disk.
-  * **Decoupling:** Producer and Consumer don't know about each other.
-  * **Complex Routing:** Fanout (broadcast), topic, and direct routing.
-  * **Load Balancing:** Multiple consumers can read from one queue.
-
-**Use Case:** Microservice backends, task queues (e.g., Celery), financial transactions.
-
-
-
-## Pattern: Brokerless (ZeroMQ / ØMQ) {.allowframebreaks}
-
-ZeroMQ is **not** a broker. It's a **socket library on steroids.** It gives you patterns, not just a raw data stream.
-
-  * **How it works:** You import `zmq` and create sockets with *patterns*.
-
-  * **Common Patterns:**
-
-      * `REQ/REP`: Like REST, but faster and bi-directional.
-      * `PUB/SUB`: Like MQTT, but *without a central broker*. (Subscribers connect directly to Publisher).
-      * `PUSH/PULL`: Distributes work to a pool of "worker" nodes.
-
-**Advantages:**
-
-  * **Blazing Fast:** Can use in-process, IPC, or TCP communication.
-  * **Lightweight:** No single point of failure (broker).
-  * **Simple:** Easy to embed in any application.
-
-**Use Case:** High-speed data (HPC), financial trading, inter-process communication.
-
-
-
-## Summary: Choosing the Right Tool {.allowframebreaks}
-
-  * **Raw Sockets (TCP/UDP):**
-      * **Use:** Custom protocols, high-performance needs, games.
-      * **Pattern:** Request/Response (or custom).
-  * **REST API (HTTP):**
-      * **Use:** Standard web services, public APIs, mobile app backends.
-      * **Pattern:** Request/Response.
-  * **WebSockets:**
-      * **Use:** Real-time web (chat, live feeds, collaborative editing).
-      * **Pattern:** Full-Duplex / Bidirectional.
-  * **MQTT:**
-      * **Use:** IoT, constrained devices, unreliable networks.
-      * **Pattern:** Publish/Subscribe (via Broker).
-  * **RabbitMQ (Broker):**
-      * **Use:** Reliable microservice communication, task queues.
-      * **Pattern:** Queues & Exchanges.
-  * **ZeroMQ (Brokerless):**
-      * **Use:** High-speed, low-latency messaging.
-      * **Pattern:** Various (Pub/Sub, Push/Pull, etc.).
-
-
-
-## 📚 Further Resources {.allowframebreaks}
-
-### Python Docs
-
-  * [`socket` — Low-level networking interface](https://www.google.com/search?q=%5Bhttps://docs.python.org/3/library/socket.html%5D\(https://docs.python.org/3/library/socket.html\))
-  * [`asyncio` — Asynchronous I/O](https://www.google.com/search?q=%5Bhttps://docs.python.org/3/library/asyncio.html%5D\(https://docs.python.org/3/library/asyncio.html\))
-
-### Frameworks & Libraries
-
-  * [FastAPI](https://fastapi.tiangolo.com/)
-  * [`websockets` library](https://www.google.com/search?q=%5Bhttps://websockets.readthedocs.io/en/stable/%5D\(https://websockets.readthedocs.io/en/stable/\))
-  * [Paho-MQTT Client](https://pypi.org/project/paho-mqtt/)
-  * [RabbitMQ (and Python tutorial)](https://www.google.com/search?q=https://www.rabbitmq.com/tutorials/get-started-with-python)
-  * [ZeroMQ (and Python guide)](https://zeromq.org/languages/python/)
-
-### Protocols & Concepts
-
-  * [MQTT Standard](https://mqtt.org/)
-  * [WebSocket (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API)
-  * [The Global Interpreter Lock (GIL)](https://realpython.com/python-gil/)
-
+  * **Resources and Reference Documentation:**
+      * [Python `socket` — Low-Level Networking](https://docs.python.org/3/library/socket.html)
+      * [Python `asyncio` — Asynchronous I/O](https://docs.python.org/3/library/asyncio.html)
+      * [FastAPI — Official Documentation](https://fastapi.tiangolo.com/)
+      * [Eclipse Paho-MQTT (Python)](https://eclipse.dev/paho/files/paho.mqtt.python/html/index.html) and [MQTT Specification](https://mqtt.org/)

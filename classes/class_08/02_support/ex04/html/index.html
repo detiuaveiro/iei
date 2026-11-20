@@ -17,7 +17,8 @@
 </head>
 <body>
     <div id="connect-bar">
-        <input id="broker" type="text" value="ws://localhost:9001">
+        <input id="broker" type="text" value="ws://localhost:9001" placeholder="Broker WebSocket URL">
+        <input id="topic" type="text" value="class/chat/main_room" placeholder="Chat topic">
         <input id="username" type="text" placeholder="Enter username">
         <button id="connect-btn">Connect</button>
     </div>
@@ -34,6 +35,7 @@
     <script>
         // DOM Elements
         const brokerInput = document.getElementById("broker");
+        const topicInput = document.getElementById("topic");
         const usernameInput = document.getElementById("username");
         const connectBtn = document.getElementById("connect-btn");
         const chatBox = document.getElementById("chat-box");
@@ -44,12 +46,13 @@
         const messageBar = document.getElementById("message-bar");
 
         let client = null;
-        const chatTopic = "class/chat/main_room"; // Our main chat topic
+        let chatTopic = "class/chat/main_room"; // Our main chat topic
 
         // --- 1. Connect to the Broker ---
         connectBtn.onclick = () => {
-            const brokerUrl = brokerInput.value;
-            const username = usernameInput.value;
+            const brokerUrl = brokerInput.value.trim();
+            const username = usernameInput.value.trim();
+            chatTopic = topicInput.value.trim() || "class/chat/main_room";
 
             if (!brokerUrl || !username) {
                 alert("Please enter a Broker URL and Username.");
