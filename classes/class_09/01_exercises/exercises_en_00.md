@@ -1,443 +1,463 @@
 ---
-title: WebPage & deployment
-subtitle: Introdução Engenharia Informática
-author: Mário Antunes
+title: 47138 - Introduction to Computer Engineering
+subtitle: "Web Pages & Deployment"
 institute: Universidade de Aveiro
-date: November 17, 2025
+date: November 23, 2026
 colorlinks: true
 highlight-style: tango
 geometry: a4paper,margin=2cm
 mainfont: NotoSans
 mainfontfallback:
   - "NotoColorEmoji:mode=harf"
+  - "DejaVu Sans:"
 header-includes:
  - \usepackage{longtable,booktabs}
  - \usepackage{etoolbox}
- - \AtBeginEnvironment{longtable}{\normalsize}
+ - \AtBeginEnvironment{longtable}{\footnotesize}
  - \AtBeginEnvironment{cslreferences}{\tiny}
- - \AtBeginEnvironment{Shaded}{\normalsize}
- - \AtBeginEnvironment{verbatim}{\normalsize}
+ - \AtBeginEnvironment{Shaded}{\small}
+ - \AtBeginEnvironment{verbatim}{\small}
  - \setmonofont[Contextuals={Alternate}]{FiraCodeNerdFontMono-Retina}
 ---
 
-# Exercises
+# Practical Lab Guide
 
-## Practice Guide: Build & Deploy a Static Webpage
+**Pedagogical Framework & Objectives:**
+In this lab session, you will build and deploy a static web page from scratch, applying the fundamentals of **semantic HTML5**, **CSS3 (Box Model)**, and **containerized deployment with Docker and Nginx**. The guide is structured into three progressive blocks and an optional challenge:
 
-This guide will walk you through the entire process of creating a simple, static website, starting from a single HTML file and progressively building it up. We will finish by serving this website from a professional-grade Nginx web server running inside a Docker container.
+* **Block 1 — Semantic Structuring in HTML5:** Creation of a valid HTML5 base document, inspection of the **DOM** tree, use of semantic containers (`<header>`, `<nav>`, `<main>`, `<article>`, `<section>`, `<footer>`), lists, hyperlinks (`mailto:`), and native media elements (`<figure>`/`<img>` and `<video>`).
+* **Block 2 — Styling and Layout with CSS3:** Separation of concerns via an external stylesheet (`css/style.css`), selector rules, typography and color settings, and card-based layout using the **CSS Box Model** (`box-sizing: border-box`, `padding`, `border`, and `margin`).
+* **Block 3 — Deployment with Nginx, Docker Compose, and HTTP Inspection:** Separation of source code (`src/`) from deployment configuration, running an `nginx:alpine` web server with a read-only (`:ro`) volume, and analyzing the HTTP request cycle via `curl` and *DevTools*.
+* **Optional Challenge — *Reverse Proxy* Architecture with Nginx:** Routing requests on a single public port (`8080`) between the static site (`/`) and an internal API service (`/api/`) isolated on a private Docker network.
 
-## Step 0: Install Required Software (Debian)
+\vspace{0.5em}
 
-We need to set up our Debian (or Debian-based, like Ubuntu) system. We need a text editor, Docker, and its 'compose' plugin.
+### Working Directory Setup
 
-1.  **Update Package Lists:**
-    Open a terminal and run:
-
-    ```bash
-    sudo apt update; sudo apt full-upgrade -y; \
-    sudo apt autoremove -y; sudo apt autoclean
-    ```
-
-2.  **Install a Text Editor:**
-    We recommend Visual Studio Code for its features.
-     [Students using `WSL` can install VSCode in Windows and connect it into the VM.]{.underline}
-
-    ```bash
-    # Install prerequisites
-    sudo apt install curl wget gpg
-    wget -qO- https://packages.microsoft.com/keys/microsoft.asc \
-    | gpg --dearmor > microsoft.gpg
-    sudo install -D -o root -g root -m 644 microsoft.gpg \
-    /usr/share/keyrings/microsoft.gpg
-    rm -f microsoft.gpg
-    ```
-    Create a `/etc/apt/sources.list.d/vscode.sources` file with the following contents to add a reference to the upstream package repository:
-    ```bash
-    Types: deb
-    URIs: https://packages.microsoft.com/repos/code
-    Suites: stable
-    Components: main
-    Architectures: amd64,arm64,armhf
-    Signed-By: /usr/share/keyrings/microsoft.gpg
-    ```
-
-    ```bash
-    # Install VS Code
-    sudo apt install apt-transport-https
-    sudo apt update
-    sudo apt install code # or code-insiders
-    ```
-
-## The Exercises
-
-Create a folder for your project.
+Create the dedicated project directory for this session and verify that Docker Compose is operational:
 
 ```bash
-mkdir my-portfolio
-cd my-portfolio
+mkdir -p ~/IEI/class09/my-portfolio
+cd ~/IEI/class09/my-portfolio
+docker compose version
 ```
 
-If you installed VS Code, open this folder by typing `code .`
+-----
 
-### Step 1: Your First "Hello, World" Page
+## Block 1: Semantic Structuring in HTML5
 
-Create your first HTML file:
+### Step 1.1: Base HTML5 Document and DOM Tree
 
-```bash
-nano index.html
-```
-
-Inside the editor, type:
-
-```html
-<h1>Hello, World!</h1>
-```
-
-Save the file (in `nano`, press `Ctrl+O`, `Enter`, then `Ctrl+X`). Find this `index.html` file in your file explorer, right-click it, and open it with Firefox. You'll see your text\! The "URL" in your browser will be a local file path (e.g., `file:///home/your-user/my-portfolio/index.html`).
-
-### Step 2: Add a Real HTML5 Skeleton
-
-A real HTML file needs a "skeleton." Replace the content of `index.html` with this:
+Create a file named `index.html` in the root of `my-portfolio` with the base structure of a valid HTML5 document:
 
 ```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Portfolio</title>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+  <title>My Portfolio</title>
 </head>
 <body>
-    <h1>Hello, World!</h1>
+  <h1>Hello, World!</h1>
+  <p>Initial HTML5 document served locally.</p>
 </body>
 </html>
 ```
 
-  * `<head>`: Contains "meta" information *about* the page.
-  * `<body>`: Contains the *visible content* of the page.
-  * `<meta charset="UTF-8">`: Ensures all text characters (like emojis) display correctly.
-  * `<meta name="viewport">`: Ensures your page looks good on mobile devices.
+* **`<!DOCTYPE html>`:** Instructs the browser to render the document in standard HTML5 mode.
+* **`<head>`:** Contains metadata not rendered in the main viewport (`UTF-8` for character encoding, `viewport` for mobile scaling, and `<title>` for the browser tab).
+* **`<body>`:** Contains all visible elements rendered in the browser window.
 
-Save and refresh your browser. The page will look the same, but now your browser tab will say "My Portfolio".
+**Verification:**
 
-### Step 3: Add Semantic Structure
+1. Open `index.html` in your browser (via your file manager or by dragging the file into a browser window).
+2. Observe the address bar — it displays a local filesystem path (`file:///.../my-portfolio/index.html`) — and verify that the tab reads *"My Portfolio"*.
+3. Open **Developer Tools (*DevTools*)** (`F12` or *Right-click $\rightarrow$ Inspect*) and examine the **DOM** tree generated by the browser under the **Elements / Inspector** tab.
 
-"Semantic" means "meaningful." We use HTML tags that describe their content. This is great for accessibility and SEO.
+### Step 1.2: Semantic Containers, Navigation, and Hyperlinks
 
-Replace the `<body>` section with this:
+Replace the `<body>` block in `index.html` with a semantic structure comprising a header (`<header>`), navigation (`<nav>`), main content (`<main>`), standalone article (`<article>`), and footer (`<footer>`) with a `mailto:` hyperlink:
 
 ```html
 <body>
-    <header>
-        <h1>My Portfolio</h1>
-        <nav>
-            <a href="index.html">Home</a>
-        </nav>
-    </header>
+  <header>
+    <h1>My Portfolio</h1>
+    <nav>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="#about">About Me</a></li>
+        <li><a href="#media">Media</a></li>
+      </ul>
+    </nav>
+  </header>
 
-    <main>
-        <h2>Welcome</h2>
-        <p>This is the main content of my website.</p>
-    </main>
+  <main>
+    <h2>Welcome</h2>
+    <p>
+      Page built from scratch with <strong>HTML5</strong>
+      and <em>CSS3</em> for IEI.
+    </p>
 
-    <footer>
-        <p>&copy; 2025 Your Name</p>
-    </footer>
+    <article id="about">
+      <h3>About Me</h3>
+      <p>
+        I am a first-year Computer Engineering student
+        at Universidade de Aveiro.
+      </p>
+      <p>
+        My main areas of interest include [Interest 1]
+        and [Interest 2].
+      </p>
+    </article>
+  </main>
+
+  <footer>
+    <p>
+      Contact: <a href="mailto:your.email@ua.pt">your.email@ua.pt</a>
+    </p>
+    <p>&copy; 2026 Your Name</p>
+  </footer>
 </body>
 ```
 
-Refresh your browser. Now you have a header, a main content area, and a footer.
+**Tasks:**
 
-### Step 4: Add "About Me" Content
+1. Replace the placeholders `[Interest 1]`, `[Interest 2]`, `your.email@ua.pt`, and `Your Name` with your own details.
+2. Save the file, refresh the browser, and observe that although the semantic structure is defined, **all blocks appear stacked vertically without styling** (default behavior without CSS).
+3. Test the `mailto:` link in the footer and verify internal navigation via the `#about` and `#media` anchors.
 
-Let's add a proper section to the page. Inside your `<main>` tag, right below the first `<p>` tag, add a new `<article>`:
+### Step 1.3: Native Media Elements (`<figure>`/`<img>` and `<video>`)
 
-```html
-    <main>
-        <h2>Welcome</h2>
-        <p>This is the main content of my website.</p>
+1. Create the directories to store media assets:
+   ```bash
+   mkdir -p images videos
+   ```
+2. Download a sample JPEG image (or copy your own photograph to `images/profile.jpg`) and a short test MP4 video clip:
+   ```bash
+   curl -L "https://placehold.co/400x400/004a8c/ffffff/jpg?text=IEI" \
+     -o images/profile.jpg
+   curl -L "https://www.w3schools.com/html/mov_bbb.mp4" \
+     -o videos/my-clip.mp4
+   ```
+3. In `index.html`, embed the image with a semantic caption (`<figure>` and `<figcaption>`) inside `<article id="about">` and add a new `<section id="media">` inside `<main>` (preserving the existing `<article>`):
 
-        <!-- ADD THIS SECTION -->
-        <article>
-            <h3>About Me</h3>
-            <p>I am a first-year student learning about web development. I am building this page from scratch to understand HTML, CSS, and how to deploy a website.</p>
-            <p>In my spare time, I enjoy [Your Hobby 1] and [Your Hobby 2].</p>
-        </article>
-        <!-- END OF NEW SECTION -->
+   ```html
+   <main>
+     <h2>Welcome</h2>
+     <p>
+       Page built from scratch with <strong>HTML5</strong>
+       and <em>CSS3</em> for IEI.
+     </p>
 
-    </main>
+     <article id="about">
+       <h3>About Me</h3>
+       <figure>
+         <img src="images/profile.jpg"
+              alt="Author profile photograph" width="150">
+         <figcaption>Computer Engineering — UA</figcaption>
+       </figure>
+       <p>
+         I am a first-year Computer Engineering student
+         at Universidade de Aveiro.
+       </p>
+       <p>
+         My main areas of interest include [Interest 1]
+         and [Interest 2].
+       </p>
+     </article>
+
+     <section id="media">
+       <h3>HTML5 Video Demonstration</h3>
+       <video controls width="100%">
+         <source src="videos/my-clip.mp4" type="video/mp4">
+         Your browser does not support HTML5 video.
+       </video>
+     </section>
+   </main>
+   ```
+
+4. **Accessibility test (`alt`):** Temporarily change the `src` attribute to a nonexistent path (e.g., `images/missing.jpg`), refresh the browser, and confirm that the alternative text defined in `alt` is displayed. Restore the valid path (`images/profile.jpg`) afterward.
+
+-----
+
+## Block 2: Styling and Layout with CSS3
+
+### Step 2.1: External Stylesheet, Typography, and Colors
+
+To enforce **separation of concerns** between content (HTML) and presentation (CSS), create a `css` directory and the file `css/style.css`:
+
+```bash
+mkdir -p css
 ```
 
-**Exercise:** Change the placeholder text and fill in your own hobbies.
+1. Link the external stylesheet inside the `<head>` section of `index.html`:
+   ```html
+   <head>
+     <meta charset="UTF-8">
+     <meta name="viewport"
+           content="width=device-width, initial-scale=1.0">
+     <title>My Portfolio</title>
+     <link rel="stylesheet" href="css/style.css">
+   </head>
+   ```
+2. Define base typography, color rules, and selectors in `css/style.css`:
+   ```css
+   /* Include padding and border in width/max-width calculation */
+   * {
+       box-sizing: border-box;
+   }
 
-### Step 5: Add a `mailto:` Link
+   body {
+       background-color: #f0f0f0;
+       font-family: Arial, Helvetica, sans-serif;
+       line-height: 1.6;
+       color: #333;
+       margin: 0;
+       padding: 16px;
+   }
 
-A `mailto:` link will open the user's default email client. Let's add one to the footer.
+   header h1 {
+       color: #004a8c;
+       margin-top: 0;
+   }
 
-Edit your `<footer>` section to look like this:
+   a {
+       color: #005a9c;
+       text-decoration: none;
+   }
 
-```html
-    <footer>
-        <p>Contact me: <a href="mailto:your.email@example.com">your.email@example.com</a></p>
-        <p>&copy; 2025 Your Name</p>
-    </footer>
-```
+   a:hover {
+       text-decoration: underline;
+   }
+   ```
+3. Save both files and refresh the browser to verify that the external stylesheet is applied.
 
-Save and refresh. Click the link to see it work.
+### Step 2.2: The Box Model (*CSS Box Model*) and Card Layout
 
-### Step 6: Link an External CSS File
-
-Our HTML is getting full. It's time to separate our styles (CSS) into a new file.
-
-1.  Create a `css` folder:
-    ```bash
-    mkdir css
-    ```
-2.  Create a new file for our styles:
-    ```bash
-    nano css/style.css
-    ```
-3.  Add one test rule to `css/style.css`:
-    ```css
-    body {
-        background-color: #f0f0f0; /* A light gray background */
-    }
-    ```
-4.  **Link the CSS file.** Open `index.html` and add this line inside the `<head>` section:
-    ```html
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>My Portfolio</title>
-        <link rel="stylesheet" href="css/style.css"> <!-- ADD THIS LINE -->
-    </head>
-    ```
-
-Save both files and refresh your browser. Your page should now have a light gray background.
-
-### Step 7: Add Basic CSS (Fonts & Colors)
-
-Now we can add more styles. Open `css/style.css` and add these rules:
+Append spacing, border, and centered card layout rules to `css/style.css`:
 
 ```css
-/* This rule was already here */
-body {
-    background-color: #f0f0f0;
-
-    /* ADD THESE */
-    font-family: Arial, sans-serif;
-    line-height: 1.6;
-    color: #333;
-}
-
-header h1 {
-    color: #004a8c; /* A nice dark blue */
-}
-
-a {
-    color: #005a9c;
-    text-decoration: none; /* Remove the underline */
-}
-
-a:hover {
-    text-decoration: underline; /* Add underline back on hover */
-}
-```
-
-Save and refresh. Your page will now have new fonts and colors.
-
-### Step 8: Add Layout Styling (Box Model)
-
-Let's make our page look less "stuck" to the left side. We'll add some layout styles to our `css/style.css` file. This will center the content in "cards."
-
-```css
-/* Add these new rules to the bottom of css/style.css */
-
+/* Centered card layout (CSS Box Model) */
 header, main, footer {
-    max-width: 800px; /* Stop the content from getting too wide */
-    margin: 20px auto; /* 20px top/bottom, 'auto' left/right centers it */
+    max-width: 800px;
+    margin: 20px auto;
     padding: 20px;
     background-color: #fff;
-    border-radius: 8px; /* Rounded corners */
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* A subtle shadow */
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+}
+
+/* Horizontal navigation menu */
+nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    gap: 16px;
 }
 
 nav a {
-    margin-right: 15px;
     font-weight: bold;
+}
+
+/* Prevent floating element from overflowing <article> */
+article {
+    display: flow-root;
+}
+
+article figure {
+    float: left;
+    margin: 0 20px 10px 0;
+    text-align: center;
+}
+
+article img {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid #004a8c;
+}
+
+figcaption {
+    font-size: 0.78em;
+    color: #555;
+    margin-top: 4px;
 }
 
 footer {
     text-align: center;
     font-size: 0.9em;
-    color: #777;
+    color: #666;
 }
 ```
 
-Save and refresh. Your site now has a modern, centered, card-based layout.
+**Verification:** Refresh the browser and inspect the **Box Model** layout (`max-width: 800px` + `margin: 20px auto`), the horizontal navigation menu, and the circular profile image framing without overlapping the video section.
 
-### Step 9: Add Media (Image)
+-----
 
-An "About Me" section needs a photo.
+## Block 3: Deployment with Nginx, Docker Compose, and HTTP Inspection
 
-1.  Create an `images` folder:
+### Step 3.1: Reorganizing for Deployment (`src/`)
 
-    ```bash
-    mkdir images
-    ```
-2.  Find a profile picture, name it `profile.jpg`, and save it in the `images` folder. If you just want a placeholder, run this command:
-
-    ```bash
-    wget "https://placehold.co/400x400/004a8c/fff?text=Me" -O images/profile.jpg
-    ```
-3.  In `index.html`, find your "About Me" `<article>` and add the `<img>` tag:
-
-    ```html
-    <article>
-        <h3>About Me</h3>
-        <img src="images/profile.jpg" alt="A photo of me" width="150">
-        <p>I am a first-year student...</p>
-        <p>In my spare time, I enjoy...</p>
-    </article>
-    ```
-4.  Let's make the image look nice. Add this to `css/style.css`:
-
-    ```css
-    article img {
-        float: left; /* Make text wrap around the image */
-        margin-right: 15px;
-        border-radius: 50%; /* Make the image a circle */
-        width: 150px;
-        height: 150px;
-    }
-    ```
-
-Save and refresh. You now have a floating, circular profile picture.
-
-### Step 10: Add Media (Video)
-
-Let's add a small video clip.
-
-1.  Create a `videos` folder:
-    ```bash
-    mkdir videos
-    ```
-2.  Let's download a small, free sample video:
-    ```bash
-    wget "https://www.w3schools.com/html/mov_bbb.mp4" -O videos/my-clip.mp4
-    ```
-    *(This is a 10MB clip from "Big Buck Bunny," a common test video).*
-3.  In `index.html`, add a new `<section>` *inside* your `<main>` tag:
-    ```html
-    <main>
-        <h2>Welcome</h2>
-        <!-- ...your <p> and <article> tags... -->
-
-        <!-- ADD THIS NEW SECTION -->
-        <section>
-            <h3>My Favorite Short Film</h3>
-            <video controls width="100%"> <!-- 'width="100%"' makes it responsive -->
-                <source src="videos/my-clip.mp4" type="video/mp4">
-                Your browser does not support the video tag.
-            </video>
-        </section>
-
-    </main>
-    ```
-
-Save and refresh. Your page now has an embedded video player.
-
-### Step 11: Re-organize for Deployment
-
-For a professional deployment, we need to separate our **source code** from our **deployment configuration**. We will put all our public website files into a single `src` folder.
-
-1.  Create the `src` folder:
-    ```bash
-    mkdir src
-    ```
-2.  Move all your website files into it:
-    ```bash
-    mv index.html src/
-    mv css src/
-    mv images src/
-    mv videos src/
-    ```
-
-Your project structure should now look like this:
-
-```
-my-portfolio/
-├── src/
-│   ├── index.html
-│   ├── css/
-│   │   └── style.css
-│   ├── images/
-│   │   └── profile.jpg
-│   └── videos/
-│       └── my-clip.mp4
-```
-
-**Important:** Go back to your browser and refresh. **Your page is now broken\!** Why? Because the `file:///` path is wrong. This is fine\! We are about to fix this for good by running a real server.
-
-### Step 12: Deploy with Docker and Nginx
-
-This is the final step. We will serve our `src` folder using a real Nginx web server.
-
-1.  In the root of your `my-portfolio` folder (the one *containing* the `src` folder), create a new file named `docker-compose.yml`:
-
-    ```bash
-    nano docker-compose.yml
-    ```
-
-2.  Add this "recipe" to the file:
-
-    ```yaml
-    services:
-      webserver:
-        image: nginx:alpine
-        container_name: my_portfolio_site
-        ports:
-          - "8080:80"
-        volumes:
-          - ./src:/usr/share/nginx/html
-    ```
-
-    **What this means:**
-
-      * `image: nginx:alpine`: Use the small, official Nginx web server.
-      * `ports: - "8080:80"`: Map port **8080** on our computer to port **80** in the container.
-      * `volumes: - ./src:/usr/share/nginx/html`: This is the magic. It tells Docker to take our `./src` folder and make it available *inside* the container at `/usr/share/nginx/html`, which is the exact folder Nginx serves files from.
-
-3.  **Run it\!**
-    Make sure you are in the `my-portfolio` directory (the one with `docker-compose.yml`). Run:
-
-    ```bash
-    docker compose up -d
-    ```
-
-    (`-d` means "detached," so it runs in the background).
-
-4.  **Visit Your Live Site\!**
-    Open your browser and go to:
-
-    **`http://localhost:8080`**
-
-You should see your complete, styled website, with images and video, being served by a professional-grade Nginx web server\!
-
-To stop the server, just run:
+In a structured workflow, public website **source code** is separated from **deployment configuration**. Move the site assets into a `src/` subdirectory:
 
 ```bash
-docker compose down
+mkdir -p src
+mv index.html css images videos src/
 ```
 
-## Congratulations\!
+Verify that your directory structure matches the layout below:
 
-You have successfully:
+```text
+my-portfolio/
+└── src/
+    ├── index.html
+    ├── css/
+    │   └── style.css
+    ├── images/
+    │   └── profile.jpg
+    └── videos/
+        └── my-clip.mp4
+```
 
-  * Set up a Debian environment with modern development tools.
-  * Written a valid, semantic HTML5 webpage.
-  * Added text content, a `mailto:` link, images, and a video.
-  * Styled that page with an external, responsive CSS file.
-  * Packaged and deployed your website inside a Docker container using Nginx.
+> **Note:** Refreshing the previous browser tab (`file:///.../my-portfolio/index.html`) will now fail because the file has moved. In the next step we will serve the site over HTTP.
 
-This is the fundamental workflow for modern static web development.
+### Step 3.2: Nginx Web Server Configuration with Docker Compose
+
+In the root of `my-portfolio` (alongside `src/`), create a `docker-compose.yml` file:
+
+```yaml
+services:
+  webserver:
+    image: nginx:alpine
+    container_name: my_portfolio_site
+    ports:
+      - "8080:80"
+    volumes:
+      - ./src:/usr/share/nginx/html:ro
+```
+
+* **`image: nginx:alpine`:** Official lightweight Nginx web server image based on Alpine Linux.
+* **`ports: - "8080:80"`:** Maps port `8080` on the host machine to port `80` inside the container.
+* **`volumes: - ./src:/usr/share/nginx/html:ro`:** Mounts the local `./src` directory into Nginx's document root in read-only (`:ro`) mode, preventing unauthorized writes from inside the container.
+
+Start the service in detached mode and open the site in your browser:
+
+```bash
+docker compose up -d
+```
+
+Visit **`http://localhost:8080`** in your browser and confirm that the full site (HTML, CSS, image, and video) is served properly.
+
+### Step 3.3: Inspecting the HTTP Request Cycle (`curl` and *DevTools*)
+
+1. **Header inspection via terminal:** Run `curl -I` to inspect the HTTP response headers returned by Nginx:
+   ```bash
+   curl -I http://localhost:8080
+   curl -I http://localhost:8080/css/style.css
+   ```
+   Observe the status code (`HTTP/1.1 200 OK`), the `Server: nginx/...` header, and the change in `Content-Type` (`text/html` vs. `text/css`).
+
+2. **Browser inspection (*DevTools*):**
+   * At `http://localhost:8080`, open **DevTools** (`F12`) $\rightarrow$ **Network** tab.
+   * Enable **Disable cache** and reload the page (`Ctrl+R` / `Cmd+R`).
+   * Confirm that loading a single web page triggers **multiple individual HTTP requests** (`/` or `index.html`, `style.css`, `profile.jpg`, and `my-clip.mp4`).
+
+3. Once finished with this block, stop and remove the container:
+   ```bash
+   docker compose down
+   ```
+
+-----
+
+## Optional Challenge: *Reverse Proxy* Architecture with Nginx
+
+**Objective:** Reproduce the **Reverse Proxy** architecture covered in the lecture, exposing **two isolated internal services** through a single public port (`8080`):
+* Requests to **`/`** $\rightarrow$ forwarded to container **`site`** (your HTML/CSS portfolio);
+* Requests to **`/api/`** $\rightarrow$ forwarded to container **`api`** (an internal service returning JSON data, simulating the Class 08 REST API).
+
+1. In the root of `my-portfolio`, create a minimal configuration file `api.conf` for the internal `api` service:
+   ```nginx
+   events {}
+   http {
+     server {
+       listen 8000;
+       location / {
+         default_type application/json;
+         return 200 '{"service":"api-iei","status":"operational"}';
+       }
+     }
+   }
+   ```
+
+2. Create the `nginx.conf` file with the routing rules for the **Reverse Proxy**:
+   ```nginx
+   events {}
+   http {
+     server {
+       listen 80;
+
+       location /api/ {
+         proxy_pass http://api:8000/;
+       }
+
+       location / {
+         proxy_pass http://site:80;
+       }
+     }
+   }
+   ```
+
+3. Create a `docker-compose.proxy.yml` file where **only the `proxy` service exposes ports externally**:
+   ```yaml
+   services:
+     proxy:
+       image: nginx:alpine
+       ports:
+         - "8080:80"
+       volumes:
+         - ./nginx.conf:/etc/nginx/nginx.conf:ro
+       depends_on:
+         - site
+         - api
+
+     site:
+       image: nginx:alpine
+       volumes:
+         - ./src:/usr/share/nginx/html:ro
+       # No 'ports': reachable only on the private Docker network
+
+     api:
+       image: nginx:alpine
+       volumes:
+         - ./api.conf:/etc/nginx/nginx.conf:ro
+       # Replaceable with your FastAPI image from Class 08
+   ```
+
+4. Launch the full stack and verify routing on both paths:
+   ```bash
+   docker compose -f docker-compose.proxy.yml up -d
+   curl -i http://localhost:8080/api/
+   ```
+   * Open **`http://localhost:8080/`** in your browser (served by the `site` container).
+   * Open **`http://localhost:8080/api/`** (served by the `api` container, returning JSON).
+   * Check with `docker ps` that only the `proxy` container exposes a host port mapping (`0.0.0.0:8080->80/tcp`), keeping `site` and `api` isolated on the internal network.
+
+5. To shut down the challenge services:
+   ```bash
+   docker compose -f docker-compose.proxy.yml down
+   ```
+
+-----
+
+## Summary of Learning Outcomes
+
+Upon completing this lab guide, you have executed the end-to-end static web development and deployment workflow:
+
+* Built a valid **semantic HTML5** document with navigation, hyperlinks (`mailto:`), and native media (`<figure>`/`<img>` and `<video>`).
+* Applied external **CSS3** following separation of concerns, selectors, and layout control via the **CSS Box Model** (`box-sizing: border-box`).
+* Packaged and deployed the site with **Nginx + Docker Compose** in read-only (`:ro`) mode, inspected HTTP requests via `curl` and *DevTools*, and (optionally) configured routing via a **Reverse Proxy**.

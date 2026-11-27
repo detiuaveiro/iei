@@ -1,438 +1,463 @@
 ---
-title: Páginas Web & Publicação
-subtitle: Introdução Engenharia Informática
-author: Mário Antunes
+title: 47138 - Introdução à Engenharia Informática
+subtitle: "Páginas Web & Publicação"
 institute: Universidade de Aveiro
-date: November 17, 2025
+date: 23 de Novembro de 2026
 colorlinks: true
 highlight-style: tango
 geometry: a4paper,margin=2cm
 mainfont: NotoSans
 mainfontfallback:
   - "NotoColorEmoji:mode=harf"
+  - "DejaVu Sans:"
 header-includes:
  - \usepackage{longtable,booktabs}
  - \usepackage{etoolbox}
- - \AtBeginEnvironment{longtable}{\tiny}
+ - \AtBeginEnvironment{longtable}{\footnotesize}
  - \AtBeginEnvironment{cslreferences}{\tiny}
- - \AtBeginEnvironment{Shaded}{\normalsize}
- - \AtBeginEnvironment{verbatim}{\normalsize}
+ - \AtBeginEnvironment{Shaded}{\small}
+ - \AtBeginEnvironment{verbatim}{\small}
  - \setmonofont[Contextuals={Alternate}]{FiraCodeNerdFontMono-Retina}
 ---
 
-# Exercícios
+# Guião Prático de Laboratório
 
-## Guia Prático: Construir & Publicar uma Página Web Estática
+**Enquadramento Pedagógico & Objetivos:**
+Nesta sessão laboratorial constrói-se e publica-se uma página web estática de raiz, aplicando os fundamentos de **HTML5 semântico**, **CSS3 (Box Model)** e **publicação em contentores Docker com Nginx**. O guião está estruturado em três blocos progressivos e um desafio opcional:
 
-Este guia irá acompanhá-lo por todo o processo de criação de um site estático simples, começando de um único ficheiro HTML e construindo-o progressivamente. Terminaremos por servir este site a partir de um servidor web Nginx de nível profissional, a correr dentro de um contentor Docker.
+* **Bloco 1 — Estruturação Semântica em HTML5:** Criação da estrutura base de um documento HTML5, inspeção da árvore **DOM**, utilização de contentores semânticos (`<header>`, `<nav>`, `<main>`, `<article>`, `<section>`, `<footer>`), listas, hiperligações (`mailto:`) e elementos multimédia nativos (`<figure>`/`<img>` e `<video>`).
+* **Bloco 2 — Estilização e Layout com CSS3:** Separação de responsabilidades através de uma folha de estilos externa (`css/style.css`), aplicação de seletores, regras de tipografia/cor e formatação de cartões com o **CSS Box Model** (`box-sizing: border-box`, `padding`, `border` e `margin`).
+* **Bloco 3 — Publicação com Nginx, Docker Compose e Inspeção HTTP:** Separação entre código-fonte (`src/`) e configuração de infraestrutura, execução do servidor web `nginx:alpine` com volume *read-only* (`:ro`) e análise do ciclo de pedidos HTTP via `curl` e *DevTools*.
+* **Desafio Opcional — Arquitetura de *Reverse Proxy* com Nginx:** Encaminhamento de pedidos numa única porta pública (`8080`) entre o site estático (`/`) e um serviço interno de API (`/api/`) isolados numa rede privada Docker.
 
-## Passo 0: Instalar Software Necessário (Debian)
+\vspace{0.5em}
 
-Precisamos de configurar o nosso sistema Debian (ou baseado em Debian, como o Ubuntu). Precisamos de um editor de texto, do Docker e do seu plugin 'compose'.
+### Preparação do Diretório de Trabalho
 
-1.  **Atualizar Listas de Pacotes:**
-    Abra um terminal e execute:
-
-    ```bash
-    sudo apt update; sudo apt full-upgrade -y; \
-    sudo apt autoremove -y; sudo apt autoclean
-    ```
-
-2.  **Instalar um Editor de Texto:**
-    Recomendamos o Visual Studio Code pelas suas funcionalidades.
-     [Alunos a usar `WSL` podem instalar o VSCode no Windows e conectá-lo à VM.]{.underline}
-
-    ```bash
-    # Instalar pré-requisitos
-    sudo apt install curl wget gpg
-    wget -qO- [https://packages.microsoft.com/keys/microsoft.asc](https://packages.microsoft.com/keys/microsoft.asc) \
-    | gpg --dearmor > microsoft.gpg
-    sudo install -D -o root -g root -m 644 microsoft.gpg \
-    /usr/share/keyrings/microsoft.gpg
-    rm -f microsoft.gpg
-    ```
-    Crie um ficheiro `/etc/apt/sources.list.d/vscode.sources` com o seguinte conteúdo para adicionar uma referência ao repositório de pacotes upstream:
-    ```bash
-    Types: deb
-    URIs: [https://packages.microsoft.com/repos/code](https://packages.microsoft.com/repos/code)
-    Suites: stable
-    Components: main
-    Architectures: amd64,arm64,armhf
-    Signed-By: /usr/share/keyrings/microsoft.gpg
-    ```
-
-    ```bash
-    # Instalar o VS Code
-    sudo apt install apt-transport-https
-    sudo apt update
-    sudo apt install code # ou code-insiders
-    ```
-
-## Os Exercícios
-
-Crie uma pasta para o seu projeto.
+Crie o diretório dedicado ao projeto desta aula e verifique se o Docker Compose se encontra operacional:
 
 ```bash
-mkdir o-meu-portfolio
-cd o-meu-portfolio
+mkdir -p ~/IEI/aula09/o-meu-portfolio
+cd ~/IEI/aula09/o-meu-portfolio
+docker compose version
 ```
 
-Se instalou o VS Code, abra esta pasta escrevendo `code .`
+-----
 
-### Passo 1: A Sua Primeira Página "Olá, Mundo"
+## Bloco 1: Estruturação Semântica em HTML5
 
-Crie o seu primeiro ficheiro HTML:
+### Passo 1.1: Documento HTML5 Base e Árvore DOM
 
-```bash
-nano index.html
-```
-
-Dentro do editor, escreva:
-
-```html
-<h1>Olá, Mundo!</h1>
-```
-
-Guarde o ficheiro (no `nano`, pressione `Ctrl+O`, `Enter`, e depois `Ctrl+X`). Encontre este ficheiro `index.html` no seu explorador de ficheiros, clique com o botão direito nele e abra-o com o Firefox. Verá o seu texto\! O "URL" no seu browser será um caminho de ficheiro local (ex: `file:///home/seu-utilizador/o-meu-portfolio/index.html`).
-
-### Passo 2: Adicionar um Esqueleto HTML5 Real
-
-Um ficheiro HTML real precisa de um "esqueleto". Substitua o conteúdo do `index.html` por isto:
+Crie um ficheiro chamado `index.html` na raiz do diretório `o-meu-portfolio` com a estrutura base de um documento HTML5 válido:
 
 ```html
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>O Meu Portfólio</title>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+  <title>O Meu Portfólio</title>
 </head>
 <body>
-    <h1>Olá, Mundo!</h1>
+  <h1>Olá, Mundo!</h1>
+  <p>Documento HTML5 inicial servido localmente.</p>
 </body>
 </html>
 ```
 
-  * `<head>`: Contém informação "meta" *sobre* a página.
-  * `<body>`: Contém o *conteúdo visível* da página.
-  * `<meta charset="UTF-8">`: Garante que todos os caracteres de texto (como emojis) são exibidos corretamente.
-  * `<meta name="viewport">`: Garante que a sua página tem bom aspeto em dispositivos móveis.
+* **`<!DOCTYPE html>`:** Instrui o navegador a interpretar o documento no modo standard HTML5.
+* **`<head>`:** Contém metadados não renderizados na área principal da página (`UTF-8` para suporte correto de acentuação, `viewport` para adaptação a ecrãs móveis e `<title>` para o separador do navegador).
+* **`<body>`:** Contém todos os elementos visíveis renderizados na janela.
 
-Guarde e atualize o seu browser. A página parecerá a mesma, mas agora o separador (tab) do seu browser dirá "O Meu Portfólio".
+**Verificação:**
 
-### Passo 3: Adicionar Estrutura Semântica
+1. Abra o ficheiro `index.html` no navegador (através do explorador de ficheiros ou arrastando-o para uma janela do navegador).
+2. Observe o endereço apresentado na barra de URL — trata-se de um caminho local do sistema de ficheiros (`file:///.../o-meu-portfolio/index.html`) — e confirme que o separador apresenta o título *"O Meu Portfólio"*.
+3. Abra as **Ferramentas de Programador (*DevTools*)** (`F12` ou *Botão direito $\rightarrow$ Inspecionar*) e observe no separador **Elements / Inspector** a árvore **DOM** gerada pelo navegador.
 
-"Semântico" significa "com significado". Usamos tags HTML que descrevem o seu conteúdo. Isto é ótimo para acessibilidade e SEO.
+### Passo 1.2: Contentores Semânticos, Navegação e Hiperligações
 
-Substitua a secção `<body>` por isto:
+Substitua o bloco `<body>` do ficheiro `index.html` por uma estrutura semântica composta por cabeçalho (`<header>`), navegação (`<nav>`), conteúdo principal (`<main>`), artigo autónomo (`<article>`) e rodapé (`<footer>`) com uma hiperligação `mailto:`:
 
 ```html
 <body>
-    <header>
-        <h1>O Meu Portfólio</h1>
-        <nav>
-            <a href="index.html">Início</a>
-        </nav>
-    </header>
+  <header>
+    <h1>O Meu Portfólio</h1>
+    <nav>
+      <ul>
+        <li><a href="index.html">Início</a></li>
+        <li><a href="#sobre">Sobre Mim</a></li>
+        <li><a href="#media">Multimédia</a></li>
+      </ul>
+    </nav>
+  </header>
 
-    <main>
-        <h2>Bem-vindo</h2>
-        <p>Este é o conteúdo principal do meu site.</p>
-    </main>
+  <main>
+    <h2>Bem-vindo</h2>
+    <p>
+      Página desenvolvida de raiz em <strong>HTML5</strong>
+      e <em>CSS3</em> no âmbito de IEI.
+    </p>
 
-    <footer>
-        <p>&copy; 2025 O Seu Nome</p>
-    </footer>
+    <article id="sobre">
+      <h3>Sobre Mim</h3>
+      <p>
+        Sou estudante do 1.º ano de Engenharia Informática
+        na Universidade de Aveiro.
+      </p>
+      <p>
+        As minhas áreas de interesse incluem [Interesse 1]
+        e [Interesse 2].
+      </p>
+    </article>
+  </main>
+
+  <footer>
+    <p>
+      Contacto: <a href="mailto:seu.email@ua.pt">seu.email@ua.pt</a>
+    </p>
+    <p>&copy; 2026 O Seu Nome</p>
+  </footer>
 </body>
 ```
 
-Atualize o seu browser. Agora tem um cabeçalho, uma área de conteúdo principal e um rodapé.
+**Tarefas:**
 
-### Passo 4: Adicionar Conteúdo "Sobre Mim"
+1. Substitua os marcadores `[Interesse 1]`, `[Interesse 2]`, `seu.email@ua.pt` e `O Seu Nome` pelos seus dados.
+2. Guarde o ficheiro, atualize o navegador e observe que, embora a estrutura semântica esteja definida, **todos os blocos aparecem empilhados verticalmente sem formatação** (comportamento padrão sem CSS).
+3. Teste a hiperligação `mailto:` no rodapé e verifique a navegação interna através das âncoras `#sobre` e `#media`.
 
-Vamos adicionar uma secção apropriada à página. Dentro da sua tag `<main>`, logo abaixo da primeira tag `<p>`, adicione um novo `<article>`:
+### Passo 1.3: Elementos Multimédia Nativos (`<figure>`/`<img>` e `<video>`)
 
-```html
-    <main>
-        <h2>Bem-vindo</h2>
-        <p>Este é o conteúdo principal do meu site.</p>
+1. Crie os diretórios para armazenar os recursos multimédia:
+   ```bash
+   mkdir -p images videos
+   ```
+2. Descarregue uma imagem de exemplo em formato JPEG (ou copie uma fotografia própria para `images/profile.jpg`) e um vídeo curto de teste em formato MP4:
+   ```bash
+   curl -L "https://placehold.co/400x400/004a8c/ffffff/jpg?text=IEI" \
+     -o images/profile.jpg
+   curl -L "https://www.w3schools.com/html/mov_bbb.mp4" \
+     -o videos/my-clip.mp4
+   ```
+3. No ficheiro `index.html`, incorpore a imagem com legenda semântica (`<figure>` e `<figcaption>`) no interior do `<article id="sobre">` e adicione uma nova `<section id="media">` no interior do `<main>` (mantendo o `<article>` existente):
 
-        <article>
-            <h3>Sobre Mim</h3>
-            <p>Eu sou um estudante de primeiro ano a aprender sobre desenvolvimento web. Estou a construir esta página de raiz para entender HTML, CSS e como publicar um site.</p>
-            <p>Nos meus tempos livres, gosto de [O Seu Hobby 1] e [O Seu Hobby 2].</p>
-        </article>
-        </main>
+   ```html
+   <main>
+     <h2>Bem-vindo</h2>
+     <p>
+       Página desenvolvida de raiz em <strong>HTML5</strong>
+       e <em>CSS3</em> no âmbito de IEI.
+     </p>
+
+     <article id="sobre">
+       <h3>Sobre Mim</h3>
+       <figure>
+         <img src="images/profile.jpg"
+              alt="Fotografia de perfil do autor" width="150">
+         <figcaption>Engenharia Informática — UA</figcaption>
+       </figure>
+       <p>
+         Sou estudante do 1.º ano de Engenharia Informática
+         na Universidade de Aveiro.
+       </p>
+       <p>
+         As minhas áreas de interesse incluem [Interesse 1]
+         e [Interesse 2].
+       </p>
+     </article>
+
+     <section id="media">
+       <h3>Demonstração de Vídeo HTML5</h3>
+       <video controls width="100%">
+         <source src="videos/my-clip.mp4" type="video/mp4">
+         O seu navegador não suporta vídeo HTML5.
+       </video>
+     </section>
+   </main>
+   ```
+
+4. **Teste de acessibilidade (`alt`):** Altere temporariamente o atributo `src` da imagem para um caminho inexistente (ex.: `images/inexistente.jpg`), atualize o navegador e confirme a exibição do texto alternativo definido em `alt`. Reponha de seguida o caminho correto (`images/profile.jpg`).
+
+-----
+
+## Bloco 2: Estilização e Layout com CSS3
+
+### Passo 2.1: Folha de Estilos Externa, Tipografia e Cores
+
+Para garantir a **separação de responsabilidades** entre conteúdo (HTML) e apresentação (CSS), crie um diretório `css` e o ficheiro `css/style.css`:
+
+```bash
+mkdir -p css
 ```
 
-**Exercício:** Altere o texto de placeholder e preencha os seus próprios passatempos.
+1. Adicione a ligação à folha de estilos externa na secção `<head>` do ficheiro `index.html`:
+   ```html
+   <head>
+     <meta charset="UTF-8">
+     <meta name="viewport"
+           content="width=device-width, initial-scale=1.0">
+     <title>O Meu Portfólio</title>
+     <link rel="stylesheet" href="css/style.css">
+   </head>
+   ```
+2. Defina as regras base de tipografia, cores e seletores no ficheiro `css/style.css`:
+   ```css
+   /* Inclui padding e border no cálculo de width/max-width */
+   * {
+       box-sizing: border-box;
+   }
 
-### Passo 5: Adicionar um Link `mailto:`
+   body {
+       background-color: #f0f0f0;
+       font-family: Arial, Helvetica, sans-serif;
+       line-height: 1.6;
+       color: #333;
+       margin: 0;
+       padding: 16px;
+   }
 
-Um link `mailto:` abrirá o cliente de email padrão do utilizador. Vamos adicionar um ao rodapé.
+   header h1 {
+       color: #004a8c;
+       margin-top: 0;
+   }
 
-Edite a sua secção `<footer>` para ficar assim:
+   a {
+       color: #005a9c;
+       text-decoration: none;
+   }
 
-```html
-    <footer>
-        <p>Contacte-me: <a href="mailto:seu.email@exemplo.com">seu.email@exemplo.com</a></p>
-        <p>&copy; 2025 O Seu Nome</p>
-    </footer>
-```
+   a:hover {
+       text-decoration: underline;
+   }
+   ```
+3. Guarde ambos os ficheiros e atualize o navegador para confirmar a aplicação da folha de estilos externa.
 
-Guarde e atualize. Clique no link para vê-lo a funcionar.
+### Passo 2.2: Modelo de Caixa (*CSS Box Model*) e Layout em Cartões
 
-### Passo 6: Ligar um Ficheiro CSS Externo
-
-O nosso HTML está a ficar cheio. É altura de separar os nossos estilos (CSS) para um novo ficheiro.
-
-1.  Crie uma pasta `css`:
-    ```bash
-    mkdir css
-    ```
-2.  Crie um novo ficheiro para os nossos estilos:
-    ```bash
-    nano css/style.css
-    ```
-3.  Adicione uma regra de teste ao `css/style.css`:
-    ```css
-    body {
-        background-color: #f0f0f0; /* Um fundo cinzento claro */
-    }
-    ```
-4.  **Ligue o ficheiro CSS.** Abra o `index.html` e adicione esta linha dentro da secção `<head>`:
-    ```html
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>O Meu Portfólio</title>
-        <link rel="stylesheet" href="css/style.css"> </head>
-    ```
-
-Guarde ambos os ficheiros e atualize o seu browser. A sua página deve ter agora um fundo cinzento claro.
-
-### Passo 7: Adicionar CSS Básico (Fontes & Cores)
-
-Agora podemos adicionar mais estilos. Abra o `css/style.css` e adicione estas regras:
+Adicione ao final de `css/style.css` as regras de espaçamento, molduras e disposição em cartões centrados:
 
 ```css
-/* Esta regra já cá estava */
-body {
-    background-color: #f0f0f0;
-
-    /* ADICIONE ESTES */
-    font-family: Arial, sans-serif;
-    line-height: 1.6;
-    color: #333;
-}
-
-header h1 {
-    color: #004a8c; /* Um bonito azul escuro */
-}
-
-a {
-    color: #005a9c;
-    text-decoration: none; /* Remover o sublinhado */
-}
-
-a:hover {
-    text-decoration: underline; /* Adicionar sublinhado de volta ao passar o rato */
-}
-```
-
-Guarde e atualize. A sua página terá agora novas fontes e cores.
-
-### Passo 8: Adicionar Estilização de Layout (Box Model)
-
-Vamos fazer com que a nossa página pareça menos "colada" ao lado esquerdo. Vamos adicionar alguns estilos de layout ao nosso ficheiro `css/style.css`. Isto irá centrar o conteúdo em "cartões".
-
-```css
-/* Adicione estas novas regras ao fundo do css/style.css */
-
+/* Layout em cartões centrados (CSS Box Model) */
 header, main, footer {
-    max-width: 800px; /* Impede o conteúdo de ficar demasiado largo */
-    margin: 20px auto; /* 20px cima/baixo, 'auto' esquerda/direita centra-o */
+    max-width: 800px;
+    margin: 20px auto;
     padding: 20px;
     background-color: #fff;
-    border-radius: 8px; /* Cantos arredondados */
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Uma sombra subtil */
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+}
+
+/* Menu de navegação horizontal */
+nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    gap: 16px;
 }
 
 nav a {
-    margin-right: 15px;
     font-weight: bold;
+}
+
+/* Evita que o elemento flutuante extravase o contentor <article> */
+article {
+    display: flow-root;
+}
+
+article figure {
+    float: left;
+    margin: 0 20px 10px 0;
+    text-align: center;
+}
+
+article img {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid #004a8c;
+}
+
+figcaption {
+    font-size: 0.78em;
+    color: #555;
+    margin-top: 4px;
 }
 
 footer {
     text-align: center;
     font-size: 0.9em;
-    color: #777;
+    color: #666;
 }
 ```
 
-Guarde e atualize. O seu site tem agora um layout moderno, centrado e baseado em cartões.
+**Verificação:** Atualize o navegador e observe o resultado do **Box Model** (`max-width: 800px` + `margin: 20px auto`), o menu horizontal e o enquadramento circular da imagem de perfil sem sobreposição com a secção de vídeo.
 
-### Passo 9: Adicionar Media (Imagem)
+-----
 
-Uma secção "Sobre Mim" precisa de uma foto.
+## Bloco 3: Publicação com Nginx, Docker Compose e Inspeção HTTP
 
-1.  Crie uma pasta `images`:
+### Passo 3.1: Reorganização para Publicação (`src/`)
 
-    ```bash
-    mkdir images
-    ```
-
-2.  Encontre uma foto de perfil, nomeie-a `profile.jpg`, e guarde-a na pasta `images`. Se quiser apenas um placeholder, execute este comando:
-
-    ```bash
-    wget "[https://placehold.co/400x400/004a8c/fff?text=Eu](https://placehold.co/400x400/004a8c/fff?text=Eu)" -O images/profile.jpg
-    ```
-
-3.  No `index.html`, encontre o seu `<article>` "Sobre Mim" e adicione a tag `<img>`:
-
-    ```html
-    <article>
-        <h3>Sobre Mim</h3>
-        <img src="images/profile.jpg" alt="Uma foto minha" width="150">
-        <p>Eu sou um estudante de primeiro ano...</p>
-        <p>Nos meus tempos livres, gosto de...</p>
-    </article>
-    ```
-
-4.  Vamos fazer com que a imagem fique bonita. Adicione isto ao `css/style.css`:
-
-    ```css
-    article img {
-        float: left; /* Faz o texto envolver a imagem */
-        margin-right: 15px;
-        border-radius: 50%; /* Torna a imagem um círculo */
-        width: 150px;
-        height: 150px;
-    }
-    ```
-
-Guarde e atualize. Tem agora uma foto de perfil circular e flutuante.
-
-### Passo 10: Adicionar Media (Vídeo)
-
-Vamos adicionar um pequeno clipe de vídeo.
-
-1.  Crie uma pasta `videos`:
-    ```bash
-    mkdir videos
-    ```
-2.  Vamos descarregar um pequeno vídeo de amostra gratuito:
-    ```bash
-    wget "[https://www.w3schools.com/html/mov_bbb.mp4](https://www.w3schools.com/html/mov_bbb.mp4)" -O videos/my-clip.mp4
-    ```
-    *(Este é um clipe de 10MB do "Big Buck Bunny", um vídeo de teste comum).*
-3.  No `index.html`, adicione uma nova `<section>` *dentro* da sua tag `<main>`:
-    ```html
-    <main>
-        <h2>Bem-vindo</h2>
-        <section>
-            <h3>A Minha Curta-Metragem Favorita</h3>
-            <video controls width="100%"> <source src="videos/my-clip.mp4" type="video/mp4">
-                O seu browser não suporta a tag de vídeo.
-            </video>
-        </section>
-
-    </main>
-    ```
-
-Guarde e atualize. A sua página tem agora um leitor de vídeo incorporado.
-
-### Passo 11: Reorganizar para Publicação (Deployment)
-
-Para uma publicação profissional, precisamos de separar o nosso **código-fonte** da nossa **configuração de publicação**. Vamos colocar todos os nossos ficheiros públicos do site numa única pasta `src`.
-
-1.  Crie a pasta `src`:
-    ```bash
-    mkdir src
-    ```
-2.  Mova todos os ficheiros do seu site para dentro dela:
-    ```bash
-    mv index.html src/
-    mv css src/
-    mv images src/
-    mv videos src/
-    ```
-
-A estrutura do seu projeto deve agora parecer-se com isto:
-
-```
-o-meu-portfolio/
-├── src/
-│   ├── index.html
-│   ├── css/
-│   │   └── style.css
-│   ├── images/
-│   │   └── profile.jpg
-│   └── videos/
-│       └── my-clip.mp4
-```
-
-**Importante:** Volte ao seu browser e atualize. **A sua página está agora partida (broken)\!** Porquê? Porque o caminho `file:///` está errado. Não há problema\! Estamos prestes a corrigir isto de vez, executando um servidor real.
-
-### Passo 12: Publicar com Docker e Nginx
-
-Este é o passo final. Vamos servir a nossa pasta `src` usando um servidor web Nginx real.
-
-1.  Na raiz da sua pasta `o-meu-portfolio` (a que *contém* a pasta `src`), crie um novo ficheiro chamado `docker-compose.yml`:
-
-    ```bash
-    nano docker-compose.yml
-    ```
-
-2.  Adicione esta "receita" ao ficheiro:
-
-    ```yaml
-    services:
-      webserver:
-        image: nginx:alpine
-        container_name: o_meu_portfolio_site
-        ports:
-          - "8080:80"
-        volumes:
-          - ./src:/usr/share/nginx/html
-    ```
-
-    **O que isto significa:**
-
-      * `image: nginx:alpine`: Usa o servidor web Nginx oficial e pequeno.
-      * `ports: - "8080:80"`: Mapeia a porta **8080** no nosso computador para a porta **80** no contentor.
-      * `volumes: - ./src:/usr/share/nginx/html`: Esta é a magia. Diz ao Docker para pegar na nossa pasta `./src` e torná-la disponível *dentro* do contentor em `/usr/share/nginx/html`, que é a pasta exata de onde o Nginx serve os ficheiros.
-
-3.  **Execute-o\!**
-    Certifique-se de que está no diretório `o-meu-portfolio` (aquele com o `docker-compose.yml`). Execute:
-
-    ```bash
-    docker compose up -d
-    ```
-
-    (`-d` significa "detached", para que corra em segundo plano).
-
-4.  **Visite o Seu Site Ativo\!**
-    Abra o seu browser e vá a:
-
-    **`http://localhost:8080`**
-
-Deverá ver o seu site completo e estilizado, com imagens e vídeo, a ser servido por um servidor web Nginx de nível profissional\!
-
-Para parar o servidor, basta executar:
+Num fluxo de trabalho estruturado, separa-se o **código-fonte público** da página da **configuração de publicação (*deployment*)**. Mova os ficheiros do site para um subdiretório `src/`:
 
 ```bash
-docker compose down
+mkdir -p src
+mv index.html css images videos src/
 ```
 
-## Parabéns\!
+Verifique que a estrutura de diretórios corresponde ao seguinte esquema:
 
-Conseguiu com sucesso:
+```text
+o-meu-portfolio/
+└── src/
+    ├── index.html
+    ├── css/
+    │   └── style.css
+    ├── images/
+    │   └── profile.jpg
+    └── videos/
+        └── my-clip.mp4
+```
 
-  * Configurar um ambiente Debian com ferramentas de desenvolvimento modernas.
-  * Escrever uma página web HTML5 válida e semântica.
-  * Adicionar conteúdo de texto, um link `mailto:`, imagens e um vídeo.
-  * Estilizar essa página com um ficheiro CSS externo e responsivo.
-  * Empacotar e publicar (deploy) o seu site dentro de um contentor Docker usando Nginx.
+> **Observação:** Caso atualize o separador anterior do navegador (`file:///.../o-meu-portfolio/index.html`), o carregamento falhará porque o ficheiro foi movido. No passo seguinte passaremos a servir o site através do protocolo HTTP.
 
-Este é o fluxo de trabalho fundamental para o desenvolvimento web estático moderno.
+### Passo 3.2: Configuração do Servidor Web Nginx em Docker Compose
+
+Na raiz de `o-meu-portfolio` (ao lado de `src/`), crie o ficheiro `docker-compose.yml`:
+
+```yaml
+services:
+  webserver:
+    image: nginx:alpine
+    container_name: o_meu_portfolio_site
+    ports:
+      - "8080:80"
+    volumes:
+      - ./src:/usr/share/nginx/html:ro
+```
+
+* **`image: nginx:alpine`:** Imagem oficial e reduzida do servidor web Nginx baseada em Alpine Linux.
+* **`ports: - "8080:80"`:** Encaminha o tráfego da porta `8080` da máquina anfitriã (*host*) para a porta `80` do contentor.
+* **`volumes: - ./src:/usr/share/nginx/html:ro`:** Monta o diretório local `./src` no diretório raiz servido pelo Nginx em modo apenas de leitura (*read-only*), prevenindo alterações não autorizadas a partir do contentor.
+
+Inicie o serviço em segundo plano (*detached mode*) e aceda ao endereço no navegador:
+
+```bash
+docker compose up -d
+```
+
+Aceda a **`http://localhost:8080`** no navegador e confirme que o site completo (HTML, CSS, imagem e vídeo) é servido corretamente.
+
+### Passo 3.3: Inspeção do Ciclo de Pedidos HTTP (`curl` e *DevTools*)
+
+1. **Inspeção de cabeçalhos via terminal:** Execute `curl -I` para inspecionar a resposta HTTP devolvida pelo servidor Nginx:
+   ```bash
+   curl -I http://localhost:8080
+   curl -I http://localhost:8080/css/style.css
+   ```
+   Observe o código de estado (`HTTP/1.1 200 OK`), o cabeçalho `Server: nginx/...` e a diferença no cabeçalho `Content-Type` (`text/html` vs. `text/css`).
+
+2. **Inspeção no navegador (*DevTools*):**
+   * Em `http://localhost:8080`, abra as **DevTools** (`F12`) $\rightarrow$ separador **Network** (*Rede*).
+   * Ative a opção **Disable cache** (*Desativar cache*) e recarregue a página (`Ctrl+R` / `Cmd+R`).
+   * Confirme que o carregamento de uma única página origina **múltiplos pedidos HTTP** individuais (`/` ou `index.html`, `style.css`, `profile.jpg` e `my-clip.mp4`).
+
+3. Quando terminar este bloco, pare e remova o contentor:
+   ```bash
+   docker compose down
+   ```
+
+-----
+
+## Desafio Opcional: Arquitetura de *Reverse Proxy* com Nginx
+
+**Objetivo:** Reproduzir a arquitetura de **Reverse Proxy** abordada na aula teórica, expondo **dois serviços internos isolados** através de uma única porta pública (`8080`):
+* Pedidos para **`/`** $\rightarrow$ encaminhados para o contentor **`site`** (o seu portfólio HTML/CSS);
+* Pedidos para **`/api/`** $\rightarrow$ encaminhados para o contentor **`api`** (um serviço interno que devolve dados JSON, simulando a API REST da Aula 08).
+
+1. Na raiz de `o-meu-portfolio`, crie um ficheiro de configuração mínimo `api.conf` para o serviço interno `api`:
+   ```nginx
+   events {}
+   http {
+     server {
+       listen 8000;
+       location / {
+         default_type application/json;
+         return 200 '{"servico":"api-iei","estado":"operacional"}';
+       }
+     }
+   }
+   ```
+
+2. Crie o ficheiro `nginx.conf` com as regras de encaminhamento do **Reverse Proxy**:
+   ```nginx
+   events {}
+   http {
+     server {
+       listen 80;
+
+       location /api/ {
+         proxy_pass http://api:8000/;
+       }
+
+       location / {
+         proxy_pass http://site:80;
+       }
+     }
+   }
+   ```
+
+3. Crie um ficheiro `docker-compose.proxy.yml` onde **apenas o serviço `proxy` expõe portas ao exterior**:
+   ```yaml
+   services:
+     proxy:
+       image: nginx:alpine
+       ports:
+         - "8080:80"
+       volumes:
+         - ./nginx.conf:/etc/nginx/nginx.conf:ro
+       depends_on:
+         - site
+         - api
+
+     site:
+       image: nginx:alpine
+       volumes:
+         - ./src:/usr/share/nginx/html:ro
+       # Sem 'ports': acessível apenas na rede privada Docker
+
+     api:
+       image: nginx:alpine
+       volumes:
+         - ./api.conf:/etc/nginx/nginx.conf:ro
+       # Substituível pela sua imagem FastAPI da Aula 08
+   ```
+
+4. Inicie a arquitetura completa e valide o encaminhamento em ambos os caminhos:
+   ```bash
+   docker compose -f docker-compose.proxy.yml up -d
+   curl -i http://localhost:8080/api/
+   ```
+   * Aceda a **`http://localhost:8080/`** no navegador (servido pelo contentor `site`).
+   * Aceda a **`http://localhost:8080/api/`** (servido pelo contentor `api`, devolvendo JSON).
+   * Verifique com `docker ps` que apenas o contentor `proxy` possui mapeamento de porta para o *host* (`0.0.0.0:8080->80/tcp`), mantendo `site` e `api` isolados na rede interna.
+
+5. Para encerrar os serviços do desafio:
+   ```bash
+   docker compose -f docker-compose.proxy.yml down
+   ```
+
+-----
+
+## Síntese dos Resultados Obtidos
+
+Ao concluir este guião prático, executou o fluxo completo de desenvolvimento e publicação de páginas web estáticas:
+
+* Construção de um documento **HTML5 semântico** válido com navegação, hiperligações (`mailto:`) e multimédia nativa (`<figure>`/`<img>` e `<video>`).
+* Aplicação de **CSS3** externo com separação de responsabilidades, seletores e controlo de layout através do **CSS Box Model** (`box-sizing: border-box`).
+* Empacotamento e publicação do site com **Nginx + Docker Compose** em modo *read-only* (`:ro`), validação dos pedidos HTTP com `curl` e *DevTools*, e (opcionalmente) configuração de encaminhamento via **Reverse Proxy**.
